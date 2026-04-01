@@ -7,20 +7,18 @@ import (
 	"product/ent"
 	"product/internal/config"
 	"product/internal/event"
-
-	dapr "github.com/dapr/go-sdk/client"
 )
 
 type ServiceContext struct {
-	Config          config.Config
-	Db              *ent.Client
-	EventDispatcher event.EventDispatcher[event.Event]
+	Config     config.Config
+	Db         *ent.Client
+	Dispatcher event.Dispatcher[event.Event]
 }
 
-func NewServiceContext(c config.Config, db *ent.Client, dapr dapr.Client) *ServiceContext {
+func NewServiceContext(c config.Config, db *ent.Client, dispatcher event.Dispatcher[event.Event]) *ServiceContext {
 	return &ServiceContext{
-		Config:          c,
-		Db:              db,
-		EventDispatcher: event.NewDaprEventDispatcher[event.Event](dapr),
+		Config:     c,
+		Db:         db,
+		Dispatcher: dispatcher,
 	}
 }

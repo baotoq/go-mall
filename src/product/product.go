@@ -10,6 +10,7 @@ import (
 
 	"product/ent"
 	"product/internal/config"
+	"product/internal/event"
 	"product/internal/handler"
 	"product/internal/svc"
 
@@ -37,7 +38,7 @@ func main() {
 	dapr := initDaprClient()
 	defer dapr.Close()
 
-	ctx := svc.NewServiceContext(c, db, dapr)
+	ctx := svc.NewServiceContext(c, db, event.NewOutboxDispatcher(event.NewDaprDispatcher[event.Event](dapr)))
 	handler.RegisterHandlers(server, ctx)
 
 	fmt.Printf("Starting server at %s:%d...\n", c.Host, c.Port)

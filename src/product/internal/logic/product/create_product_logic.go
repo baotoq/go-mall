@@ -6,12 +6,14 @@ package product
 import (
 	"context"
 	"fmt"
+	"time"
 
-	"product/ent/product"
 	"product/internal/domain"
+	"product/internal/lib"
 	"product/internal/svc"
 	"product/internal/types"
 
+	"github.com/google/uuid"
 	"github.com/zeromicro/go-zero/core/logx"
 )
 
@@ -28,6 +30,15 @@ func NewCreateProductLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Cre
 		ctx:    ctx,
 		svcCtx: svcCtx,
 	}
+}
+
+type ProductCreatedEvent struct {
+	OccurredAt time.Time `json:"occurred_at"`
+	ProductID  uuid.UUID `json:"id"`
+}
+
+func (e ProductCreatedEvent) EventID() uuid.UUID {
+	return uuid.Must(uuid.NewV7())
 }
 
 func (l *CreateProductLogic) CreateProduct(req *types.CreateProductRequest) (resp *types.CreateProductResponse, err error) {
@@ -50,8 +61,13 @@ func (l *CreateProductLogic) CreateProduct(req *types.CreateProductRequest) (res
 		return nil, fmt.Errorf("create product: %w", err)
 	}
 
+	l.svcCtx.Dispatcher.PublishEvent(l.ctx, ProductCreatedEvent{
+		OccurredAt: lib.NowUTC(),
+		ProductID:  p.ID,
+	})
+
 	l.Logger.Infow("create product success",
-		logx.Field("id", product.ID),
+		logx.Field("id", p.ID),
 	)
 
 	return &types.CreateProductResponse{Id: savedProduct.ID}, nil

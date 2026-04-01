@@ -53,7 +53,7 @@ func (l *IncreaseProductStockLogic) IncreaseProductStock(req *types.IncreaseProd
 		return nil, fmt.Errorf("update product: %w", err)
 	}
 
-	if err := l.svcCtx.EventDispatcher.Publish(l.ctx, ProductStockIncreasedEvent{
+	if err := l.svcCtx.Dispatcher.PublishEvent(l.ctx, ProductStockIncreasedEvent{
 		OccurredAt: lib.NowUTC(),
 		ProductID:  req.ID,
 	}); err != nil {
