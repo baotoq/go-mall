@@ -2,22 +2,10 @@ package schema
 
 import (
 	"product/ent/schema/mixin"
-	"time"
 
 	"entgo.io/ent"
 	"entgo.io/ent/schema/field"
 )
-
-func must[T any](v T, err error) T {
-	if err != nil {
-		panic(err)
-	}
-	return v
-}
-
-func NowUTC() time.Time {
-	return time.Now().UTC()
-}
 
 // Product holds the schema definition for the Product entity.
 type Product struct {

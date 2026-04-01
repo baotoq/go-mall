@@ -59,7 +59,7 @@ type UpdateProductRequest struct {
 }
 
 type IncreaseProductStockRequest struct {
-	Id       uuid.UUID `path:"id"`
+	ID       uuid.UUID `path:"id"`
 	Quantity int64     `json:"quantity"`
 }
 

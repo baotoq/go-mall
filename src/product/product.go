@@ -13,6 +13,8 @@ import (
 	"product/internal/handler"
 	"product/internal/svc"
 
+	dapr "github.com/dapr/go-sdk/client"
+
 	"github.com/zeromicro/go-zero/core/conf"
 	"github.com/zeromicro/go-zero/core/logx"
 	"github.com/zeromicro/go-zero/rest"
@@ -23,26 +25,45 @@ var configFile = flag.String("f", "etc/product-api.yaml", "the config file")
 func main() {
 	flag.Parse()
 
-	logger := logx.WithContext(context.Background())
-
 	var c config.Config
 	conf.MustLoad(*configFile, &c)
 
 	server := rest.MustNewServer(c.RestConf)
 	defer server.Stop()
 
-	client, err := ent.Open("sqlite3", "file:ent?mode=memory&cache=shared&_fk=1")
-	if err != nil {
-		logger.Errorf("failed opening connection to sqlite: %v", err)
-	}
-	defer client.Close()
-	if err := client.Schema.Create(context.Background()); err != nil {
-		logger.Errorf("failed creating schema resources: %v", err)
-	}
+	db := initDb()
+	defer db.Close()
 
-	ctx := svc.NewServiceContext(c, client)
+	dapr := initDaprClient()
+	defer dapr.Close()
+
+	ctx := svc.NewServiceContext(c, db, dapr)
 	handler.RegisterHandlers(server, ctx)
 
 	fmt.Printf("Starting server at %s:%d...\n", c.Host, c.Port)
 	server.Start()
+}
+
+func initDb() *ent.Client {
+	db, err := ent.Open("sqlite3", "file:ent?mode=memory&cache=shared&_fk=1")
+
+	if err != nil {
+		logx.Must(err)
+		return nil
+	}
+	if err := db.Schema.Create(context.Background()); err != nil {
+		logx.Must(err)
+		return nil
+	}
+
+	return db
+}
+
+func initDaprClient() dapr.Client {
+	daprClient, err := dapr.NewClient()
+	if err != nil {
+		logx.Must(err)
+		return nil
+	}
+	return daprClient
 }

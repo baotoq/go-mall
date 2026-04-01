@@ -6,11 +6,13 @@ package product
 import (
 	"context"
 	"fmt"
+	"time"
 
-	"product/ent/product"
+	"product/internal/lib"
 	"product/internal/svc"
 	"product/internal/types"
 
+	"github.com/google/uuid"
 	"github.com/zeromicro/go-zero/core/logx"
 )
 
@@ -29,11 +31,20 @@ func NewIncreaseProductStockLogic(ctx context.Context, svcCtx *svc.ServiceContex
 	}
 }
 
+type ProductStockIncreasedEvent struct {
+	OccurredAt time.Time `json:"occurred_at"`
+	ProductID  uuid.UUID `json:"id"`
+}
+
+func (e ProductStockIncreasedEvent) EventID() uuid.UUID {
+	return uuid.Must(uuid.NewV7())
+}
+
 func (l *IncreaseProductStockLogic) IncreaseProductStock(req *types.IncreaseProductStockRequest) (resp *types.IncreaseProductStockResponse, err error) {
 	l.Logger.Infow("handling increase product stock", logx.Field("req", req))
 
 	err = l.svcCtx.Db.Product.
-		UpdateOneID(req.Id).
+		UpdateOneID(req.ID).
 		AddTotalStock(req.Quantity).
 		AddRemainingStock(req.Quantity).
 		Exec(l.ctx)
@@ -42,9 +53,15 @@ func (l *IncreaseProductStockLogic) IncreaseProductStock(req *types.IncreaseProd
 		return nil, fmt.Errorf("update product: %w", err)
 	}
 
-	l.Logger.Infow("increase product stock success",
-		logx.Field("id", product.ID),
-	)
+	if err := l.svcCtx.EventDispatcher.Publish(l.ctx, ProductStockIncreasedEvent{
+		OccurredAt: lib.NowUTC(),
+		ProductID:  req.ID,
+	}); err != nil {
+		l.Logger.Errorw("failed to publish product stock increased event", logx.Field("id", req.ID))
+		return nil, fmt.Errorf("publish event: %w", err)
+	}
 
-	return &types.IncreaseProductStockResponse{Id: req.Id}, nil
+	l.Logger.Infow("increase product stock success", logx.Field("id", req.ID))
+
+	return &types.IncreaseProductStockResponse{Id: req.ID}, nil
 }
