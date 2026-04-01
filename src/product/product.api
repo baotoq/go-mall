@@ -12,35 +12,35 @@ type (
 		Name        string  `json:"name"`
 		Description string  `json:"description,optional"`
 		Price       float64 `json:"price"`
-		Stock       int64   `json:"stock"`
+		TotalStock  int64   `json:"totalStock"`
 		CategoryId  int64   `json:"categoryId"`
 	}
 	CreateProductResponse {
-		Id int64 `json:"id"`
+		Id uuid.UUID `json:"id"`
 	}
 	GetProductRequest {
-		Id int64 `path:"id"`
+		Id uuid.UUID `path:"id"`
 	}
 	ProductInfo {
-		Id          int64   `json:"id"`
-		Name        string  `json:"name"`
-		Description string  `json:"description"`
-		Price       float64 `json:"price"`
-		Stock       int64   `json:"stock"`
-		CategoryId  int64   `json:"categoryId"`
-		CreatedAt   int64   `json:"createdAt"`
-		UpdatedAt   int64   `json:"updatedAt"`
+		Id             uuid.UUID `json:"id"`
+		Name           string  `json:"name"`
+		Description    string  `json:"description"`
+		Price          float64 `json:"price"`
+		TotalStock     int64   `json:"totalStock"`
+		RemainingStock int64   `json:"remainingStock"`
+		CategoryId     int64   `json:"categoryId"`
+		CreatedAt      int64   `json:"createdAt"`
+		UpdatedAt      int64   `json:"updatedAt"`
 	}
 	UpdateProductRequest {
-		Id          int64   `path:"id"`
-		Name        string  `json:"name,optional"`
-		Description string  `json:"description,optional"`
-		Price       float64 `json:"price,optional"`
-		Stock       int64   `json:"stock,optional"`
-		CategoryId  int64   `json:"categoryId,optional"`
+		Id          uuid.UUID   `path:"id"`
+		Name        string      `json:"name,optional"`
+		Description string      `json:"description,optional"`
+		Price       float64     `json:"price,optional"`
+		CategoryId  int64       `json:"categoryId,optional"`
 	}
 	DeleteProductRequest {
-		Id int64 `path:"id"`
+		Id uuid.UUID `path:"id"`
 	}
 	ListProductRequest {
 		Page       int64  `form:"page,default=1"`

@@ -28,8 +28,23 @@ func NewGetProductLogic(ctx context.Context, svcCtx *svc.ServiceContext) *GetPro
 }
 
 func (l *GetProductLogic) GetProduct(req *types.GetProductRequest) (resp *types.ProductInfo, err error) {
-	l.Logger.Infof("GetProduct id: %d", req.Id)
+	l.Logger.Infow("getting product", logx.Field("id", req.Id))
 
-	// TODO: fetch from database via l.svcCtx.ProductModel
-	return &types.ProductInfo{Id: req.Id}, nil
+	product, err := l.svcCtx.Db.Product.Get(l.ctx, req.Id)
+	if err != nil {
+		return nil, err
+	}
+
+	l.Logger.Infow("retrieved product", logx.Field("product", product))
+
+	return &types.ProductInfo{
+		Id:             product.ID,
+		Name:           product.Name,
+		Description:    product.Description,
+		Price:          product.Price,
+		TotalStock:     product.TotalStock,
+		RemainingStock: product.RemainingStock,
+		CreatedAt:      product.CreatedAt,
+		UpdatedAt:      product.UpdatedAt,
+	}, nil
 }

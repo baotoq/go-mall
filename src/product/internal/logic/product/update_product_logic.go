@@ -28,7 +28,19 @@ func NewUpdateProductLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Upd
 }
 
 func (l *UpdateProductLogic) UpdateProduct(req *types.UpdateProductRequest) error {
-	// todo: add your logic here and delete this line
+	l.Logger.Infow("handling update product", logx.Field("req", req))
+
+	_, err := l.svcCtx.Db.Product.UpdateOneID(req.Id).
+		SetName(req.Name).
+		SetDescription(req.Description).
+		SetPrice(req.Price).
+		Save(l.ctx)
+
+	if err != nil {
+		return err
+	}
+
+	l.Logger.Infof("handled update product successfully")
 
 	return nil
 }

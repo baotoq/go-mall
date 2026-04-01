@@ -5,6 +5,7 @@ package product
 
 import (
 	"context"
+	"fmt"
 
 	"product/internal/svc"
 	"product/internal/types"
@@ -28,7 +29,14 @@ func NewDeleteProductLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Del
 }
 
 func (l *DeleteProductLogic) DeleteProduct(req *types.DeleteProductRequest) error {
-	// todo: add your logic here and delete this line
+	l.Logger.Infow("handling delete product", logx.Field("req", req))
 
+	err := l.svcCtx.Db.Product.DeleteOneID(req.Id).Exec(l.ctx)
+
+	if err != nil {
+		return fmt.Errorf("delete product: %w", err)
+	}
+
+	l.Logger.Infof("handled delete product successfully")
 	return nil
 }

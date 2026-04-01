@@ -5,7 +5,10 @@ package product
 
 import (
 	"context"
+	"fmt"
 
+	"product/ent/product"
+	"product/internal/domain"
 	"product/internal/svc"
 	"product/internal/types"
 
@@ -28,9 +31,28 @@ func NewCreateProductLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Cre
 }
 
 func (l *CreateProductLogic) CreateProduct(req *types.CreateProductRequest) (resp *types.CreateProductResponse, err error) {
-	l.Logger.Infof("CreateProduct: %+v", req)
+	l.Logger.Infow("handling create product", logx.Field("req", req))
 
-	// TODO: persist to database via l.svcCtx.ProductModel
-	// Placeholder: return a mock ID until the model layer is wired up
-	return &types.CreateProductResponse{Id: 1}, nil
+	p, err := domain.NewProduct(req.Name, req.Description, req.Price, req.TotalStock)
+	if err != nil {
+		return nil, fmt.Errorf("create product: %w", err)
+	}
+
+	savedProduct, err := l.svcCtx.Db.Product.Create().
+		SetName(p.Name).
+		SetDescription(p.Description).
+		SetPrice(p.Price).
+		SetTotalStock(p.TotalStock).
+		SetRemainingStock(p.RemainingStock).
+		Save(l.ctx)
+
+	if err != nil {
+		return nil, fmt.Errorf("create product: %w", err)
+	}
+
+	l.Logger.Infow("create product success",
+		logx.Field("id", product.ID),
+	)
+
+	return &types.CreateProductResponse{Id: savedProduct.ID}, nil
 }

@@ -3,31 +3,36 @@
 
 package types
 
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
+
 type CreateProductRequest struct {
 	Name        string  `json:"name"`
 	Description string  `json:"description,optional"`
 	Price       float64 `json:"price"`
-	Stock       int64   `json:"stock"`
+	TotalStock  int64   `json:"totalStock"`
 	CategoryId  int64   `json:"categoryId"`
 }
 
 type CreateProductResponse struct {
-	Id int64 `json:"id"`
+	Id uuid.UUID `json:"id"`
 }
 
 type DeleteProductRequest struct {
-	Id int64 `path:"id"`
+	Id uuid.UUID `path:"id"`
 }
 
 type GetProductRequest struct {
-	Id int64 `path:"id"`
+	Id uuid.UUID `path:"id"`
 }
 
 type ListProductRequest struct {
-	Page       int64  `form:"page,default=1"`
-	PageSize   int64  `form:"pageSize,default=20"`
-	CategoryId int64  `form:"categoryId,optional"`
-	Keyword    string `form:"keyword,optional"`
+	Page     int64  `form:"page,default=1"`
+	PageSize int64  `form:"pageSize,default=20"`
+	Keyword  string `form:"keyword,optional"`
 }
 
 type ListProductResponse struct {
@@ -36,21 +41,28 @@ type ListProductResponse struct {
 }
 
 type ProductInfo struct {
-	Id          int64   `json:"id"`
-	Name        string  `json:"name"`
-	Description string  `json:"description"`
-	Price       float64 `json:"price"`
-	Stock       int64   `json:"stock"`
-	CategoryId  int64   `json:"categoryId"`
-	CreatedAt   int64   `json:"createdAt"`
-	UpdatedAt   int64   `json:"updatedAt"`
+	Id             uuid.UUID  `json:"id"`
+	Name           string     `json:"name"`
+	Description    string     `json:"description"`
+	Price          float64    `json:"price"`
+	TotalStock     int64      `json:"totalStock"`
+	RemainingStock int64      `json:"remainingStock"`
+	CreatedAt      time.Time  `json:"createdAt"`
+	UpdatedAt      *time.Time `json:"updatedAt"`
 }
 
 type UpdateProductRequest struct {
-	Id          int64   `path:"id"`
-	Name        string  `json:"name,optional"`
-	Description string  `json:"description,optional"`
-	Price       float64 `json:"price,optional"`
-	Stock       int64   `json:"stock,optional"`
-	CategoryId  int64   `json:"categoryId,optional"`
+	Id          uuid.UUID `path:"id"`
+	Name        string    `json:"name,optional"`
+	Description string    `json:"description,optional"`
+	Price       float64   `json:"price,optional"`
+}
+
+type IncreaseProductStockRequest struct {
+	Id       uuid.UUID `path:"id"`
+	Quantity int64     `json:"quantity"`
+}
+
+type IncreaseProductStockResponse struct {
+	Id uuid.UUID `json:"id"`
 }
