@@ -1,0 +1,16 @@
+Name: product-api
+Host: 0.0.0.0
+Port: 8001
+
+Log:
+  Mode: console
+  Level: info
+
+DevServer:
+  Port: 8011
+
+# MySQL:
+#   DataSource: root:password@tcp(localhost:3306)/go_mall?parseTime=true
+
+# Cache:
+#   - Host: localhost:6379
