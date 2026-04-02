@@ -3,6 +3,7 @@
 package ent
 
 import (
+	"product/ent/outboxmessage"
 	"product/ent/product"
 	"product/ent/schema"
 	"time"
@@ -14,6 +15,25 @@ import (
 // (default values, validators, hooks and policies) and stitches it
 // to their package variables.
 func init() {
+	outboxmessageMixin := schema.OutboxMessage{}.Mixin()
+	outboxmessageMixinFields0 := outboxmessageMixin[0].Fields()
+	_ = outboxmessageMixinFields0
+	outboxmessageMixinFields1 := outboxmessageMixin[1].Fields()
+	_ = outboxmessageMixinFields1
+	outboxmessageFields := schema.OutboxMessage{}.Fields()
+	_ = outboxmessageFields
+	// outboxmessageDescCreatedAt is the schema descriptor for created_at field.
+	outboxmessageDescCreatedAt := outboxmessageMixinFields1[0].Descriptor()
+	// outboxmessage.DefaultCreatedAt holds the default value on creation for the created_at field.
+	outboxmessage.DefaultCreatedAt = outboxmessageDescCreatedAt.Default.(func() time.Time)
+	// outboxmessageDescUpdatedAt is the schema descriptor for updated_at field.
+	outboxmessageDescUpdatedAt := outboxmessageMixinFields1[1].Descriptor()
+	// outboxmessage.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	outboxmessage.UpdateDefaultUpdatedAt = outboxmessageDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// outboxmessageDescID is the schema descriptor for id field.
+	outboxmessageDescID := outboxmessageMixinFields0[0].Descriptor()
+	// outboxmessage.DefaultID holds the default value on creation for the id field.
+	outboxmessage.DefaultID = outboxmessageDescID.Default.(func() uuid.UUID)
 	productMixin := schema.Product{}.Mixin()
 	productMixinFields0 := productMixin[0].Fields()
 	_ = productMixinFields0

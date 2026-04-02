@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"product/ent/outboxmessage"
 	"product/ent/product"
 	"reflect"
 	"sync"
@@ -73,7 +74,8 @@ var (
 func checkColumn(t, c string) error {
 	initCheck.Do(func() {
 		columnCheck = sql.NewColumnCheck(map[string]func(string) bool{
-			product.Table: product.ValidColumn,
+			outboxmessage.Table: outboxmessage.ValidColumn,
+			product.Table:       product.ValidColumn,
 		})
 	})
 	return columnCheck(t, c)

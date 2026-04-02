@@ -18,6 +18,6 @@ func NewDaprDispatcher[T Event](dapr dapr.Client) *DaprDispatcher[T] {
 }
 
 func (d *DaprDispatcher[T]) PublishEvent(ctx context.Context, event T) error {
-	logx.WithContext(ctx).Infow("publishing event", logx.Field("event", event))
+	logx.WithContext(ctx).Infow("dapr publishing event", logx.Field("event", event))
 	return d.dapr.PublishEvent(ctx, "pubsub", reflect.TypeOf(event).Name(), event)
 }
