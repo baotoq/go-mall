@@ -1,13 +1,13 @@
 # go-mall - Tiltfile
 
 local_resource(
-    'product-api',
-    serve_cmd='go run product.go -f etc/product-api.yaml',
-    serve_dir='src/product',
+    'catalog-api',
+    serve_cmd='go run product.go -f etc/catalog-api.yaml',
+    serve_dir='src/catalog',
     deps=[
-        'src/product/product.go',
-        'src/product/internal/',
-        'src/product/etc/product-api.yaml',
+        'src/catalog/product.go',
+        'src/catalog/internal/',
+        'src/catalog/etc/catalog-api.yaml',
     ],
     labels=['service'],
 )
