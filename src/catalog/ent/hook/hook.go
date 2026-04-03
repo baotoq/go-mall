@@ -3,9 +3,9 @@
 package hook
 
 import (
+	"catalog/ent"
 	"context"
 	"fmt"
-	"catalog/ent"
 )
 
 // The OutboxMessageFunc type is an adapter to allow the use of ordinary

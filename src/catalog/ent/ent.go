@@ -3,11 +3,11 @@
 package ent
 
 import (
+	"catalog/ent/outboxmessage"
+	"catalog/ent/product"
 	"context"
 	"errors"
 	"fmt"
-	"catalog/ent/outboxmessage"
-	"catalog/ent/product"
 	"reflect"
 	"sync"
 

@@ -3,13 +3,13 @@
 package ent
 
 import (
+	"catalog/ent/outboxmessage"
+	"catalog/ent/predicate"
+	"catalog/ent/schema"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"catalog/ent/outboxmessage"
-	"catalog/ent/predicate"
-	"catalog/ent/schema"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
@@ -66,6 +66,27 @@ func (_u *OutboxMessageUpdate) SetPayload(v json.RawMessage) *OutboxMessageUpdat
 // AppendPayload appends value to the "payload" field.
 func (_u *OutboxMessageUpdate) AppendPayload(v json.RawMessage) *OutboxMessageUpdate {
 	_u.mutation.AppendPayload(v)
+	return _u
+}
+
+// SetRetryAttempts sets the "retry_attempts" field.
+func (_u *OutboxMessageUpdate) SetRetryAttempts(v int32) *OutboxMessageUpdate {
+	_u.mutation.ResetRetryAttempts()
+	_u.mutation.SetRetryAttempts(v)
+	return _u
+}
+
+// SetNillableRetryAttempts sets the "retry_attempts" field if the given value is not nil.
+func (_u *OutboxMessageUpdate) SetNillableRetryAttempts(v *int32) *OutboxMessageUpdate {
+	if v != nil {
+		_u.SetRetryAttempts(*v)
+	}
+	return _u
+}
+
+// AddRetryAttempts adds value to the "retry_attempts" field.
+func (_u *OutboxMessageUpdate) AddRetryAttempts(v int32) *OutboxMessageUpdate {
+	_u.mutation.AddRetryAttempts(v)
 	return _u
 }
 
@@ -183,6 +204,12 @@ func (_u *OutboxMessageUpdate) sqlSave(ctx context.Context) (_node int, err erro
 			sqljson.Append(u, outboxmessage.FieldPayload, value)
 		})
 	}
+	if value, ok := _u.mutation.RetryAttempts(); ok {
+		_spec.SetField(outboxmessage.FieldRetryAttempts, field.TypeInt32, value)
+	}
+	if value, ok := _u.mutation.AddedRetryAttempts(); ok {
+		_spec.AddField(outboxmessage.FieldRetryAttempts, field.TypeInt32, value)
+	}
 	if value, ok := _u.mutation.Status(); ok {
 		_spec.SetField(outboxmessage.FieldStatus, field.TypeEnum, value)
 	}
@@ -247,6 +274,27 @@ func (_u *OutboxMessageUpdateOne) SetPayload(v json.RawMessage) *OutboxMessageUp
 // AppendPayload appends value to the "payload" field.
 func (_u *OutboxMessageUpdateOne) AppendPayload(v json.RawMessage) *OutboxMessageUpdateOne {
 	_u.mutation.AppendPayload(v)
+	return _u
+}
+
+// SetRetryAttempts sets the "retry_attempts" field.
+func (_u *OutboxMessageUpdateOne) SetRetryAttempts(v int32) *OutboxMessageUpdateOne {
+	_u.mutation.ResetRetryAttempts()
+	_u.mutation.SetRetryAttempts(v)
+	return _u
+}
+
+// SetNillableRetryAttempts sets the "retry_attempts" field if the given value is not nil.
+func (_u *OutboxMessageUpdateOne) SetNillableRetryAttempts(v *int32) *OutboxMessageUpdateOne {
+	if v != nil {
+		_u.SetRetryAttempts(*v)
+	}
+	return _u
+}
+
+// AddRetryAttempts adds value to the "retry_attempts" field.
+func (_u *OutboxMessageUpdateOne) AddRetryAttempts(v int32) *OutboxMessageUpdateOne {
+	_u.mutation.AddRetryAttempts(v)
 	return _u
 }
 
@@ -393,6 +441,12 @@ func (_u *OutboxMessageUpdateOne) sqlSave(ctx context.Context) (_node *OutboxMes
 		_spec.AddModifier(func(u *sql.UpdateBuilder) {
 			sqljson.Append(u, outboxmessage.FieldPayload, value)
 		})
+	}
+	if value, ok := _u.mutation.RetryAttempts(); ok {
+		_spec.SetField(outboxmessage.FieldRetryAttempts, field.TypeInt32, value)
+	}
+	if value, ok := _u.mutation.AddedRetryAttempts(); ok {
+		_spec.AddField(outboxmessage.FieldRetryAttempts, field.TypeInt32, value)
 	}
 	if value, ok := _u.mutation.Status(); ok {
 		_spec.SetField(outboxmessage.FieldStatus, field.TypeEnum, value)

@@ -3,12 +3,12 @@
 package ent
 
 import (
+	"catalog/ent/outboxmessage"
+	"catalog/ent/schema"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"catalog/ent/outboxmessage"
-	"catalog/ent/schema"
 	"time"
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
@@ -60,6 +60,20 @@ func (_c *OutboxMessageCreate) SetEventName(v string) *OutboxMessageCreate {
 // SetPayload sets the "payload" field.
 func (_c *OutboxMessageCreate) SetPayload(v json.RawMessage) *OutboxMessageCreate {
 	_c.mutation.SetPayload(v)
+	return _c
+}
+
+// SetRetryAttempts sets the "retry_attempts" field.
+func (_c *OutboxMessageCreate) SetRetryAttempts(v int32) *OutboxMessageCreate {
+	_c.mutation.SetRetryAttempts(v)
+	return _c
+}
+
+// SetNillableRetryAttempts sets the "retry_attempts" field if the given value is not nil.
+func (_c *OutboxMessageCreate) SetNillableRetryAttempts(v *int32) *OutboxMessageCreate {
+	if v != nil {
+		_c.SetRetryAttempts(*v)
+	}
 	return _c
 }
 
@@ -136,6 +150,10 @@ func (_c *OutboxMessageCreate) defaults() {
 		v := outboxmessage.DefaultCreatedAt()
 		_c.mutation.SetCreatedAt(v)
 	}
+	if _, ok := _c.mutation.RetryAttempts(); !ok {
+		v := outboxmessage.DefaultRetryAttempts
+		_c.mutation.SetRetryAttempts(v)
+	}
 	if _, ok := _c.mutation.ID(); !ok {
 		v := outboxmessage.DefaultID()
 		_c.mutation.SetID(v)
@@ -152,6 +170,9 @@ func (_c *OutboxMessageCreate) check() error {
 	}
 	if _, ok := _c.mutation.Payload(); !ok {
 		return &ValidationError{Name: "payload", err: errors.New(`ent: missing required field "OutboxMessage.payload"`)}
+	}
+	if _, ok := _c.mutation.RetryAttempts(); !ok {
+		return &ValidationError{Name: "retry_attempts", err: errors.New(`ent: missing required field "OutboxMessage.retry_attempts"`)}
 	}
 	if _, ok := _c.mutation.Status(); !ok {
 		return &ValidationError{Name: "status", err: errors.New(`ent: missing required field "OutboxMessage.status"`)}
@@ -211,6 +232,10 @@ func (_c *OutboxMessageCreate) createSpec() (*OutboxMessage, *sqlgraph.CreateSpe
 	if value, ok := _c.mutation.Payload(); ok {
 		_spec.SetField(outboxmessage.FieldPayload, field.TypeJSON, value)
 		_node.Payload = value
+	}
+	if value, ok := _c.mutation.RetryAttempts(); ok {
+		_spec.SetField(outboxmessage.FieldRetryAttempts, field.TypeInt32, value)
+		_node.RetryAttempts = value
 	}
 	if value, ok := _c.mutation.Status(); ok {
 		_spec.SetField(outboxmessage.FieldStatus, field.TypeEnum, value)

@@ -3,10 +3,10 @@
 package ent
 
 import (
-	"encoding/json"
-	"fmt"
 	"catalog/ent/outboxmessage"
 	"catalog/ent/schema"
+	"encoding/json"
+	"fmt"
 	"strings"
 	"time"
 
@@ -28,6 +28,8 @@ type OutboxMessage struct {
 	EventName string `json:"event_name,omitempty"`
 	// Payload holds the value of the "payload" field.
 	Payload json.RawMessage `json:"payload,omitempty"`
+	// RetryAttempts holds the value of the "retry_attempts" field.
+	RetryAttempts int32 `json:"retry_attempts,omitempty"`
 	// Status holds the value of the "status" field.
 	Status schema.MessageStatus `json:"status,omitempty"`
 	// SentAt holds the value of the "sent_at" field.
@@ -42,6 +44,8 @@ func (*OutboxMessage) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case outboxmessage.FieldPayload:
 			values[i] = new([]byte)
+		case outboxmessage.FieldRetryAttempts:
+			values[i] = new(sql.NullInt64)
 		case outboxmessage.FieldEventName, outboxmessage.FieldStatus:
 			values[i] = new(sql.NullString)
 		case outboxmessage.FieldCreatedAt, outboxmessage.FieldUpdatedAt, outboxmessage.FieldSentAt:
@@ -95,6 +99,12 @@ func (_m *OutboxMessage) assignValues(columns []string, values []any) error {
 				if err := json.Unmarshal(*value, &_m.Payload); err != nil {
 					return fmt.Errorf("unmarshal field payload: %w", err)
 				}
+			}
+		case outboxmessage.FieldRetryAttempts:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field retry_attempts", values[i])
+			} else if value.Valid {
+				_m.RetryAttempts = int32(value.Int64)
 			}
 		case outboxmessage.FieldStatus:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -157,6 +167,9 @@ func (_m *OutboxMessage) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("payload=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Payload))
+	builder.WriteString(", ")
+	builder.WriteString("retry_attempts=")
+	builder.WriteString(fmt.Sprintf("%v", _m.RetryAttempts))
 	builder.WriteString(", ")
 	builder.WriteString("status=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Status))

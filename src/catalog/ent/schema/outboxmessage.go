@@ -1,8 +1,8 @@
 package schema
 
 import (
-	"encoding/json"
 	"catalog/ent/schema/mixin"
+	"encoding/json"
 
 	"entgo.io/ent"
 	"entgo.io/ent/schema/field"
@@ -11,10 +11,10 @@ import (
 type MessageStatus string
 
 const (
-	StatusPending MessageStatus = "pending"
+	StatusPending    MessageStatus = "pending"
 	StatusProcessing MessageStatus = "processing"
-	StatusSent    MessageStatus = "sent"
-	StatusFailed  MessageStatus = "failed"
+	StatusSent       MessageStatus = "sent"
+	StatusFailed     MessageStatus = "failed"
 )
 
 func (MessageStatus) Values() []string {
@@ -35,6 +35,7 @@ func (OutboxMessage) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("event_name"),
 		field.JSON("payload", json.RawMessage{}),
+		field.Int32("retry_attempts").Default(0),
 		field.Enum("status").
 			GoType(MessageStatus("")),
 		field.Time("sent_at").Optional(),

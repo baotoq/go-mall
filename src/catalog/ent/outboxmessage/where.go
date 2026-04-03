@@ -71,6 +71,11 @@ func EventName(v string) predicate.OutboxMessage {
 	return predicate.OutboxMessage(sql.FieldEQ(FieldEventName, v))
 }
 
+// RetryAttempts applies equality check predicate on the "retry_attempts" field. It's identical to RetryAttemptsEQ.
+func RetryAttempts(v int32) predicate.OutboxMessage {
+	return predicate.OutboxMessage(sql.FieldEQ(FieldRetryAttempts, v))
+}
+
 // SentAt applies equality check predicate on the "sent_at" field. It's identical to SentAtEQ.
 func SentAt(v time.Time) predicate.OutboxMessage {
 	return predicate.OutboxMessage(sql.FieldEQ(FieldSentAt, v))
@@ -229,6 +234,46 @@ func EventNameEqualFold(v string) predicate.OutboxMessage {
 // EventNameContainsFold applies the ContainsFold predicate on the "event_name" field.
 func EventNameContainsFold(v string) predicate.OutboxMessage {
 	return predicate.OutboxMessage(sql.FieldContainsFold(FieldEventName, v))
+}
+
+// RetryAttemptsEQ applies the EQ predicate on the "retry_attempts" field.
+func RetryAttemptsEQ(v int32) predicate.OutboxMessage {
+	return predicate.OutboxMessage(sql.FieldEQ(FieldRetryAttempts, v))
+}
+
+// RetryAttemptsNEQ applies the NEQ predicate on the "retry_attempts" field.
+func RetryAttemptsNEQ(v int32) predicate.OutboxMessage {
+	return predicate.OutboxMessage(sql.FieldNEQ(FieldRetryAttempts, v))
+}
+
+// RetryAttemptsIn applies the In predicate on the "retry_attempts" field.
+func RetryAttemptsIn(vs ...int32) predicate.OutboxMessage {
+	return predicate.OutboxMessage(sql.FieldIn(FieldRetryAttempts, vs...))
+}
+
+// RetryAttemptsNotIn applies the NotIn predicate on the "retry_attempts" field.
+func RetryAttemptsNotIn(vs ...int32) predicate.OutboxMessage {
+	return predicate.OutboxMessage(sql.FieldNotIn(FieldRetryAttempts, vs...))
+}
+
+// RetryAttemptsGT applies the GT predicate on the "retry_attempts" field.
+func RetryAttemptsGT(v int32) predicate.OutboxMessage {
+	return predicate.OutboxMessage(sql.FieldGT(FieldRetryAttempts, v))
+}
+
+// RetryAttemptsGTE applies the GTE predicate on the "retry_attempts" field.
+func RetryAttemptsGTE(v int32) predicate.OutboxMessage {
+	return predicate.OutboxMessage(sql.FieldGTE(FieldRetryAttempts, v))
+}
+
+// RetryAttemptsLT applies the LT predicate on the "retry_attempts" field.
+func RetryAttemptsLT(v int32) predicate.OutboxMessage {
+	return predicate.OutboxMessage(sql.FieldLT(FieldRetryAttempts, v))
+}
+
+// RetryAttemptsLTE applies the LTE predicate on the "retry_attempts" field.
+func RetryAttemptsLTE(v int32) predicate.OutboxMessage {
+	return predicate.OutboxMessage(sql.FieldLTE(FieldRetryAttempts, v))
 }
 
 // StatusEQ applies the EQ predicate on the "status" field.

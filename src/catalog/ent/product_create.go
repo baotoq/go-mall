@@ -3,10 +3,10 @@
 package ent
 
 import (
+	"catalog/ent/product"
 	"context"
 	"errors"
 	"fmt"
-	"catalog/ent/product"
 	"time"
 
 	"entgo.io/ent/dialect/sql/sqlgraph"

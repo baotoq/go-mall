@@ -3,14 +3,14 @@
 package ent
 
 import (
-	"context"
-	"encoding/json"
-	"errors"
-	"fmt"
 	"catalog/ent/outboxmessage"
 	"catalog/ent/predicate"
 	"catalog/ent/product"
 	"catalog/ent/schema"
+	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
 	"sync"
 	"time"
 
@@ -35,20 +35,22 @@ const (
 // OutboxMessageMutation represents an operation that mutates the OutboxMessage nodes in the graph.
 type OutboxMessageMutation struct {
 	config
-	op            Op
-	typ           string
-	id            *uuid.UUID
-	created_at    *time.Time
-	updated_at    *time.Time
-	event_name    *string
-	payload       *json.RawMessage
-	appendpayload json.RawMessage
-	status        *schema.MessageStatus
-	sent_at       *time.Time
-	clearedFields map[string]struct{}
-	done          bool
-	oldValue      func(context.Context) (*OutboxMessage, error)
-	predicates    []predicate.OutboxMessage
+	op                Op
+	typ               string
+	id                *uuid.UUID
+	created_at        *time.Time
+	updated_at        *time.Time
+	event_name        *string
+	payload           *json.RawMessage
+	appendpayload     json.RawMessage
+	retry_attempts    *int32
+	addretry_attempts *int32
+	status            *schema.MessageStatus
+	sent_at           *time.Time
+	clearedFields     map[string]struct{}
+	done              bool
+	oldValue          func(context.Context) (*OutboxMessage, error)
+	predicates        []predicate.OutboxMessage
 }
 
 var _ ent.Mutation = (*OutboxMessageMutation)(nil)
@@ -327,6 +329,62 @@ func (m *OutboxMessageMutation) ResetPayload() {
 	m.appendpayload = nil
 }
 
+// SetRetryAttempts sets the "retry_attempts" field.
+func (m *OutboxMessageMutation) SetRetryAttempts(i int32) {
+	m.retry_attempts = &i
+	m.addretry_attempts = nil
+}
+
+// RetryAttempts returns the value of the "retry_attempts" field in the mutation.
+func (m *OutboxMessageMutation) RetryAttempts() (r int32, exists bool) {
+	v := m.retry_attempts
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRetryAttempts returns the old "retry_attempts" field's value of the OutboxMessage entity.
+// If the OutboxMessage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *OutboxMessageMutation) OldRetryAttempts(ctx context.Context) (v int32, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRetryAttempts is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRetryAttempts requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRetryAttempts: %w", err)
+	}
+	return oldValue.RetryAttempts, nil
+}
+
+// AddRetryAttempts adds i to the "retry_attempts" field.
+func (m *OutboxMessageMutation) AddRetryAttempts(i int32) {
+	if m.addretry_attempts != nil {
+		*m.addretry_attempts += i
+	} else {
+		m.addretry_attempts = &i
+	}
+}
+
+// AddedRetryAttempts returns the value that was added to the "retry_attempts" field in this mutation.
+func (m *OutboxMessageMutation) AddedRetryAttempts() (r int32, exists bool) {
+	v := m.addretry_attempts
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetRetryAttempts resets all changes to the "retry_attempts" field.
+func (m *OutboxMessageMutation) ResetRetryAttempts() {
+	m.retry_attempts = nil
+	m.addretry_attempts = nil
+}
+
 // SetStatus sets the "status" field.
 func (m *OutboxMessageMutation) SetStatus(ss schema.MessageStatus) {
 	m.status = &ss
@@ -446,7 +504,7 @@ func (m *OutboxMessageMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *OutboxMessageMutation) Fields() []string {
-	fields := make([]string, 0, 6)
+	fields := make([]string, 0, 7)
 	if m.created_at != nil {
 		fields = append(fields, outboxmessage.FieldCreatedAt)
 	}
@@ -458,6 +516,9 @@ func (m *OutboxMessageMutation) Fields() []string {
 	}
 	if m.payload != nil {
 		fields = append(fields, outboxmessage.FieldPayload)
+	}
+	if m.retry_attempts != nil {
+		fields = append(fields, outboxmessage.FieldRetryAttempts)
 	}
 	if m.status != nil {
 		fields = append(fields, outboxmessage.FieldStatus)
@@ -481,6 +542,8 @@ func (m *OutboxMessageMutation) Field(name string) (ent.Value, bool) {
 		return m.EventName()
 	case outboxmessage.FieldPayload:
 		return m.Payload()
+	case outboxmessage.FieldRetryAttempts:
+		return m.RetryAttempts()
 	case outboxmessage.FieldStatus:
 		return m.Status()
 	case outboxmessage.FieldSentAt:
@@ -502,6 +565,8 @@ func (m *OutboxMessageMutation) OldField(ctx context.Context, name string) (ent.
 		return m.OldEventName(ctx)
 	case outboxmessage.FieldPayload:
 		return m.OldPayload(ctx)
+	case outboxmessage.FieldRetryAttempts:
+		return m.OldRetryAttempts(ctx)
 	case outboxmessage.FieldStatus:
 		return m.OldStatus(ctx)
 	case outboxmessage.FieldSentAt:
@@ -543,6 +608,13 @@ func (m *OutboxMessageMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetPayload(v)
 		return nil
+	case outboxmessage.FieldRetryAttempts:
+		v, ok := value.(int32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRetryAttempts(v)
+		return nil
 	case outboxmessage.FieldStatus:
 		v, ok := value.(schema.MessageStatus)
 		if !ok {
@@ -564,13 +636,21 @@ func (m *OutboxMessageMutation) SetField(name string, value ent.Value) error {
 // AddedFields returns all numeric fields that were incremented/decremented during
 // this mutation.
 func (m *OutboxMessageMutation) AddedFields() []string {
-	return nil
+	var fields []string
+	if m.addretry_attempts != nil {
+		fields = append(fields, outboxmessage.FieldRetryAttempts)
+	}
+	return fields
 }
 
 // AddedField returns the numeric value that was incremented/decremented on a field
 // with the given name. The second boolean return value indicates that this field
 // was not set, or was not defined in the schema.
 func (m *OutboxMessageMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case outboxmessage.FieldRetryAttempts:
+		return m.AddedRetryAttempts()
+	}
 	return nil, false
 }
 
@@ -579,6 +659,13 @@ func (m *OutboxMessageMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *OutboxMessageMutation) AddField(name string, value ent.Value) error {
 	switch name {
+	case outboxmessage.FieldRetryAttempts:
+		v, ok := value.(int32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddRetryAttempts(v)
+		return nil
 	}
 	return fmt.Errorf("unknown OutboxMessage numeric field %s", name)
 }
@@ -632,6 +719,9 @@ func (m *OutboxMessageMutation) ResetField(name string) error {
 		return nil
 	case outboxmessage.FieldPayload:
 		m.ResetPayload()
+		return nil
+	case outboxmessage.FieldRetryAttempts:
+		m.ResetRetryAttempts()
 		return nil
 	case outboxmessage.FieldStatus:
 		m.ResetStatus()

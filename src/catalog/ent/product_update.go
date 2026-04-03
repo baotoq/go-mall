@@ -3,11 +3,11 @@
 package ent
 
 import (
+	"catalog/ent/predicate"
+	"catalog/ent/product"
 	"context"
 	"errors"
 	"fmt"
-	"catalog/ent/predicate"
-	"catalog/ent/product"
 	"time"
 
 	"entgo.io/ent/dialect/sql"

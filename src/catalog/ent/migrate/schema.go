@@ -15,7 +15,8 @@ var (
 		{Name: "updated_at", Type: field.TypeTime, Nullable: true},
 		{Name: "event_name", Type: field.TypeString},
 		{Name: "payload", Type: field.TypeJSON},
-		{Name: "status", Type: field.TypeEnum, Enums: []string{"pending", "sent", "failed"}},
+		{Name: "retry_attempts", Type: field.TypeInt32, Default: 0},
+		{Name: "status", Type: field.TypeEnum, Enums: []string{"pending", "processing", "sent", "failed"}},
 		{Name: "sent_at", Type: field.TypeTime, Nullable: true},
 	}
 	// OutboxMessagesTable holds the schema information for the "outbox_messages" table.

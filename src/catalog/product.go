@@ -38,7 +38,7 @@ func main() {
 	dapr := initDaprClient()
 	defer dapr.Close()
 
-	ctx := svc.NewServiceContext(c, db, event.NewOutboxDispatcher(event.NewDaprDispatcher[event.Event](dapr)))
+	ctx := svc.NewServiceContext(c, db, event.NewOutboxDispatcher(event.NewDaprDispatcher[event.Event](dapr), db))
 	handler.RegisterHandlers(server, ctx)
 
 	fmt.Printf("Starting server at %s:%d...\n", c.Host, c.Port)

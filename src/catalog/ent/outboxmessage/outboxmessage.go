@@ -3,8 +3,8 @@
 package outboxmessage
 
 import (
-	"fmt"
 	"catalog/ent/schema"
+	"fmt"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
@@ -24,6 +24,8 @@ const (
 	FieldEventName = "event_name"
 	// FieldPayload holds the string denoting the payload field in the database.
 	FieldPayload = "payload"
+	// FieldRetryAttempts holds the string denoting the retry_attempts field in the database.
+	FieldRetryAttempts = "retry_attempts"
 	// FieldStatus holds the string denoting the status field in the database.
 	FieldStatus = "status"
 	// FieldSentAt holds the string denoting the sent_at field in the database.
@@ -39,6 +41,7 @@ var Columns = []string{
 	FieldUpdatedAt,
 	FieldEventName,
 	FieldPayload,
+	FieldRetryAttempts,
 	FieldStatus,
 	FieldSentAt,
 }
@@ -58,6 +61,8 @@ var (
 	DefaultCreatedAt func() time.Time
 	// UpdateDefaultUpdatedAt holds the default value on update for the "updated_at" field.
 	UpdateDefaultUpdatedAt func() time.Time
+	// DefaultRetryAttempts holds the default value on creation for the "retry_attempts" field.
+	DefaultRetryAttempts int32
 	// DefaultID holds the default value on creation for the "id" field.
 	DefaultID func() uuid.UUID
 )
@@ -65,7 +70,7 @@ var (
 // StatusValidator is a validator for the "status" field enum values. It is called by the builders before save.
 func StatusValidator(s schema.MessageStatus) error {
 	switch s {
-	case "pending", "sent", "failed":
+	case "pending", "processing", "sent", "failed":
 		return nil
 	default:
 		return fmt.Errorf("outboxmessage: invalid enum value for status field: %q", s)
@@ -93,6 +98,11 @@ func ByUpdatedAt(opts ...sql.OrderTermOption) OrderOption {
 // ByEventName orders the results by the event_name field.
 func ByEventName(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldEventName, opts...).ToFunc()
+}
+
+// ByRetryAttempts orders the results by the retry_attempts field.
+func ByRetryAttempts(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRetryAttempts, opts...).ToFunc()
 }
 
 // ByStatus orders the results by the status field.

@@ -3,8 +3,8 @@
 package ent
 
 import (
-	"fmt"
 	"catalog/ent/product"
+	"fmt"
 	"strings"
 	"time"
 
