@@ -1,0 +1,42 @@
+package schema
+
+import (
+	"encoding/json"
+	"entgo.io/ent"
+	"entgo.io/ent/schema/field"
+	"payment/ent/schema/mixin"
+)
+
+type MessageStatus string
+
+const (
+	StatusPending    MessageStatus = "pending"
+	StatusProcessing MessageStatus = "processing"
+	StatusSent       MessageStatus = "sent"
+	StatusFailed     MessageStatus = "failed"
+)
+
+func (MessageStatus) Values() []string {
+	return []string{string(StatusPending), string(StatusProcessing), string(StatusSent), string(StatusFailed)}
+}
+
+type OutboxMessage struct {
+	ent.Schema
+}
+
+func (OutboxMessage) Fields() []ent.Field {
+	return []ent.Field{
+		field.String("event_name"),
+		field.JSON("payload", json.RawMessage{}),
+		field.Int32("retry_attempts").Default(0),
+		field.Enum("status").GoType(MessageStatus("")),
+		field.Time("sent_at").Optional(),
+	}
+}
+
+func (OutboxMessage) Mixin() []ent.Mixin {
+	return []ent.Mixin{
+		mixin.IdMixin{},
+		mixin.TimeMixin{},
+	}
+}
