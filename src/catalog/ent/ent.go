@@ -6,6 +6,7 @@ import (
 	"catalog/ent/category"
 	"catalog/ent/outboxmessage"
 	"catalog/ent/product"
+	"catalog/ent/reservation"
 	"context"
 	"errors"
 	"fmt"
@@ -78,6 +79,7 @@ func checkColumn(t, c string) error {
 			category.Table:      category.ValidColumn,
 			outboxmessage.Table: outboxmessage.ValidColumn,
 			product.Table:       product.ValidColumn,
+			reservation.Table:   reservation.ValidColumn,
 		})
 	})
 	return columnCheck(t, c)

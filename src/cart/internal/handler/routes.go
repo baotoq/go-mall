@@ -39,6 +39,12 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Path:    "/items/:productId",
 				Handler: cart.DeleteCartItemHandler(serverCtx),
 			},
+			{
+				// Checkout cart
+				Method:  http.MethodPost,
+				Path:    "/checkout",
+				Handler: cart.CheckoutHandler(serverCtx),
+			},
 		},
 		rest.WithPrefix("/api/v1/cart"),
 	)

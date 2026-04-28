@@ -26,6 +26,24 @@ type (
 	DeleteCartItemRequest {
 		ProductId string `path:"productId"`
 	}
+	CheckoutRequest {
+		IdempotencyKey string `json:"idempotencyKey,optional"`
+	}
+	OrderItemInfo {
+		ProductId string `json:"productId"`
+		Quantity  int64  `json:"quantity"`
+		UnitPrice int64  `json:"unitPrice"`
+	}
+	CheckoutResponse {
+		OrderId       string          `json:"orderId"`
+		Status        string          `json:"status"`
+		TotalAmount   int64           `json:"totalAmount"`
+		ReservationId string          `json:"reservationId,optional"`
+		PaymentId     string          `json:"paymentId,optional"`
+		TransactionId string          `json:"transactionId,optional"`
+		FailureReason string          `json:"failureReason,optional"`
+		Items         []OrderItemInfo `json:"items"`
+	}
 )
 
 @server (
@@ -48,5 +66,9 @@ service cart-api {
 	@doc "Delete item from cart"
 	@handler DeleteCartItem
 	delete /items/:productId (DeleteCartItemRequest)
+
+	@doc "Checkout cart"
+	@handler Checkout
+	post /checkout (CheckoutRequest) returns (CheckoutResponse)
 }
 

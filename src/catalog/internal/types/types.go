@@ -74,6 +74,43 @@ type IncreaseProductStockResponse struct {
 	Id string `json:"id"`
 }
 
+type ReservationItemRequest struct {
+	ProductId string `json:"productId"`
+	Quantity  int64  `json:"quantity"`
+}
+
+type CreateReservationRequest struct {
+	SessionId string                   `json:"sessionId"`
+	Items     []ReservationItemRequest `json:"items"`
+}
+
+type ReservationItemInfo struct {
+	ProductId string `json:"productId"`
+	Quantity  int64  `json:"quantity"`
+}
+
+type ReservationInfo struct {
+	Id        string                `json:"id"`
+	SessionId string                `json:"sessionId"`
+	Status    string                `json:"status"`
+	Items     []ReservationItemInfo `json:"items"`
+	CreatedAt int64                 `json:"createdAt"`
+	UpdatedAt int64                 `json:"updatedAt"`
+}
+
+type ConfirmReservationRequest struct {
+	Id string `path:"id"`
+}
+
+type CancelReservationRequest struct {
+	Id string `path:"id"`
+}
+
+type ReservationActionResponse struct {
+	Id     string `json:"id"`
+	Status string `json:"status"`
+}
+
 type CreateCategoryRequest struct {
 	Name        string `json:"name"`
 	Slug        string `json:"slug"`

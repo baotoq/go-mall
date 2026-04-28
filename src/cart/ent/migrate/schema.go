@@ -35,6 +35,38 @@ var (
 			},
 		},
 	}
+	// OrdersColumns holds the columns for the "orders" table.
+	OrdersColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID, Unique: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime, Nullable: true},
+		{Name: "session_id", Type: field.TypeString},
+		{Name: "status", Type: field.TypeString, Default: "pending"},
+		{Name: "total_amount", Type: field.TypeInt64},
+		{Name: "reservation_id", Type: field.TypeString, Nullable: true},
+		{Name: "payment_id", Type: field.TypeString, Nullable: true},
+		{Name: "transaction_id", Type: field.TypeString, Nullable: true},
+		{Name: "failure_reason", Type: field.TypeString, Nullable: true},
+		{Name: "items", Type: field.TypeJSON},
+	}
+	// OrdersTable holds the schema information for the "orders" table.
+	OrdersTable = &schema.Table{
+		Name:       "orders",
+		Columns:    OrdersColumns,
+		PrimaryKey: []*schema.Column{OrdersColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "order_session_id",
+				Unique:  false,
+				Columns: []*schema.Column{OrdersColumns[3]},
+			},
+			{
+				Name:    "order_status",
+				Unique:  false,
+				Columns: []*schema.Column{OrdersColumns[4]},
+			},
+		},
+	}
 	// OutboxMessagesColumns holds the columns for the "outbox_messages" table.
 	OutboxMessagesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID, Unique: true},
@@ -55,6 +87,7 @@ var (
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
 		CartItemsTable,
+		OrdersTable,
 		OutboxMessagesTable,
 	}
 )

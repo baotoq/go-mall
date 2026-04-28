@@ -9,6 +9,8 @@ import (
 	"fmt"
 
 	"cart/ent"
+	catalogclient "cart/internal/clients/catalog"
+	paymentclient "cart/internal/clients/payment"
 	"cart/internal/config"
 	cartevent "cart/internal/event"
 	"cart/internal/handler"
@@ -40,10 +42,16 @@ func main() {
 	dapr := initDaprClient()
 	defer dapr.Close()
 
-	ctx := svc.NewServiceContext(c, db, sharedevent.NewOutboxDispatcher[sharedevent.Event](
-		sharedevent.NewDaprDispatcher[sharedevent.Event](dapr),
-		cartevent.NewEntStore(db),
-	))
+	ctx := svc.NewServiceContext(
+		c,
+		db,
+		sharedevent.NewOutboxDispatcher[sharedevent.Event](
+			sharedevent.NewDaprDispatcher[sharedevent.Event](dapr),
+			cartevent.NewEntStore(db),
+		),
+		catalogclient.New(c.CatalogBaseURL),
+		paymentclient.New(c.PaymentBaseURL),
+	)
 	handler.RegisterHandlers(server, ctx)
 
 	fmt.Printf("Starting server at %s:%d...\n", c.Host, c.Port)

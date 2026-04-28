@@ -82,11 +82,39 @@ var (
 			},
 		},
 	}
+	// ReservationsColumns holds the columns for the "reservations" table.
+	ReservationsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID, Unique: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime, Nullable: true},
+		{Name: "session_id", Type: field.TypeString},
+		{Name: "status", Type: field.TypeString, Default: "pending"},
+		{Name: "items", Type: field.TypeJSON},
+	}
+	// ReservationsTable holds the schema information for the "reservations" table.
+	ReservationsTable = &schema.Table{
+		Name:       "reservations",
+		Columns:    ReservationsColumns,
+		PrimaryKey: []*schema.Column{ReservationsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "reservation_session_id",
+				Unique:  false,
+				Columns: []*schema.Column{ReservationsColumns[3]},
+			},
+			{
+				Name:    "reservation_status",
+				Unique:  false,
+				Columns: []*schema.Column{ReservationsColumns[4]},
+			},
+		},
+	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
 		CategoriesTable,
 		OutboxMessagesTable,
 		ProductsTable,
+		ReservationsTable,
 	}
 )
 

@@ -69,6 +69,37 @@ type (
 		Id string `json:"id"`
 	}
 
+	ReservationItemRequest {
+		ProductId string `json:"productId"`
+		Quantity  int64  `json:"quantity"`
+	}
+	CreateReservationRequest {
+		SessionId string                   `json:"sessionId"`
+		Items     []ReservationItemRequest `json:"items"`
+	}
+	ReservationItemInfo {
+		ProductId string `json:"productId"`
+		Quantity  int64  `json:"quantity"`
+	}
+	ReservationInfo {
+		Id        string                `json:"id"`
+		SessionId string                `json:"sessionId"`
+		Status    string                `json:"status"`
+		Items     []ReservationItemInfo `json:"items"`
+		CreatedAt int64                 `json:"createdAt"`
+		UpdatedAt int64                 `json:"updatedAt"`
+	}
+	ConfirmReservationRequest {
+		Id string `path:"id"`
+	}
+	CancelReservationRequest {
+		Id string `path:"id"`
+	}
+	ReservationActionResponse {
+		Id     string `json:"id"`
+		Status string `json:"status"`
+	}
+
 	CreateCategoryRequest {
 		Name        string `json:"name"`
 		Slug        string `json:"slug"`
@@ -130,6 +161,18 @@ service catalog-api {
 	@doc "Increase product stock"
 	@handler IncreaseProductStock
 	post /products/:id/increase-stock (IncreaseProductStockRequest) returns (IncreaseProductStockResponse)
+
+	@doc "Create stock reservation"
+	@handler CreateReservation
+	post /reservations (CreateReservationRequest) returns (ReservationInfo)
+
+	@doc "Confirm reservation"
+	@handler ConfirmReservation
+	post /reservations/:id/confirm (ConfirmReservationRequest) returns (ReservationActionResponse)
+
+	@doc "Cancel reservation"
+	@handler CancelReservation
+	post /reservations/:id/cancel (CancelReservationRequest) returns (ReservationActionResponse)
 
 	@doc "Create a new category"
 	@handler CreateCategory

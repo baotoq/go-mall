@@ -58,6 +58,24 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Handler: catalog.IncreaseProductStockHandler(serverCtx),
 			},
 			{
+				// Create stock reservation
+				Method:  http.MethodPost,
+				Path:    "/reservations",
+				Handler: catalog.CreateReservationHandler(serverCtx),
+			},
+			{
+				// Confirm reservation
+				Method:  http.MethodPost,
+				Path:    "/reservations/:id/confirm",
+				Handler: catalog.ConfirmReservationHandler(serverCtx),
+			},
+			{
+				// Cancel reservation
+				Method:  http.MethodPost,
+				Path:    "/reservations/:id/cancel",
+				Handler: catalog.CancelReservationHandler(serverCtx),
+			},
+			{
 				// Create a new category
 				Method:  http.MethodPost,
 				Path:    "/categories",

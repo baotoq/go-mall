@@ -4,6 +4,7 @@ package ent
 
 import (
 	"cart/ent/cartitem"
+	"cart/ent/order"
 	"cart/ent/outboxmessage"
 	"cart/ent/schema"
 	"time"
@@ -42,6 +43,37 @@ func init() {
 	cartitemDescID := cartitemMixinFields0[0].Descriptor()
 	// cartitem.DefaultID holds the default value on creation for the id field.
 	cartitem.DefaultID = cartitemDescID.Default.(func() uuid.UUID)
+	orderMixin := schema.Order{}.Mixin()
+	orderMixinFields0 := orderMixin[0].Fields()
+	_ = orderMixinFields0
+	orderMixinFields1 := orderMixin[1].Fields()
+	_ = orderMixinFields1
+	orderFields := schema.Order{}.Fields()
+	_ = orderFields
+	// orderDescCreatedAt is the schema descriptor for created_at field.
+	orderDescCreatedAt := orderMixinFields1[0].Descriptor()
+	// order.DefaultCreatedAt holds the default value on creation for the created_at field.
+	order.DefaultCreatedAt = orderDescCreatedAt.Default.(func() time.Time)
+	// orderDescUpdatedAt is the schema descriptor for updated_at field.
+	orderDescUpdatedAt := orderMixinFields1[1].Descriptor()
+	// order.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	order.UpdateDefaultUpdatedAt = orderDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// orderDescSessionID is the schema descriptor for session_id field.
+	orderDescSessionID := orderFields[0].Descriptor()
+	// order.SessionIDValidator is a validator for the "session_id" field. It is called by the builders before save.
+	order.SessionIDValidator = orderDescSessionID.Validators[0].(func(string) error)
+	// orderDescStatus is the schema descriptor for status field.
+	orderDescStatus := orderFields[1].Descriptor()
+	// order.DefaultStatus holds the default value on creation for the status field.
+	order.DefaultStatus = orderDescStatus.Default.(string)
+	// orderDescTotalAmount is the schema descriptor for total_amount field.
+	orderDescTotalAmount := orderFields[2].Descriptor()
+	// order.TotalAmountValidator is a validator for the "total_amount" field. It is called by the builders before save.
+	order.TotalAmountValidator = orderDescTotalAmount.Validators[0].(func(int64) error)
+	// orderDescID is the schema descriptor for id field.
+	orderDescID := orderMixinFields0[0].Descriptor()
+	// order.DefaultID holds the default value on creation for the id field.
+	order.DefaultID = orderDescID.Default.(func() uuid.UUID)
 	outboxmessageMixin := schema.OutboxMessage{}.Mixin()
 	outboxmessageMixinFields0 := outboxmessageMixin[0].Fields()
 	_ = outboxmessageMixinFields0

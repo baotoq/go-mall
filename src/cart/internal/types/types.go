@@ -3,11 +3,6 @@
 
 package types
 
-type CartItemListResponse struct {
-	Items []CartItemResponse `json:"items"`
-	Total int64              `json:"total"`
-}
-
 type CartItemRequest struct {
 	ProductId string `json:"productId"`
 	Quantity  int64  `json:"quantity"`
@@ -21,6 +16,32 @@ type CartItemResponse struct {
 	UpdatedAt int64  `json:"updatedAt"`
 }
 
+type CartItemListResponse struct {
+	Items []CartItemResponse `json:"items"`
+	Total int64              `json:"total"`
+}
+
 type DeleteCartItemRequest struct {
 	ProductId string `path:"productId"`
+}
+
+type CheckoutRequest struct {
+	IdempotencyKey string `json:"idempotencyKey,optional"`
+}
+
+type OrderItemInfo struct {
+	ProductId string `json:"productId"`
+	Quantity  int64  `json:"quantity"`
+	UnitPrice int64  `json:"unitPrice"`
+}
+
+type CheckoutResponse struct {
+	OrderId       string          `json:"orderId"`
+	Status        string          `json:"status"`
+	TotalAmount   int64           `json:"totalAmount"`
+	ReservationId string          `json:"reservationId,optional"`
+	PaymentId     string          `json:"paymentId,optional"`
+	TransactionId string          `json:"transactionId,optional"`
+	FailureReason string          `json:"failureReason,optional"`
+	Items         []OrderItemInfo `json:"items"`
 }

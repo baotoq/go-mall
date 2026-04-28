@@ -4,6 +4,7 @@ package ent
 
 import (
 	"cart/ent/cartitem"
+	"cart/ent/order"
 	"cart/ent/outboxmessage"
 	"context"
 	"errors"
@@ -75,6 +76,7 @@ func checkColumn(t, c string) error {
 	initCheck.Do(func() {
 		columnCheck = sql.NewColumnCheck(map[string]func(string) bool{
 			cartitem.Table:      cartitem.ValidColumn,
+			order.Table:         order.ValidColumn,
 			outboxmessage.Table: outboxmessage.ValidColumn,
 		})
 	})

@@ -41,3 +41,25 @@ type CategoryCreatedEvent struct {
 }
 
 func (e CategoryCreatedEvent) EventID() uuid.UUID { return uuid.Must(uuid.NewV7()) }
+
+type ReservationCreatedEvent struct {
+	OccurredAt    time.Time `json:"occurred_at"`
+	ReservationID uuid.UUID `json:"id"`
+	SessionID     string    `json:"session_id"`
+}
+
+func (e ReservationCreatedEvent) EventID() uuid.UUID { return uuid.Must(uuid.NewV7()) }
+
+type ReservationConfirmedEvent struct {
+	OccurredAt    time.Time `json:"occurred_at"`
+	ReservationID uuid.UUID `json:"id"`
+}
+
+func (e ReservationConfirmedEvent) EventID() uuid.UUID { return uuid.Must(uuid.NewV7()) }
+
+type ReservationCancelledEvent struct {
+	OccurredAt    time.Time `json:"occurred_at"`
+	ReservationID uuid.UUID `json:"id"`
+}
+
+func (e ReservationCancelledEvent) EventID() uuid.UUID { return uuid.Must(uuid.NewV7()) }

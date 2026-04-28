@@ -14,6 +14,8 @@ type Tx struct {
 	config
 	// CartItem is the client for interacting with the CartItem builders.
 	CartItem *CartItemClient
+	// Order is the client for interacting with the Order builders.
+	Order *OrderClient
 	// OutboxMessage is the client for interacting with the OutboxMessage builders.
 	OutboxMessage *OutboxMessageClient
 
@@ -148,6 +150,7 @@ func (tx *Tx) Client() *Client {
 
 func (tx *Tx) init() {
 	tx.CartItem = NewCartItemClient(tx.config)
+	tx.Order = NewOrderClient(tx.config)
 	tx.OutboxMessage = NewOutboxMessageClient(tx.config)
 }
 

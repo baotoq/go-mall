@@ -14,6 +14,7 @@ import (
 	"catalog/ent/category"
 	"catalog/ent/outboxmessage"
 	"catalog/ent/product"
+	"catalog/ent/reservation"
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect"
@@ -33,6 +34,8 @@ type Client struct {
 	OutboxMessage *OutboxMessageClient
 	// Product is the client for interacting with the Product builders.
 	Product *ProductClient
+	// Reservation is the client for interacting with the Reservation builders.
+	Reservation *ReservationClient
 }
 
 // NewClient creates a new client configured with the given options.
@@ -47,6 +50,7 @@ func (c *Client) init() {
 	c.Category = NewCategoryClient(c.config)
 	c.OutboxMessage = NewOutboxMessageClient(c.config)
 	c.Product = NewProductClient(c.config)
+	c.Reservation = NewReservationClient(c.config)
 }
 
 type (
@@ -142,6 +146,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		Category:      NewCategoryClient(cfg),
 		OutboxMessage: NewOutboxMessageClient(cfg),
 		Product:       NewProductClient(cfg),
+		Reservation:   NewReservationClient(cfg),
 	}, nil
 }
 
@@ -164,6 +169,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		Category:      NewCategoryClient(cfg),
 		OutboxMessage: NewOutboxMessageClient(cfg),
 		Product:       NewProductClient(cfg),
+		Reservation:   NewReservationClient(cfg),
 	}, nil
 }
 
@@ -195,6 +201,7 @@ func (c *Client) Use(hooks ...Hook) {
 	c.Category.Use(hooks...)
 	c.OutboxMessage.Use(hooks...)
 	c.Product.Use(hooks...)
+	c.Reservation.Use(hooks...)
 }
 
 // Intercept adds the query interceptors to all the entity clients.
@@ -203,6 +210,7 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 	c.Category.Intercept(interceptors...)
 	c.OutboxMessage.Intercept(interceptors...)
 	c.Product.Intercept(interceptors...)
+	c.Reservation.Intercept(interceptors...)
 }
 
 // Mutate implements the ent.Mutator interface.
@@ -214,6 +222,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.OutboxMessage.mutate(ctx, m)
 	case *ProductMutation:
 		return c.Product.mutate(ctx, m)
+	case *ReservationMutation:
+		return c.Reservation.mutate(ctx, m)
 	default:
 		return nil, fmt.Errorf("ent: unknown mutation type %T", m)
 	}
@@ -650,12 +660,145 @@ func (c *ProductClient) mutate(ctx context.Context, m *ProductMutation) (Value, 
 	}
 }
 
+// ReservationClient is a client for the Reservation schema.
+type ReservationClient struct {
+	config
+}
+
+// NewReservationClient returns a client for the Reservation from the given config.
+func NewReservationClient(c config) *ReservationClient {
+	return &ReservationClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `reservation.Hooks(f(g(h())))`.
+func (c *ReservationClient) Use(hooks ...Hook) {
+	c.hooks.Reservation = append(c.hooks.Reservation, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `reservation.Intercept(f(g(h())))`.
+func (c *ReservationClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Reservation = append(c.inters.Reservation, interceptors...)
+}
+
+// Create returns a builder for creating a Reservation entity.
+func (c *ReservationClient) Create() *ReservationCreate {
+	mutation := newReservationMutation(c.config, OpCreate)
+	return &ReservationCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Reservation entities.
+func (c *ReservationClient) CreateBulk(builders ...*ReservationCreate) *ReservationCreateBulk {
+	return &ReservationCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *ReservationClient) MapCreateBulk(slice any, setFunc func(*ReservationCreate, int)) *ReservationCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &ReservationCreateBulk{err: fmt.Errorf("calling to ReservationClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*ReservationCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &ReservationCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Reservation.
+func (c *ReservationClient) Update() *ReservationUpdate {
+	mutation := newReservationMutation(c.config, OpUpdate)
+	return &ReservationUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ReservationClient) UpdateOne(_m *Reservation) *ReservationUpdateOne {
+	mutation := newReservationMutation(c.config, OpUpdateOne, withReservation(_m))
+	return &ReservationUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ReservationClient) UpdateOneID(id uuid.UUID) *ReservationUpdateOne {
+	mutation := newReservationMutation(c.config, OpUpdateOne, withReservationID(id))
+	return &ReservationUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Reservation.
+func (c *ReservationClient) Delete() *ReservationDelete {
+	mutation := newReservationMutation(c.config, OpDelete)
+	return &ReservationDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ReservationClient) DeleteOne(_m *Reservation) *ReservationDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ReservationClient) DeleteOneID(id uuid.UUID) *ReservationDeleteOne {
+	builder := c.Delete().Where(reservation.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ReservationDeleteOne{builder}
+}
+
+// Query returns a query builder for Reservation.
+func (c *ReservationClient) Query() *ReservationQuery {
+	return &ReservationQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeReservation},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Reservation entity by its id.
+func (c *ReservationClient) Get(ctx context.Context, id uuid.UUID) (*Reservation, error) {
+	return c.Query().Where(reservation.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ReservationClient) GetX(ctx context.Context, id uuid.UUID) *Reservation {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *ReservationClient) Hooks() []Hook {
+	return c.hooks.Reservation
+}
+
+// Interceptors returns the client interceptors.
+func (c *ReservationClient) Interceptors() []Interceptor {
+	return c.inters.Reservation
+}
+
+func (c *ReservationClient) mutate(ctx context.Context, m *ReservationMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ReservationCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ReservationUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ReservationUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ReservationDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Reservation mutation op: %q", m.Op())
+	}
+}
+
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		Category, OutboxMessage, Product []ent.Hook
+		Category, OutboxMessage, Product, Reservation []ent.Hook
 	}
 	inters struct {
-		Category, OutboxMessage, Product []ent.Interceptor
+		Category, OutboxMessage, Product, Reservation []ent.Interceptor
 	}
 )

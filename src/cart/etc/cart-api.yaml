@@ -9,8 +9,5 @@ Log:
 DevServer:
   Port: 8899
 
-# MySQL:
-#   DataSource: root:password@tcp(localhost:3306)/go_mall?parseTime=true
-
-# Cache:
-#   - Host: localhost:6379
+CatalogBaseURL: http://localhost:8001
+PaymentBaseURL: http://localhost:8890

@@ -6,6 +6,7 @@ import (
 	"catalog/ent/category"
 	"catalog/ent/outboxmessage"
 	"catalog/ent/product"
+	"catalog/ent/reservation"
 	"catalog/ent/schema"
 	"time"
 
@@ -91,4 +92,31 @@ func init() {
 	productDescID := productMixinFields0[0].Descriptor()
 	// product.DefaultID holds the default value on creation for the id field.
 	product.DefaultID = productDescID.Default.(func() uuid.UUID)
+	reservationMixin := schema.Reservation{}.Mixin()
+	reservationMixinFields0 := reservationMixin[0].Fields()
+	_ = reservationMixinFields0
+	reservationMixinFields1 := reservationMixin[1].Fields()
+	_ = reservationMixinFields1
+	reservationFields := schema.Reservation{}.Fields()
+	_ = reservationFields
+	// reservationDescCreatedAt is the schema descriptor for created_at field.
+	reservationDescCreatedAt := reservationMixinFields1[0].Descriptor()
+	// reservation.DefaultCreatedAt holds the default value on creation for the created_at field.
+	reservation.DefaultCreatedAt = reservationDescCreatedAt.Default.(func() time.Time)
+	// reservationDescUpdatedAt is the schema descriptor for updated_at field.
+	reservationDescUpdatedAt := reservationMixinFields1[1].Descriptor()
+	// reservation.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	reservation.UpdateDefaultUpdatedAt = reservationDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// reservationDescSessionID is the schema descriptor for session_id field.
+	reservationDescSessionID := reservationFields[0].Descriptor()
+	// reservation.SessionIDValidator is a validator for the "session_id" field. It is called by the builders before save.
+	reservation.SessionIDValidator = reservationDescSessionID.Validators[0].(func(string) error)
+	// reservationDescStatus is the schema descriptor for status field.
+	reservationDescStatus := reservationFields[1].Descriptor()
+	// reservation.DefaultStatus holds the default value on creation for the status field.
+	reservation.DefaultStatus = reservationDescStatus.Default.(string)
+	// reservationDescID is the schema descriptor for id field.
+	reservationDescID := reservationMixinFields0[0].Descriptor()
+	// reservation.DefaultID holds the default value on creation for the id field.
+	reservation.DefaultID = reservationDescID.Default.(func() uuid.UUID)
 }

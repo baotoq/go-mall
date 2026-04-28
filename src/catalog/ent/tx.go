@@ -18,6 +18,8 @@ type Tx struct {
 	OutboxMessage *OutboxMessageClient
 	// Product is the client for interacting with the Product builders.
 	Product *ProductClient
+	// Reservation is the client for interacting with the Reservation builders.
+	Reservation *ReservationClient
 
 	// lazily loaded.
 	client     *Client
@@ -152,6 +154,7 @@ func (tx *Tx) init() {
 	tx.Category = NewCategoryClient(tx.config)
 	tx.OutboxMessage = NewOutboxMessageClient(tx.config)
 	tx.Product = NewProductClient(tx.config)
+	tx.Reservation = NewReservationClient(tx.config)
 }
 
 // txDriver wraps the given dialect.Tx with a nop dialect.Driver implementation.
