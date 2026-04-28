@@ -8,7 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"payment/ent/outboxmessage"
-	"payment/ent/schema"
+	"shared/event"
 	"time"
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
@@ -78,7 +78,7 @@ func (_c *OutboxMessageCreate) SetNillableRetryAttempts(v *int32) *OutboxMessage
 }
 
 // SetStatus sets the "status" field.
-func (_c *OutboxMessageCreate) SetStatus(v schema.MessageStatus) *OutboxMessageCreate {
+func (_c *OutboxMessageCreate) SetStatus(v event.MessageStatus) *OutboxMessageCreate {
 	_c.mutation.SetStatus(v)
 	return _c
 }

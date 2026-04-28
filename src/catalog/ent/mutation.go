@@ -6,11 +6,11 @@ import (
 	"catalog/ent/outboxmessage"
 	"catalog/ent/predicate"
 	"catalog/ent/product"
-	"catalog/ent/schema"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"shared/event"
 	"sync"
 	"time"
 
@@ -45,7 +45,7 @@ type OutboxMessageMutation struct {
 	appendpayload     json.RawMessage
 	retry_attempts    *int32
 	addretry_attempts *int32
-	status            *schema.MessageStatus
+	status            *event.MessageStatus
 	sent_at           *time.Time
 	clearedFields     map[string]struct{}
 	done              bool
@@ -386,12 +386,12 @@ func (m *OutboxMessageMutation) ResetRetryAttempts() {
 }
 
 // SetStatus sets the "status" field.
-func (m *OutboxMessageMutation) SetStatus(ss schema.MessageStatus) {
-	m.status = &ss
+func (m *OutboxMessageMutation) SetStatus(es event.MessageStatus) {
+	m.status = &es
 }
 
 // Status returns the value of the "status" field in the mutation.
-func (m *OutboxMessageMutation) Status() (r schema.MessageStatus, exists bool) {
+func (m *OutboxMessageMutation) Status() (r event.MessageStatus, exists bool) {
 	v := m.status
 	if v == nil {
 		return
@@ -402,7 +402,7 @@ func (m *OutboxMessageMutation) Status() (r schema.MessageStatus, exists bool) {
 // OldStatus returns the old "status" field's value of the OutboxMessage entity.
 // If the OutboxMessage object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *OutboxMessageMutation) OldStatus(ctx context.Context) (v schema.MessageStatus, err error) {
+func (m *OutboxMessageMutation) OldStatus(ctx context.Context) (v event.MessageStatus, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldStatus is only allowed on UpdateOne operations")
 	}
@@ -616,7 +616,7 @@ func (m *OutboxMessageMutation) SetField(name string, value ent.Value) error {
 		m.SetRetryAttempts(v)
 		return nil
 	case outboxmessage.FieldStatus:
-		v, ok := value.(schema.MessageStatus)
+		v, ok := value.(event.MessageStatus)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}

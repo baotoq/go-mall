@@ -10,12 +10,13 @@ import (
 
 	"cart/ent"
 	"cart/internal/config"
-	"cart/internal/event"
+	cartevent "cart/internal/event"
 	"cart/internal/handler"
 	"cart/internal/svc"
 
 	dapr "github.com/dapr/go-sdk/client"
 	_ "github.com/mattn/go-sqlite3"
+	sharedevent "shared/event"
 
 	"github.com/zeromicro/go-zero/core/conf"
 	"github.com/zeromicro/go-zero/core/logx"
@@ -39,7 +40,10 @@ func main() {
 	dapr := initDaprClient()
 	defer dapr.Close()
 
-	ctx := svc.NewServiceContext(c, db, event.NewOutboxDispatcher(event.NewDaprDispatcher[event.Event](dapr), db))
+	ctx := svc.NewServiceContext(c, db, sharedevent.NewOutboxDispatcher[sharedevent.Event](
+		sharedevent.NewDaprDispatcher[sharedevent.Event](dapr),
+		cartevent.NewEntStore(db),
+	))
 	handler.RegisterHandlers(server, ctx)
 
 	fmt.Printf("Starting server at %s:%d...\n", c.Host, c.Port)

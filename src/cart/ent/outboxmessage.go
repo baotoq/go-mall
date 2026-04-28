@@ -4,9 +4,9 @@ package ent
 
 import (
 	"cart/ent/outboxmessage"
-	"cart/ent/schema"
 	"encoding/json"
 	"fmt"
+	"shared/event"
 	"strings"
 	"time"
 
@@ -31,7 +31,7 @@ type OutboxMessage struct {
 	// RetryAttempts holds the value of the "retry_attempts" field.
 	RetryAttempts int32 `json:"retry_attempts,omitempty"`
 	// Status holds the value of the "status" field.
-	Status schema.MessageStatus `json:"status,omitempty"`
+	Status event.MessageStatus `json:"status,omitempty"`
 	// SentAt holds the value of the "sent_at" field.
 	SentAt       time.Time `json:"sent_at,omitempty"`
 	selectValues sql.SelectValues
@@ -110,7 +110,7 @@ func (_m *OutboxMessage) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field status", values[i])
 			} else if value.Valid {
-				_m.Status = schema.MessageStatus(value.String)
+				_m.Status = event.MessageStatus(value.String)
 			}
 		case outboxmessage.FieldSentAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {

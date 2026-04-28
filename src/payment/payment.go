@@ -10,11 +10,12 @@ import (
 
 	"payment/ent"
 	"payment/internal/config"
-	"payment/internal/event"
+	paymentevent "payment/internal/event"
 	"payment/internal/handler"
 	"payment/internal/svc"
 
 	dapr "github.com/dapr/go-sdk/client"
+	sharedevent "shared/event"
 
 	"github.com/zeromicro/go-zero/core/conf"
 	"github.com/zeromicro/go-zero/core/logx"
@@ -44,7 +45,10 @@ func main() {
 		defer daprClient.Close()
 	}
 
-	ctx := svc.NewServiceContext(c, db, event.NewOutboxDispatcher(event.NewDaprDispatcher[event.Event](daprClient), db))
+	ctx := svc.NewServiceContext(c, db, sharedevent.NewOutboxDispatcher[sharedevent.Event](
+		sharedevent.NewDaprDispatcher[sharedevent.Event](daprClient),
+		paymentevent.NewEntStore(db),
+	))
 	handler.RegisterHandlers(server, ctx)
 
 	fmt.Printf("Starting server at %s:%d...\n", c.Host, c.Port)

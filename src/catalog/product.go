@@ -10,11 +10,12 @@ import (
 
 	"catalog/ent"
 	"catalog/internal/config"
-	"catalog/internal/event"
+	catalogevent "catalog/internal/event"
 	"catalog/internal/handler"
 	"catalog/internal/svc"
 
 	dapr "github.com/dapr/go-sdk/client"
+	sharedevent "shared/event"
 
 	"github.com/zeromicro/go-zero/core/conf"
 	"github.com/zeromicro/go-zero/core/logx"
@@ -38,7 +39,10 @@ func main() {
 	dapr := initDaprClient()
 	defer dapr.Close()
 
-	ctx := svc.NewServiceContext(c, db, event.NewOutboxDispatcher(event.NewDaprDispatcher[event.Event](dapr), db))
+	ctx := svc.NewServiceContext(c, db, sharedevent.NewOutboxDispatcher[sharedevent.Event](
+		sharedevent.NewDaprDispatcher[sharedevent.Event](dapr),
+		catalogevent.NewEntStore(db),
+	))
 	handler.RegisterHandlers(server, ctx)
 
 	fmt.Printf("Starting server at %s:%d...\n", c.Host, c.Port)

@@ -4,7 +4,7 @@ package outboxmessage
 
 import (
 	"fmt"
-	"payment/ent/schema"
+	"shared/event"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
@@ -68,7 +68,7 @@ var (
 )
 
 // StatusValidator is a validator for the "status" field enum values. It is called by the builders before save.
-func StatusValidator(s schema.MessageStatus) error {
+func StatusValidator(s event.MessageStatus) error {
 	switch s {
 	case "pending", "processing", "sent", "failed":
 		return nil

@@ -4,7 +4,7 @@ package outboxmessage
 
 import (
 	"cart/ent/predicate"
-	"cart/ent/schema"
+	"shared/event"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
@@ -277,19 +277,19 @@ func RetryAttemptsLTE(v int32) predicate.OutboxMessage {
 }
 
 // StatusEQ applies the EQ predicate on the "status" field.
-func StatusEQ(v schema.MessageStatus) predicate.OutboxMessage {
+func StatusEQ(v event.MessageStatus) predicate.OutboxMessage {
 	vc := v
 	return predicate.OutboxMessage(sql.FieldEQ(FieldStatus, vc))
 }
 
 // StatusNEQ applies the NEQ predicate on the "status" field.
-func StatusNEQ(v schema.MessageStatus) predicate.OutboxMessage {
+func StatusNEQ(v event.MessageStatus) predicate.OutboxMessage {
 	vc := v
 	return predicate.OutboxMessage(sql.FieldNEQ(FieldStatus, vc))
 }
 
 // StatusIn applies the In predicate on the "status" field.
-func StatusIn(vs ...schema.MessageStatus) predicate.OutboxMessage {
+func StatusIn(vs ...event.MessageStatus) predicate.OutboxMessage {
 	v := make([]any, len(vs))
 	for i := range v {
 		v[i] = vs[i]
@@ -298,7 +298,7 @@ func StatusIn(vs ...schema.MessageStatus) predicate.OutboxMessage {
 }
 
 // StatusNotIn applies the NotIn predicate on the "status" field.
-func StatusNotIn(vs ...schema.MessageStatus) predicate.OutboxMessage {
+func StatusNotIn(vs ...event.MessageStatus) predicate.OutboxMessage {
 	v := make([]any, len(vs))
 	for i := range v {
 		v[i] = vs[i]

@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"payment/ent/outboxmessage"
 	"payment/ent/predicate"
-	"payment/ent/schema"
+	"shared/event"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
@@ -91,13 +91,13 @@ func (_u *OutboxMessageUpdate) AddRetryAttempts(v int32) *OutboxMessageUpdate {
 }
 
 // SetStatus sets the "status" field.
-func (_u *OutboxMessageUpdate) SetStatus(v schema.MessageStatus) *OutboxMessageUpdate {
+func (_u *OutboxMessageUpdate) SetStatus(v event.MessageStatus) *OutboxMessageUpdate {
 	_u.mutation.SetStatus(v)
 	return _u
 }
 
 // SetNillableStatus sets the "status" field if the given value is not nil.
-func (_u *OutboxMessageUpdate) SetNillableStatus(v *schema.MessageStatus) *OutboxMessageUpdate {
+func (_u *OutboxMessageUpdate) SetNillableStatus(v *event.MessageStatus) *OutboxMessageUpdate {
 	if v != nil {
 		_u.SetStatus(*v)
 	}
@@ -299,13 +299,13 @@ func (_u *OutboxMessageUpdateOne) AddRetryAttempts(v int32) *OutboxMessageUpdate
 }
 
 // SetStatus sets the "status" field.
-func (_u *OutboxMessageUpdateOne) SetStatus(v schema.MessageStatus) *OutboxMessageUpdateOne {
+func (_u *OutboxMessageUpdateOne) SetStatus(v event.MessageStatus) *OutboxMessageUpdateOne {
 	_u.mutation.SetStatus(v)
 	return _u
 }
 
 // SetNillableStatus sets the "status" field if the given value is not nil.
-func (_u *OutboxMessageUpdateOne) SetNillableStatus(v *schema.MessageStatus) *OutboxMessageUpdateOne {
+func (_u *OutboxMessageUpdateOne) SetNillableStatus(v *event.MessageStatus) *OutboxMessageUpdateOne {
 	if v != nil {
 		_u.SetStatus(*v)
 	}

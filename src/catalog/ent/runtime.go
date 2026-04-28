@@ -20,6 +20,8 @@ func init() {
 	_ = outboxmessageMixinFields0
 	outboxmessageMixinFields1 := outboxmessageMixin[1].Fields()
 	_ = outboxmessageMixinFields1
+	outboxmessageMixinFields2 := outboxmessageMixin[2].Fields()
+	_ = outboxmessageMixinFields2
 	outboxmessageFields := schema.OutboxMessage{}.Fields()
 	_ = outboxmessageFields
 	// outboxmessageDescCreatedAt is the schema descriptor for created_at field.
@@ -31,7 +33,7 @@ func init() {
 	// outboxmessage.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	outboxmessage.UpdateDefaultUpdatedAt = outboxmessageDescUpdatedAt.UpdateDefault.(func() time.Time)
 	// outboxmessageDescRetryAttempts is the schema descriptor for retry_attempts field.
-	outboxmessageDescRetryAttempts := outboxmessageFields[2].Descriptor()
+	outboxmessageDescRetryAttempts := outboxmessageMixinFields2[2].Descriptor()
 	// outboxmessage.DefaultRetryAttempts holds the default value on creation for the retry_attempts field.
 	outboxmessage.DefaultRetryAttempts = outboxmessageDescRetryAttempts.Default.(int32)
 	// outboxmessageDescID is the schema descriptor for id field.
