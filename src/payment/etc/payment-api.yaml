@@ -1,11 +1,17 @@
 Name: payment-api
 Host: 0.0.0.0
-Port: 8890
+Port: 9003
 
 Log:
   Mode: console
   Level: info
 
 DevServer:
-  Port: 8013
+  Port: 9013
+
+Keycloak:
+  RealmURL: "http://localhost:8080/realms/go-mall"
+  ClientID: "payment"
+  ClientSecret: ""
+  JWKSCacheTTL: 24h
 

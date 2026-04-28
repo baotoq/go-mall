@@ -1,13 +1,19 @@
 Name: cart-api
 Host: 0.0.0.0
-Port: 8889
+Port: 9002
 
 Log:
   Mode: console
   Level: info
 
 DevServer:
-  Port: 8899
+  Port: 9012
 
-CatalogBaseURL: http://localhost:8001
-PaymentBaseURL: http://localhost:8890
+Keycloak:
+  RealmURL: "http://localhost:8080/realms/go-mall"
+  ClientID: "cart"
+  ClientSecret: "cart-secret"
+  JWKSCacheTTL: 24h
+
+CatalogAppID: catalog-api
+PaymentAppID: payment-api

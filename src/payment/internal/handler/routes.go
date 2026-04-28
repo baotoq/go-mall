@@ -16,19 +16,16 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 	server.AddRoutes(
 		[]rest.Route{
 			{
-				// Create a payment
 				Method:  http.MethodPost,
 				Path:    "/",
 				Handler: payment.CreatePaymentHandler(serverCtx),
 			},
 			{
-				// List payments by idempotency key
 				Method:  http.MethodGet,
 				Path:    "/",
 				Handler: payment.GetPaymentsHandler(serverCtx),
 			},
 			{
-				// Get payment status
 				Method:  http.MethodGet,
 				Path:    "/:id",
 				Handler: payment.GetPaymentHandler(serverCtx),

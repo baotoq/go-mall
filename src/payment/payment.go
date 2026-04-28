@@ -13,6 +13,7 @@ import (
 	paymentevent "payment/internal/event"
 	"payment/internal/handler"
 	"payment/internal/svc"
+	"shared/auth"
 
 	dapr "github.com/dapr/go-sdk/client"
 	sharedevent "shared/event"
@@ -50,6 +51,8 @@ func main() {
 		paymentevent.NewEntStore(db),
 	))
 	handler.RegisterHandlers(server, ctx)
+
+	server.Use(auth.RequireServiceAuth(ctx.Validator))
 
 	fmt.Printf("Starting server at %s:%d...\n", c.Host, c.Port)
 	server.Start()

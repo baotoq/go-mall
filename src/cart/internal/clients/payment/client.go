@@ -7,18 +7,30 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 )
 
 type Client struct {
-	baseURL string
-	http    *http.Client
+	baseURL   string
+	authToken string
+	http      *http.Client
 }
 
-func New(baseURL string) *Client {
+func (c *Client) SetAuthToken(token string) {
+	c.authToken = token
+}
+
+func New(daprHTTPPort string, appID string) *Client {
+	if daprHTTPPort == "" {
+		daprHTTPPort = os.Getenv("DAPR_HTTP_PORT")
+	}
+	if daprHTTPPort == "" {
+		daprHTTPPort = "3500"
+	}
 	return &Client{
-		baseURL: strings.TrimRight(baseURL, "/"),
+		baseURL: fmt.Sprintf("http://localhost:%s/v1.0/invoke/%s/method", daprHTTPPort, appID),
 		http:    &http.Client{Timeout: 10 * time.Second},
 	}
 }
@@ -53,9 +65,13 @@ func (c *Client) CreatePayment(ctx context.Context, idempotencyKey string, req C
 		return nil, fmt.Errorf("new request: %w", err)
 	}
 	httpReq.Header.Set("Content-Type", "application/json")
+	if c.authToken != "" {
+		httpReq.Header.Set("Authorization", "Bearer "+c.authToken)
+	}
 	if idempotencyKey != "" {
 		httpReq.Header.Set("Idempotency-Key", idempotencyKey)
 	}
+
 	resp, err := c.http.Do(httpReq)
 	if err != nil {
 		return nil, fmt.Errorf("call payment: %w", err)

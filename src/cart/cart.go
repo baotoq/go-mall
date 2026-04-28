@@ -1,12 +1,11 @@
-// Code scaffolded by goctl. Safe to edit.
-// goctl 1.10.1
-
 package main
 
 import (
 	"context"
 	"flag"
 	"fmt"
+	"net/http"
+	"strings"
 
 	"cart/ent"
 	catalogclient "cart/internal/clients/catalog"
@@ -19,6 +18,7 @@ import (
 	dapr "github.com/dapr/go-sdk/client"
 	_ "github.com/mattn/go-sqlite3"
 	sharedevent "shared/event"
+	"shared/auth"
 
 	"github.com/zeromicro/go-zero/core/conf"
 	"github.com/zeromicro/go-zero/core/logx"
@@ -39,23 +39,52 @@ func main() {
 	db := initDb()
 	defer db.Close()
 
-	dapr := initDaprClient()
-	defer dapr.Close()
+	daprClient := initDaprClient()
+	defer daprClient.Close()
 
 	ctx := svc.NewServiceContext(
 		c,
 		db,
 		sharedevent.NewOutboxDispatcher[sharedevent.Event](
-			sharedevent.NewDaprDispatcher[sharedevent.Event](dapr),
+			sharedevent.NewDaprDispatcher[sharedevent.Event](daprClient),
 			cartevent.NewEntStore(db),
 		),
-		catalogclient.New(c.CatalogBaseURL),
-		paymentclient.New(c.PaymentBaseURL),
+		catalogclient.New("", c.CatalogAppID),
+		paymentclient.New("", c.PaymentAppID),
 	)
+
+	if token, err := ctx.ServiceClient.GetToken(context.Background()); err == nil {
+		ctx.CatalogClient.SetAuthToken(token)
+		ctx.PaymentClient.SetAuthToken(token)
+	}
+
 	handler.RegisterHandlers(server, ctx)
+	server.Use(pathAuthMiddleware(ctx.Validator))
 
 	fmt.Printf("Starting server at %s:%d...\n", c.Host, c.Port)
 	server.Start()
+}
+
+func pathAuthMiddleware(validator auth.TokenValidator) func(next http.HandlerFunc) http.HandlerFunc {
+	return func(next http.HandlerFunc) http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) {
+			path := r.URL.Path
+			method := r.Method
+
+			if method == http.MethodGet && path == "/api/v1/cart/items" {
+				next.ServeHTTP(w, r)
+				return
+			}
+
+			if strings.HasPrefix(path, "/api/v1/cart/items") ||
+				strings.HasPrefix(path, "/api/v1/cart/checkout") {
+				auth.RequireAuth(validator)(next)(w, r)
+				return
+			}
+
+			next.ServeHTTP(w, r)
+		}
+	}
 }
 
 func initDb() *ent.Client {

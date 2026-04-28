@@ -7,32 +7,44 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 )
 
 type Client struct {
-	baseURL string
-	http    *http.Client
+	baseURL   string
+	authToken string
+	http      *http.Client
 }
 
-func New(baseURL string) *Client {
+func (c *Client) SetAuthToken(token string) {
+	c.authToken = token
+}
+
+func New(daprHTTPPort string, appID string) *Client {
+	if daprHTTPPort == "" {
+		daprHTTPPort = os.Getenv("DAPR_HTTP_PORT")
+	}
+	if daprHTTPPort == "" {
+		daprHTTPPort = "3500"
+	}
 	return &Client{
-		baseURL: strings.TrimRight(baseURL, "/"),
+		baseURL: fmt.Sprintf("http://localhost:%s/v1.0/invoke/%s/method", daprHTTPPort, appID),
 		http:    &http.Client{Timeout: 10 * time.Second},
 	}
 }
 
 type ProductInfo struct {
-	Id             string `json:"id"`
-	Name           string `json:"name"`
-	Slug           string `json:"slug"`
-	Description    string `json:"description"`
-	ImageUrl       string `json:"imageUrl"`
+	Id             string  `json:"id"`
+	Name           string  `json:"name"`
+	Slug           string  `json:"slug"`
+	Description    string  `json:"description"`
+	ImageUrl       string  `json:"imageUrl"`
 	Price          float64 `json:"price"`
-	TotalStock     int64  `json:"totalStock"`
-	RemainingStock int64  `json:"remainingStock"`
-	CategoryId     string `json:"categoryId"`
+	TotalStock     int64   `json:"totalStock"`
+	RemainingStock int64   `json:"remainingStock"`
+	CategoryId     string  `json:"categoryId"`
 }
 
 type ReservationItemInput struct {
@@ -106,6 +118,9 @@ func (c *Client) do(ctx context.Context, method, path string, body, out any) err
 	}
 	if body != nil {
 		req.Header.Set("Content-Type", "application/json")
+	}
+	if c.authToken != "" {
+		req.Header.Set("Authorization", "Bearer "+c.authToken)
 	}
 	resp, err := c.http.Do(req)
 	if err != nil {

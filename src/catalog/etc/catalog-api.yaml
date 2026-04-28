@@ -1,13 +1,19 @@
 Name: catalog-api
 Host: 0.0.0.0
-Port: 8001
+Port: 9001
 
 Log:
   Mode: console
   Level: info
 
 DevServer:
-  Port: 8011
+  Port: 9011
+
+Keycloak:
+  RealmURL: "http://localhost:8080/realms/go-mall"
+  ClientID: "catalog"
+  ClientSecret: ""
+  JWKSCacheTTL: 24h
 
 # MySQL:
 #   DataSource: root:password@tcp(localhost:3306)/go_mall?parseTime=true
