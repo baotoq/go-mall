@@ -10,47 +10,91 @@ info (
 type (
 	CreateProductRequest {
 		Name        string  `json:"name"`
+		Slug        string  `json:"slug"`
 		Description string  `json:"description,optional"`
+		ImageUrl    string  `json:"imageUrl,optional"`
 		Price       float64 `json:"price"`
 		TotalStock  int64   `json:"totalStock"`
-		CategoryId  int64   `json:"categoryId"`
+		CategoryId  string  `json:"categoryId,optional"`
 	}
 	CreateProductResponse {
-		Id uuid.UUID `json:"id"`
+		Id string `json:"id"`
 	}
 	GetProductRequest {
-		Id uuid.UUID `path:"id"`
+		Id string `path:"id"`
+	}
+	GetProductBySlugRequest {
+		Slug string `path:"slug"`
 	}
 	ProductInfo {
-		Id             uuid.UUID `json:"id"`
+		Id             string  `json:"id"`
 		Name           string  `json:"name"`
+		Slug           string  `json:"slug"`
 		Description    string  `json:"description"`
+		ImageUrl       string  `json:"imageUrl"`
 		Price          float64 `json:"price"`
 		TotalStock     int64   `json:"totalStock"`
 		RemainingStock int64   `json:"remainingStock"`
-		CategoryId     int64   `json:"categoryId"`
+		CategoryId     string  `json:"categoryId"`
 		CreatedAt      int64   `json:"createdAt"`
 		UpdatedAt      int64   `json:"updatedAt"`
 	}
 	UpdateProductRequest {
-		Id          uuid.UUID   `path:"id"`
-		Name        string      `json:"name,optional"`
-		Description string      `json:"description,optional"`
-		Price       float64     `json:"price,optional"`
-		CategoryId  int64       `json:"categoryId,optional"`
+		Id          string  `path:"id"`
+		Name        string  `json:"name,optional"`
+		Slug        string  `json:"slug,optional"`
+		Description string  `json:"description,optional"`
+		ImageUrl    string  `json:"imageUrl,optional"`
+		Price       float64 `json:"price,optional"`
+		CategoryId  string  `json:"categoryId,optional"`
 	}
 	DeleteProductRequest {
-		Id uuid.UUID `path:"id"`
+		Id string `path:"id"`
 	}
 	ListProductRequest {
 		Page       int64  `form:"page,default=1"`
 		PageSize   int64  `form:"pageSize,default=20"`
-		CategoryId int64  `form:"categoryId,optional"`
+		CategoryId string `form:"categoryId,optional"`
 		Keyword    string `form:"keyword,optional"`
 	}
 	ListProductResponse {
 		Total    int64         `json:"total"`
 		Products []ProductInfo `json:"products"`
+	}
+	IncreaseProductStockRequest {
+		Id       string `path:"id"`
+		Quantity int64  `json:"quantity"`
+	}
+	IncreaseProductStockResponse {
+		Id string `json:"id"`
+	}
+
+	CreateCategoryRequest {
+		Name        string `json:"name"`
+		Slug        string `json:"slug"`
+		Description string `json:"description,optional"`
+	}
+	CreateCategoryResponse {
+		Id string `json:"id"`
+	}
+	GetCategoryRequest {
+		Id string `path:"id"`
+	}
+	CategoryInfo {
+		Id          string `json:"id"`
+		Name        string `json:"name"`
+		Slug        string `json:"slug"`
+		Description string `json:"description"`
+		CreatedAt   int64  `json:"createdAt"`
+		UpdatedAt   int64  `json:"updatedAt"`
+	}
+	ListCategoryRequest {
+		Page     int64 `form:"page,default=1"`
+		PageSize int64 `form:"pageSize,default=50"`
+	}
+	ListCategoryResponse {
+		Total      int64          `json:"total"`
+		Categories []CategoryInfo `json:"categories"`
 	}
 )
 
@@ -67,6 +111,10 @@ service catalog-api {
 	@handler GetProduct
 	get /products/:id (GetProductRequest) returns (ProductInfo)
 
+	@doc "Get product by slug"
+	@handler GetProductBySlug
+	get /products/by-slug/:slug (GetProductBySlugRequest) returns (ProductInfo)
+
 	@doc "Update product"
 	@handler UpdateProduct
 	put /products/:id (UpdateProductRequest)
@@ -78,5 +126,20 @@ service catalog-api {
 	@doc "List products"
 	@handler ListProduct
 	get /products (ListProductRequest) returns (ListProductResponse)
-}
 
+	@doc "Increase product stock"
+	@handler IncreaseProductStock
+	post /products/:id/increase-stock (IncreaseProductStockRequest) returns (IncreaseProductStockResponse)
+
+	@doc "Create a new category"
+	@handler CreateCategory
+	post /categories (CreateCategoryRequest) returns (CreateCategoryResponse)
+
+	@doc "Get category by ID"
+	@handler GetCategory
+	get /categories/:id (GetCategoryRequest) returns (CategoryInfo)
+
+	@doc "List categories"
+	@handler ListCategory
+	get /categories (ListCategoryRequest) returns (ListCategoryResponse)
+}

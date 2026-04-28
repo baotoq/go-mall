@@ -1,0 +1,250 @@
+/* Low-fi sketch wireframe styles */
+:root {
+  --paper: #f6f1e7;
+  --paper-2: #efe9db;
+  --ink: #1a1a1a;
+  --ink-2: #4a4742;
+  --ink-3: #8a8680;
+  --accent: #c8382f; /* red pencil */
+  --accent-blue: #2a5a8a;
+  --line: #1a1a1a;
+}
+
+html, body { background: var(--paper); color: var(--ink); }
+body {
+  font-family: "Caveat", "Kalam", "Comic Sans MS", cursive;
+  font-size: 17px;
+  margin: 0;
+  min-height: 100vh;
+}
+
+/* Typography */
+.hand { font-family: "Caveat", "Kalam", cursive; }
+.hand-title { font-family: "Gloock", "Caveat", serif; letter-spacing: -0.01em; }
+.mono { font-family: "JetBrains Mono", ui-monospace, monospace; }
+
+/* Paper texture */
+.paper {
+  background: var(--paper);
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(0,0,0,0.02) 0, transparent 40%),
+    radial-gradient(circle at 80% 70%, rgba(0,0,0,0.015) 0, transparent 40%);
+}
+
+/* Sketchy box — wobbly outline using filter */
+.sb {
+  border: 1.5px solid var(--ink);
+  border-radius: 3px;
+  position: relative;
+  background: transparent;
+}
+.sb-dashed { border-style: dashed; border-color: var(--ink-2); }
+.sb-fill { background: rgba(0,0,0,0.04); }
+.sb-accent { border-color: var(--accent); color: var(--accent); }
+.sb-accent-fill { background: rgba(200,56,47,0.08); border-color: var(--accent); color: var(--accent); }
+
+/* diagonal hatch for image placeholders */
+.hatch {
+  background-image: repeating-linear-gradient(
+    135deg,
+    transparent 0, transparent 8px,
+    rgba(0,0,0,0.18) 8px, rgba(0,0,0,0.18) 9px
+  );
+}
+.hatch-dense {
+  background-image: repeating-linear-gradient(
+    135deg,
+    transparent 0, transparent 5px,
+    rgba(0,0,0,0.22) 5px, rgba(0,0,0,0.22) 6px
+  );
+}
+
+/* squiggly underline for links */
+.squiggle {
+  text-decoration: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 4'><path d='M0 2 Q 2.5 0, 5 2 T 10 2 T 15 2 T 20 2' stroke='%231a1a1a' stroke-width='0.8' fill='none'/></svg>");
+  background-repeat: repeat-x;
+  background-position: 0 100%;
+  background-size: 10px 4px;
+  padding-bottom: 3px;
+}
+
+/* scribble text lines — used for body placeholder copy */
+.scribble {
+  display: block;
+  height: 6px;
+  background: var(--ink-2);
+  opacity: 0.55;
+  border-radius: 3px;
+  margin: 5px 0;
+}
+.scribble.s-1 { width: 100%; }
+.scribble.s-2 { width: 86%; }
+.scribble.s-3 { width: 72%; }
+.scribble.s-4 { width: 55%; }
+
+/* image placeholder X */
+.img-x {
+  position: relative;
+  overflow: hidden;
+}
+.img-x::before, .img-x::after {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; top: 0; bottom: 0;
+  background: linear-gradient(to top right, transparent calc(50% - 0.6px), var(--ink) calc(50% - 0.6px), var(--ink) calc(50% + 0.6px), transparent calc(50% + 0.6px));
+  opacity: 0.4;
+}
+.img-x::after {
+  background: linear-gradient(to top left, transparent calc(50% - 0.6px), var(--ink) calc(50% - 0.6px), var(--ink) calc(50% + 0.6px), transparent calc(50% + 0.6px));
+}
+
+/* arrow / annotation */
+.annot {
+  font-family: "Caveat", cursive;
+  color: var(--accent);
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.1;
+}
+
+/* wobble filter — adds hand-drawn feel to borders */
+.wobble {
+  filter: url(#wobble);
+}
+
+/* button-like sketchy pill */
+.sb-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border: 1.5px solid var(--ink);
+  border-radius: 999px;
+  font-family: "Caveat", cursive;
+  font-size: 15px;
+  background: transparent;
+  line-height: 1;
+}
+.sb-btn-fill { background: var(--ink); color: var(--paper); }
+.sb-btn-accent { border-color: var(--accent); color: var(--accent); }
+.sb-btn-accent-fill { background: var(--accent); color: var(--paper); border-color: var(--accent); }
+
+/* small tag */
+.sb-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border: 1.2px solid var(--ink-2);
+  border-radius: 4px;
+  font-size: 13px;
+  color: var(--ink-2);
+}
+
+/* frame for a single wireframe */
+.wf-frame {
+  background: var(--paper);
+  border: 1.5px solid var(--ink);
+  border-radius: 4px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* caption under a wireframe */
+.wf-caption {
+  font-family: "Caveat", cursive;
+  color: var(--ink-2);
+  font-size: 18px;
+  margin-top: 10px;
+  line-height: 1.2;
+}
+.wf-caption b {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+/* annotation arrow */
+.arrow-svg {
+  position: absolute;
+  pointer-events: none;
+}
+
+/* tab bar */
+.tab {
+  font-family: "Caveat", cursive;
+  font-size: 22px;
+  padding: 6px 16px;
+  border: 1.5px solid transparent;
+  border-radius: 999px;
+  cursor: pointer;
+  color: var(--ink-2);
+  user-select: none;
+  white-space: nowrap;
+}
+.tab:hover { color: var(--ink); }
+.tab.active {
+  border-color: var(--ink);
+  color: var(--ink);
+  background: rgba(0,0,0,0.04);
+}
+
+/* variation card */
+.var-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.var-row {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+/* small helper */
+.dotted-hr {
+  border: none;
+  border-top: 1.5px dashed var(--ink-3);
+  margin: 0;
+}
+.solid-hr {
+  border: none;
+  border-top: 1.5px solid var(--ink);
+  margin: 0;
+}
+.hairline-hr {
+  border: none;
+  border-top: 1px solid var(--ink-3);
+  opacity: 0.6;
+  margin: 0;
+}
+
+/* circle button */
+.sb-circle {
+  width: 28px; height: 28px;
+  border: 1.5px solid var(--ink);
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+}
+
+/* stepper */
+.stepper {
+  display: inline-flex;
+  align-items: center;
+  border: 1.5px solid var(--ink);
+  border-radius: 999px;
+  font-family: "Caveat", cursive;
+}
+.stepper > * {
+  padding: 2px 10px;
+  min-width: 20px;
+  text-align: center;
+}
+.stepper > * + * {
+  border-left: 1.5px solid var(--ink);
+}

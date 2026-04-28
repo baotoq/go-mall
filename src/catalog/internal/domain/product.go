@@ -2,6 +2,7 @@ package domain
 
 import (
 	"errors"
+
 	"catalog/ent"
 
 	"github.com/google/uuid"
@@ -10,15 +11,21 @@ import (
 type Product struct {
 	ID             uuid.UUID
 	Name           string
+	Slug           string
 	Description    string
+	ImageURL       string
 	Price          float64
 	TotalStock     int64
 	RemainingStock int64
+	CategoryID     uuid.UUID
 }
 
-func NewProduct(name, desc string, price float64, initialStock int64) (*Product, error) {
+func NewProduct(name, slug, desc, imageURL string, price float64, initialStock int64, categoryID uuid.UUID) (*Product, error) {
 	if name == "" {
 		return nil, errors.New("name is required")
+	}
+	if slug == "" {
+		return nil, errors.New("slug is required")
 	}
 	if price < 0 {
 		return nil, errors.New("price must be >= 0")
@@ -29,22 +36,31 @@ func NewProduct(name, desc string, price float64, initialStock int64) (*Product,
 
 	return &Product{
 		Name:           name,
+		Slug:           slug,
 		Description:    desc,
+		ImageURL:       imageURL,
 		Price:          price,
 		TotalStock:     initialStock,
 		RemainingStock: initialStock,
+		CategoryID:     categoryID,
 	}, nil
 }
 
 func NewFromEnt(p *ent.Product) *Product {
-	return &Product{
+	out := &Product{
 		ID:             p.ID,
 		Name:           p.Name,
+		Slug:           p.Slug,
 		Description:    p.Description,
+		ImageURL:       p.ImageURL,
 		Price:          p.Price,
 		TotalStock:     p.TotalStock,
 		RemainingStock: p.RemainingStock,
 	}
+	if p.Edges.Category != nil {
+		out.CategoryID = p.Edges.Category.ID
+	}
+	return out
 }
 
 func (p *Product) UseRemainingStock(qty int64) error {

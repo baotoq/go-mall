@@ -3,6 +3,7 @@
 package ent
 
 import (
+	"catalog/ent/category"
 	"catalog/ent/product"
 	"context"
 	"errors"
@@ -55,6 +56,12 @@ func (_c *ProductCreate) SetName(v string) *ProductCreate {
 	return _c
 }
 
+// SetSlug sets the "slug" field.
+func (_c *ProductCreate) SetSlug(v string) *ProductCreate {
+	_c.mutation.SetSlug(v)
+	return _c
+}
+
 // SetDescription sets the "description" field.
 func (_c *ProductCreate) SetDescription(v string) *ProductCreate {
 	_c.mutation.SetDescription(v)
@@ -65,6 +72,20 @@ func (_c *ProductCreate) SetDescription(v string) *ProductCreate {
 func (_c *ProductCreate) SetNillableDescription(v *string) *ProductCreate {
 	if v != nil {
 		_c.SetDescription(*v)
+	}
+	return _c
+}
+
+// SetImageURL sets the "image_url" field.
+func (_c *ProductCreate) SetImageURL(v string) *ProductCreate {
+	_c.mutation.SetImageURL(v)
+	return _c
+}
+
+// SetNillableImageURL sets the "image_url" field if the given value is not nil.
+func (_c *ProductCreate) SetNillableImageURL(v *string) *ProductCreate {
+	if v != nil {
+		_c.SetImageURL(*v)
 	}
 	return _c
 }
@@ -99,6 +120,25 @@ func (_c *ProductCreate) SetNillableID(v *uuid.UUID) *ProductCreate {
 		_c.SetID(*v)
 	}
 	return _c
+}
+
+// SetCategoryID sets the "category" edge to the Category entity by ID.
+func (_c *ProductCreate) SetCategoryID(id uuid.UUID) *ProductCreate {
+	_c.mutation.SetCategoryID(id)
+	return _c
+}
+
+// SetNillableCategoryID sets the "category" edge to the Category entity by ID if the given value is not nil.
+func (_c *ProductCreate) SetNillableCategoryID(id *uuid.UUID) *ProductCreate {
+	if id != nil {
+		_c = _c.SetCategoryID(*id)
+	}
+	return _c
+}
+
+// SetCategory sets the "category" edge to the Category entity.
+func (_c *ProductCreate) SetCategory(v *Category) *ProductCreate {
+	return _c.SetCategoryID(v.ID)
 }
 
 // Mutation returns the ProductMutation object of the builder.
@@ -153,6 +193,14 @@ func (_c *ProductCreate) check() error {
 	}
 	if _, ok := _c.mutation.Name(); !ok {
 		return &ValidationError{Name: "name", err: errors.New(`ent: missing required field "Product.name"`)}
+	}
+	if _, ok := _c.mutation.Slug(); !ok {
+		return &ValidationError{Name: "slug", err: errors.New(`ent: missing required field "Product.slug"`)}
+	}
+	if v, ok := _c.mutation.Slug(); ok {
+		if err := product.SlugValidator(v); err != nil {
+			return &ValidationError{Name: "slug", err: fmt.Errorf(`ent: validator failed for field "Product.slug": %w`, err)}
+		}
 	}
 	if _, ok := _c.mutation.Price(); !ok {
 		return &ValidationError{Name: "price", err: errors.New(`ent: missing required field "Product.price"`)}
@@ -210,9 +258,17 @@ func (_c *ProductCreate) createSpec() (*Product, *sqlgraph.CreateSpec) {
 		_spec.SetField(product.FieldName, field.TypeString, value)
 		_node.Name = value
 	}
+	if value, ok := _c.mutation.Slug(); ok {
+		_spec.SetField(product.FieldSlug, field.TypeString, value)
+		_node.Slug = value
+	}
 	if value, ok := _c.mutation.Description(); ok {
 		_spec.SetField(product.FieldDescription, field.TypeString, value)
 		_node.Description = value
+	}
+	if value, ok := _c.mutation.ImageURL(); ok {
+		_spec.SetField(product.FieldImageURL, field.TypeString, value)
+		_node.ImageURL = value
 	}
 	if value, ok := _c.mutation.Price(); ok {
 		_spec.SetField(product.FieldPrice, field.TypeFloat64, value)
@@ -225,6 +281,23 @@ func (_c *ProductCreate) createSpec() (*Product, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.RemainingStock(); ok {
 		_spec.SetField(product.FieldRemainingStock, field.TypeInt64, value)
 		_node.RemainingStock = value
+	}
+	if nodes := _c.mutation.CategoryIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   product.CategoryTable,
+			Columns: []string{product.CategoryColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(category.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.category_products = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
 }

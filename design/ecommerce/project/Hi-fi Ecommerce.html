@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Hi-fi Ecommerce — Apple style</title>
+  <meta name="viewport" content="width=1800" />
+  <link rel="stylesheet" href="apple.css" />
+  <link rel="stylesheet" href="midfi.css" />
+  <link rel="stylesheet" href="hifi.css" />
+  <style>
+    html, body { margin: 0; padding: 0; background: var(--surface-3); }
+    body { font-family: var(--font-text); color: var(--ink); -webkit-font-smoothing: antialiased; }
+  </style>
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script>
+    // Tweakable defaults — persisted by host
+    window.TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+      "accent": "#0071e3",
+      "density": "comfy",
+      "radius": "default",
+      "theme": "light"
+    }/*EDITMODE-END*/;
+  </script>
+
+  <script type="text/babel" src="mf_kit.jsx"></script>
+  <script type="text/babel" src="mf_home.jsx"></script>
+  <script type="text/babel" src="mf_listing.jsx"></script>
+  <script type="text/babel" src="mf_pdp.jsx"></script>
+  <script type="text/babel" src="mf_cart_checkout_account.jsx"></script>
+
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+
+    const TABS = [
+      { id: "home",     label: "Home",     title: "Home — Editorial hero",               caption: "Full-bleed product moments in the Apple store tradition. Hero tiles stack, then a 4-up shop-the-latest grid.", Comp: HomeV2 },
+      { id: "listing",  label: "Listing",  title: "Listing — Top filter bar",            caption: "Filter chips pin to the top; the grid keeps full width. Active filters appear as removable pills.", Comp: ListingV2 },
+      { id: "pdp",      label: "PDP",      title: "PDP — Gallery + buy box",             caption: "Thumbnails, hero and a sticky buy box. Color, storage and Care+ selectors; highlights live below the fold.", Comp: PDPV1 },
+      { id: "cart",     label: "Cart",     title: "Cart — Full page",                    caption: "Centered review-your-bag layout with inline quantity controls, add-ons, and a sticky summary with express pay.", Comp: CartV1 },
+      { id: "checkout", label: "Checkout", title: "Checkout — Single-page accordion",    caption: "Contact, delivery and payment as stackable steps. Completed steps collapse to a summary line with Edit.", Comp: CheckoutV2 },
+      { id: "account",  label: "Account",  title: "Account — Orders hub",                caption: "Left-rail nav, orders as cards with a status header. Quick actions per order — track, buy again, invoice.", Comp: AccountV1 },
+    ];
+
+    const ACCENTS = [
+      { name: "Blue",   hex: "#0071e3" },
+      { name: "Black",  hex: "#1d1d1f" },
+      { name: "Orange", hex: "#f56300" },
+      { name: "Violet", hex: "#7b3fe4" },
+      { name: "Green",  hex: "#1a7a33" },
+    ];
+
+    /* ---- Tweaks panel ---- */
+    function TweaksPanel({ tweaks, setTweaks, open, onClose }) {
+      if (!open) return null;
+      const set = (k, v) => setTweaks(t => ({ ...t, [k]: v }));
+      return (
+        <div className="tweaks-panel">
+          <h3>Tweaks <button className="close" onClick={onClose}><IconClose size={16} /></button></h3>
+
+          <div className="tweaks-row">
+            <label>Accent</label>
+            <div className="tweaks-swatches">
+              {ACCENTS.map(a => (
+                <div
+                  key={a.name}
+                  className={`tweaks-swatch ${tweaks.accent === a.hex ? "active" : ""}`}
+                  style={{ background: a.hex }}
+                  title={a.name}
+                  onClick={() => set("accent", a.hex)}
+                />
+              ))}
+            </div>
+          </div>
+
+          <div className="tweaks-row">
+            <label>Density</label>
+            <div className="tweaks-seg">
+              {["compact","comfy","spacious"].map(d => (
+                <button key={d} className={tweaks.density === d ? "active" : ""} onClick={() => set("density", d)}>{d}</button>
+              ))}
+            </div>
+          </div>
+
+          <div className="tweaks-row">
+            <label>Corner radius</label>
+            <div className="tweaks-seg">
+              {[["sharp","0.4"],["default","1"],["soft","1.6"]].map(([l,v]) => (
+                <button key={l} className={tweaks.radius === l ? "active" : ""} onClick={() => set("radius", l)}>{l}</button>
+              ))}
+            </div>
+          </div>
+
+          <div className="tweaks-row">
+            <label>Appearance</label>
+            <div className="tweaks-seg">
+              {["light","dark"].map(t => (
+                <button key={t} className={tweaks.theme === t ? "active" : ""} onClick={() => set("theme", t)}>{t}</button>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ fontSize: 11, color: "var(--ink-3)", marginTop: 4 }}>
+            Changes save automatically.
+          </div>
+        </div>
+      );
+    }
+
+    function App() {
+      const [active, setActive] = useState(() => localStorage.getItem("hifi_tab") || "home");
+      const [tweaks, setTweaks] = useState(window.TWEAK_DEFAULTS);
+      const [panelOpen, setPanelOpen] = useState(false);
+      const [editModeActive, setEditModeActive] = useState(false);
+      const contentRef = useRef(null);
+
+      useEffect(() => { localStorage.setItem("hifi_tab", active); }, [active]);
+
+      // Apply tweaks live
+      useEffect(() => {
+        const root = document.documentElement;
+        root.style.setProperty("--tweak-accent", tweaks.accent);
+        const radiusMap = { sharp: 0.4, default: 1, soft: 1.6 };
+        root.style.setProperty("--radius-scale", radiusMap[tweaks.radius] || 1);
+        root.setAttribute("data-theme", tweaks.theme);
+      }, [tweaks]);
+
+      // Persist tweaks in file via host
+      useEffect(() => {
+        window.parent?.postMessage({ type: "__edit_mode_set_keys", edits: tweaks }, "*");
+      }, [tweaks]);
+
+      // Edit-mode wiring
+      useEffect(() => {
+        const onMsg = (e) => {
+          const d = e.data || {};
+          if (d.type === "__activate_edit_mode") { setEditModeActive(true); setPanelOpen(true); }
+          if (d.type === "__deactivate_edit_mode") { setEditModeActive(false); setPanelOpen(false); }
+        };
+        window.addEventListener("message", onMsg);
+        window.parent?.postMessage({ type: "__edit_mode_available" }, "*");
+        return () => window.removeEventListener("message", onMsg);
+      }, []);
+
+      // Replay reveal anim on tab change
+      useEffect(() => {
+        const el = contentRef.current;
+        if (!el) return;
+        el.classList.remove("reveal"); void el.offsetWidth; el.classList.add("reveal");
+      }, [active]);
+
+      const tab = TABS.find(t => t.id === active) || TABS[0];
+      const Comp = tab.Comp;
+
+      return (
+        <div className="mf-app" data-density={tweaks.density}>
+          <header className="mf-header">
+            <div className="mf-eyebrow">Design review · Hi-fi</div>
+            <h1 className="mf-title">Ecommerce, refined.</h1>
+            <p className="mf-intro">
+              Six committed directions — <b>one per screen</b> — polished with Apple-style type, washes and motion.
+              Each tab shows <b>desktop + mobile</b>. Use <b>Tweaks</b> to try accent, density, radius and dark mode live.
+            </p>
+          </header>
+
+          <div className="mf-tabs" role="tablist">
+            {TABS.map(t => (
+              <div
+                key={t.id}
+                role="tab"
+                aria-selected={active === t.id}
+                tabIndex={0}
+                className={`mf-tab ${active === t.id ? "active" : ""}`}
+                onClick={() => setActive(t.id)}
+                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") setActive(t.id); }}
+              >{t.label}</div>
+            ))}
+          </div>
+
+          <div className="mf-content reveal" ref={contentRef} data-screen-label={tab.label}>
+            <Variation
+              title={tab.title}
+              caption={tab.caption}
+              desktop={
+                <div>
+                  <DesktopFrame url={`shop.com/${tab.id}`} w={1280} h={820} style={{ transition: "transform 400ms var(--ease-standard), box-shadow 400ms var(--ease-standard)" }}>
+                    <Comp mobile={false} />
+                  </DesktopFrame>
+                  <div className="frame-caption">Desktop · 1280 × 820</div>
+                </div>
+              }
+              mobile={
+                <div>
+                  <MobileFrame w={340} h={720}>
+                    <Comp mobile={true} />
+                  </MobileFrame>
+                  <div className="frame-caption">Mobile · 340 × 720</div>
+                </div>
+              }
+            />
+          </div>
+
+          {!editModeActive && (
+            <button className="tweaks-fab" onClick={() => setPanelOpen(o => !o)} aria-label="Open tweaks">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 0 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 0 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 0 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8v.1a1.7 1.7 0 0 0 1.5 1H21a2 2 0 0 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></svg>
+            </button>
+          )}
+          <TweaksPanel tweaks={tweaks} setTweaks={setTweaks} open={panelOpen} onClose={() => setPanelOpen(false)} />
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+  </script>
+</body>
+</html>

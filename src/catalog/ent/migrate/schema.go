@@ -8,6 +8,28 @@ import (
 )
 
 var (
+	// CategoriesColumns holds the columns for the "categories" table.
+	CategoriesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID, Unique: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime, Nullable: true},
+		{Name: "name", Type: field.TypeString},
+		{Name: "slug", Type: field.TypeString, Unique: true},
+		{Name: "description", Type: field.TypeString, Nullable: true},
+	}
+	// CategoriesTable holds the schema information for the "categories" table.
+	CategoriesTable = &schema.Table{
+		Name:       "categories",
+		Columns:    CategoriesColumns,
+		PrimaryKey: []*schema.Column{CategoriesColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "category_slug",
+				Unique:  true,
+				Columns: []*schema.Column{CategoriesColumns[4]},
+			},
+		},
+	}
 	// OutboxMessagesColumns holds the columns for the "outbox_messages" table.
 	OutboxMessagesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID, Unique: true},
@@ -31,23 +53,43 @@ var (
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime, Nullable: true},
 		{Name: "name", Type: field.TypeString},
+		{Name: "slug", Type: field.TypeString, Unique: true},
 		{Name: "description", Type: field.TypeString, Nullable: true},
+		{Name: "image_url", Type: field.TypeString, Nullable: true},
 		{Name: "price", Type: field.TypeFloat64},
 		{Name: "total_stock", Type: field.TypeInt64},
 		{Name: "remaining_stock", Type: field.TypeInt64},
+		{Name: "category_products", Type: field.TypeUUID, Nullable: true},
 	}
 	// ProductsTable holds the schema information for the "products" table.
 	ProductsTable = &schema.Table{
 		Name:       "products",
 		Columns:    ProductsColumns,
 		PrimaryKey: []*schema.Column{ProductsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "products_categories_products",
+				Columns:    []*schema.Column{ProductsColumns[10]},
+				RefColumns: []*schema.Column{CategoriesColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "product_slug",
+				Unique:  true,
+				Columns: []*schema.Column{ProductsColumns[4]},
+			},
+		},
 	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
+		CategoriesTable,
 		OutboxMessagesTable,
 		ProductsTable,
 	}
 )
 
 func init() {
+	ProductsTable.ForeignKeys[0].RefTable = CategoriesTable
 }

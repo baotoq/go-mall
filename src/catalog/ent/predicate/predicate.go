@@ -6,6 +6,9 @@ import (
 	"entgo.io/ent/dialect/sql"
 )
 
+// Category is the predicate function for category builders.
+type Category func(*sql.Selector)
+
 // OutboxMessage is the predicate function for outboxmessage builders.
 type OutboxMessage func(*sql.Selector)
 

@@ -3,6 +3,7 @@
 package ent
 
 import (
+	"catalog/ent/category"
 	"catalog/ent/product"
 	"fmt"
 	"strings"
@@ -24,15 +25,43 @@ type Product struct {
 	UpdatedAt *time.Time `json:"updated_at,omitempty"`
 	// Name holds the value of the "name" field.
 	Name string `json:"name,omitempty"`
+	// Slug holds the value of the "slug" field.
+	Slug string `json:"slug,omitempty"`
 	// Description holds the value of the "description" field.
 	Description string `json:"description,omitempty"`
+	// ImageURL holds the value of the "image_url" field.
+	ImageURL string `json:"image_url,omitempty"`
 	// Price holds the value of the "price" field.
 	Price float64 `json:"price,omitempty"`
 	// TotalStock holds the value of the "total_stock" field.
 	TotalStock int64 `json:"total_stock,omitempty"`
 	// RemainingStock holds the value of the "remaining_stock" field.
 	RemainingStock int64 `json:"remaining_stock,omitempty"`
-	selectValues   sql.SelectValues
+	// Edges holds the relations/edges for other nodes in the graph.
+	// The values are being populated by the ProductQuery when eager-loading is set.
+	Edges             ProductEdges `json:"edges"`
+	category_products *uuid.UUID
+	selectValues      sql.SelectValues
+}
+
+// ProductEdges holds the relations/edges for other nodes in the graph.
+type ProductEdges struct {
+	// Category holds the value of the category edge.
+	Category *Category `json:"category,omitempty"`
+	// loadedTypes holds the information for reporting if a
+	// type was loaded (or requested) in eager-loading or not.
+	loadedTypes [1]bool
+}
+
+// CategoryOrErr returns the Category value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e ProductEdges) CategoryOrErr() (*Category, error) {
+	if e.Category != nil {
+		return e.Category, nil
+	} else if e.loadedTypes[0] {
+		return nil, &NotFoundError{label: category.Label}
+	}
+	return nil, &NotLoadedError{edge: "category"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -44,12 +73,14 @@ func (*Product) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullFloat64)
 		case product.FieldTotalStock, product.FieldRemainingStock:
 			values[i] = new(sql.NullInt64)
-		case product.FieldName, product.FieldDescription:
+		case product.FieldName, product.FieldSlug, product.FieldDescription, product.FieldImageURL:
 			values[i] = new(sql.NullString)
 		case product.FieldCreatedAt, product.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
 		case product.FieldID:
 			values[i] = new(uuid.UUID)
+		case product.ForeignKeys[0]: // category_products
+			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		default:
 			values[i] = new(sql.UnknownType)
 		}
@@ -90,11 +121,23 @@ func (_m *Product) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.Name = value.String
 			}
+		case product.FieldSlug:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field slug", values[i])
+			} else if value.Valid {
+				_m.Slug = value.String
+			}
 		case product.FieldDescription:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field description", values[i])
 			} else if value.Valid {
 				_m.Description = value.String
+			}
+		case product.FieldImageURL:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field image_url", values[i])
+			} else if value.Valid {
+				_m.ImageURL = value.String
 			}
 		case product.FieldPrice:
 			if value, ok := values[i].(*sql.NullFloat64); !ok {
@@ -114,6 +157,13 @@ func (_m *Product) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.RemainingStock = value.Int64
 			}
+		case product.ForeignKeys[0]:
+			if value, ok := values[i].(*sql.NullScanner); !ok {
+				return fmt.Errorf("unexpected type %T for field category_products", values[i])
+			} else if value.Valid {
+				_m.category_products = new(uuid.UUID)
+				*_m.category_products = *value.S.(*uuid.UUID)
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -125,6 +175,11 @@ func (_m *Product) assignValues(columns []string, values []any) error {
 // This includes values selected through modifiers, order, etc.
 func (_m *Product) Value(name string) (ent.Value, error) {
 	return _m.selectValues.Get(name)
+}
+
+// QueryCategory queries the "category" edge of the Product entity.
+func (_m *Product) QueryCategory() *CategoryQuery {
+	return NewProductClient(_m.config).QueryCategory(_m)
 }
 
 // Update returns a builder for updating this Product.
@@ -161,8 +216,14 @@ func (_m *Product) String() string {
 	builder.WriteString("name=")
 	builder.WriteString(_m.Name)
 	builder.WriteString(", ")
+	builder.WriteString("slug=")
+	builder.WriteString(_m.Slug)
+	builder.WriteString(", ")
 	builder.WriteString("description=")
 	builder.WriteString(_m.Description)
+	builder.WriteString(", ")
+	builder.WriteString("image_url=")
+	builder.WriteString(_m.ImageURL)
 	builder.WriteString(", ")
 	builder.WriteString("price=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Price))

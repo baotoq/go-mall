@@ -3,6 +3,7 @@
 package ent
 
 import (
+	"catalog/ent/category"
 	"catalog/ent/outboxmessage"
 	"catalog/ent/product"
 	"catalog/ent/schema"
@@ -15,6 +16,33 @@ import (
 // (default values, validators, hooks and policies) and stitches it
 // to their package variables.
 func init() {
+	categoryMixin := schema.Category{}.Mixin()
+	categoryMixinFields0 := categoryMixin[0].Fields()
+	_ = categoryMixinFields0
+	categoryMixinFields1 := categoryMixin[1].Fields()
+	_ = categoryMixinFields1
+	categoryFields := schema.Category{}.Fields()
+	_ = categoryFields
+	// categoryDescCreatedAt is the schema descriptor for created_at field.
+	categoryDescCreatedAt := categoryMixinFields1[0].Descriptor()
+	// category.DefaultCreatedAt holds the default value on creation for the created_at field.
+	category.DefaultCreatedAt = categoryDescCreatedAt.Default.(func() time.Time)
+	// categoryDescUpdatedAt is the schema descriptor for updated_at field.
+	categoryDescUpdatedAt := categoryMixinFields1[1].Descriptor()
+	// category.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	category.UpdateDefaultUpdatedAt = categoryDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// categoryDescName is the schema descriptor for name field.
+	categoryDescName := categoryFields[0].Descriptor()
+	// category.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	category.NameValidator = categoryDescName.Validators[0].(func(string) error)
+	// categoryDescSlug is the schema descriptor for slug field.
+	categoryDescSlug := categoryFields[1].Descriptor()
+	// category.SlugValidator is a validator for the "slug" field. It is called by the builders before save.
+	category.SlugValidator = categoryDescSlug.Validators[0].(func(string) error)
+	// categoryDescID is the schema descriptor for id field.
+	categoryDescID := categoryMixinFields0[0].Descriptor()
+	// category.DefaultID holds the default value on creation for the id field.
+	category.DefaultID = categoryDescID.Default.(func() uuid.UUID)
 	outboxmessageMixin := schema.OutboxMessage{}.Mixin()
 	outboxmessageMixinFields0 := outboxmessageMixin[0].Fields()
 	_ = outboxmessageMixinFields0
@@ -55,6 +83,10 @@ func init() {
 	productDescUpdatedAt := productMixinFields1[1].Descriptor()
 	// product.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	product.UpdateDefaultUpdatedAt = productDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// productDescSlug is the schema descriptor for slug field.
+	productDescSlug := productFields[1].Descriptor()
+	// product.SlugValidator is a validator for the "slug" field. It is called by the builders before save.
+	product.SlugValidator = productDescSlug.Validators[0].(func(string) error)
 	// productDescID is the schema descriptor for id field.
 	productDescID := productMixinFields0[0].Descriptor()
 	// product.DefaultID holds the default value on creation for the id field.

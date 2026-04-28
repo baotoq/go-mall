@@ -3,6 +3,7 @@
 package ent
 
 import (
+	"catalog/ent/category"
 	"catalog/ent/outboxmessage"
 	"catalog/ent/product"
 	"context"
@@ -74,6 +75,7 @@ var (
 func checkColumn(t, c string) error {
 	initCheck.Do(func() {
 		columnCheck = sql.NewColumnCheck(map[string]func(string) bool{
+			category.Table:      category.ValidColumn,
 			outboxmessage.Table: outboxmessage.ValidColumn,
 			product.Table:       product.ValidColumn,
 		})

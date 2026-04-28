@@ -3,6 +3,7 @@
 package ent
 
 import (
+	"catalog/ent/category"
 	"catalog/ent/predicate"
 	"catalog/ent/product"
 	"context"
@@ -13,6 +14,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/google/uuid"
 )
 
 // ProductUpdate is the builder for updating Product entities.
@@ -54,6 +56,20 @@ func (_u *ProductUpdate) SetNillableName(v *string) *ProductUpdate {
 	return _u
 }
 
+// SetSlug sets the "slug" field.
+func (_u *ProductUpdate) SetSlug(v string) *ProductUpdate {
+	_u.mutation.SetSlug(v)
+	return _u
+}
+
+// SetNillableSlug sets the "slug" field if the given value is not nil.
+func (_u *ProductUpdate) SetNillableSlug(v *string) *ProductUpdate {
+	if v != nil {
+		_u.SetSlug(*v)
+	}
+	return _u
+}
+
 // SetDescription sets the "description" field.
 func (_u *ProductUpdate) SetDescription(v string) *ProductUpdate {
 	_u.mutation.SetDescription(v)
@@ -71,6 +87,26 @@ func (_u *ProductUpdate) SetNillableDescription(v *string) *ProductUpdate {
 // ClearDescription clears the value of the "description" field.
 func (_u *ProductUpdate) ClearDescription() *ProductUpdate {
 	_u.mutation.ClearDescription()
+	return _u
+}
+
+// SetImageURL sets the "image_url" field.
+func (_u *ProductUpdate) SetImageURL(v string) *ProductUpdate {
+	_u.mutation.SetImageURL(v)
+	return _u
+}
+
+// SetNillableImageURL sets the "image_url" field if the given value is not nil.
+func (_u *ProductUpdate) SetNillableImageURL(v *string) *ProductUpdate {
+	if v != nil {
+		_u.SetImageURL(*v)
+	}
+	return _u
+}
+
+// ClearImageURL clears the value of the "image_url" field.
+func (_u *ProductUpdate) ClearImageURL() *ProductUpdate {
+	_u.mutation.ClearImageURL()
 	return _u
 }
 
@@ -137,9 +173,34 @@ func (_u *ProductUpdate) AddRemainingStock(v int64) *ProductUpdate {
 	return _u
 }
 
+// SetCategoryID sets the "category" edge to the Category entity by ID.
+func (_u *ProductUpdate) SetCategoryID(id uuid.UUID) *ProductUpdate {
+	_u.mutation.SetCategoryID(id)
+	return _u
+}
+
+// SetNillableCategoryID sets the "category" edge to the Category entity by ID if the given value is not nil.
+func (_u *ProductUpdate) SetNillableCategoryID(id *uuid.UUID) *ProductUpdate {
+	if id != nil {
+		_u = _u.SetCategoryID(*id)
+	}
+	return _u
+}
+
+// SetCategory sets the "category" edge to the Category entity.
+func (_u *ProductUpdate) SetCategory(v *Category) *ProductUpdate {
+	return _u.SetCategoryID(v.ID)
+}
+
 // Mutation returns the ProductMutation object of the builder.
 func (_u *ProductUpdate) Mutation() *ProductMutation {
 	return _u.mutation
+}
+
+// ClearCategory clears the "category" edge to the Category entity.
+func (_u *ProductUpdate) ClearCategory() *ProductUpdate {
+	_u.mutation.ClearCategory()
+	return _u
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -178,7 +239,20 @@ func (_u *ProductUpdate) defaults() {
 	}
 }
 
+// check runs all checks and user-defined validators on the builder.
+func (_u *ProductUpdate) check() error {
+	if v, ok := _u.mutation.Slug(); ok {
+		if err := product.SlugValidator(v); err != nil {
+			return &ValidationError{Name: "slug", err: fmt.Errorf(`ent: validator failed for field "Product.slug": %w`, err)}
+		}
+	}
+	return nil
+}
+
 func (_u *ProductUpdate) sqlSave(ctx context.Context) (_node int, err error) {
+	if err := _u.check(); err != nil {
+		return _node, err
+	}
 	_spec := sqlgraph.NewUpdateSpec(product.Table, product.Columns, sqlgraph.NewFieldSpec(product.FieldID, field.TypeUUID))
 	if ps := _u.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
@@ -196,11 +270,20 @@ func (_u *ProductUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(product.FieldName, field.TypeString, value)
 	}
+	if value, ok := _u.mutation.Slug(); ok {
+		_spec.SetField(product.FieldSlug, field.TypeString, value)
+	}
 	if value, ok := _u.mutation.Description(); ok {
 		_spec.SetField(product.FieldDescription, field.TypeString, value)
 	}
 	if _u.mutation.DescriptionCleared() {
 		_spec.ClearField(product.FieldDescription, field.TypeString)
+	}
+	if value, ok := _u.mutation.ImageURL(); ok {
+		_spec.SetField(product.FieldImageURL, field.TypeString, value)
+	}
+	if _u.mutation.ImageURLCleared() {
+		_spec.ClearField(product.FieldImageURL, field.TypeString)
 	}
 	if value, ok := _u.mutation.Price(); ok {
 		_spec.SetField(product.FieldPrice, field.TypeFloat64, value)
@@ -219,6 +302,35 @@ func (_u *ProductUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.AddedRemainingStock(); ok {
 		_spec.AddField(product.FieldRemainingStock, field.TypeInt64, value)
+	}
+	if _u.mutation.CategoryCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   product.CategoryTable,
+			Columns: []string{product.CategoryColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(category.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.CategoryIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   product.CategoryTable,
+			Columns: []string{product.CategoryColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(category.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -266,6 +378,20 @@ func (_u *ProductUpdateOne) SetNillableName(v *string) *ProductUpdateOne {
 	return _u
 }
 
+// SetSlug sets the "slug" field.
+func (_u *ProductUpdateOne) SetSlug(v string) *ProductUpdateOne {
+	_u.mutation.SetSlug(v)
+	return _u
+}
+
+// SetNillableSlug sets the "slug" field if the given value is not nil.
+func (_u *ProductUpdateOne) SetNillableSlug(v *string) *ProductUpdateOne {
+	if v != nil {
+		_u.SetSlug(*v)
+	}
+	return _u
+}
+
 // SetDescription sets the "description" field.
 func (_u *ProductUpdateOne) SetDescription(v string) *ProductUpdateOne {
 	_u.mutation.SetDescription(v)
@@ -283,6 +409,26 @@ func (_u *ProductUpdateOne) SetNillableDescription(v *string) *ProductUpdateOne 
 // ClearDescription clears the value of the "description" field.
 func (_u *ProductUpdateOne) ClearDescription() *ProductUpdateOne {
 	_u.mutation.ClearDescription()
+	return _u
+}
+
+// SetImageURL sets the "image_url" field.
+func (_u *ProductUpdateOne) SetImageURL(v string) *ProductUpdateOne {
+	_u.mutation.SetImageURL(v)
+	return _u
+}
+
+// SetNillableImageURL sets the "image_url" field if the given value is not nil.
+func (_u *ProductUpdateOne) SetNillableImageURL(v *string) *ProductUpdateOne {
+	if v != nil {
+		_u.SetImageURL(*v)
+	}
+	return _u
+}
+
+// ClearImageURL clears the value of the "image_url" field.
+func (_u *ProductUpdateOne) ClearImageURL() *ProductUpdateOne {
+	_u.mutation.ClearImageURL()
 	return _u
 }
 
@@ -349,9 +495,34 @@ func (_u *ProductUpdateOne) AddRemainingStock(v int64) *ProductUpdateOne {
 	return _u
 }
 
+// SetCategoryID sets the "category" edge to the Category entity by ID.
+func (_u *ProductUpdateOne) SetCategoryID(id uuid.UUID) *ProductUpdateOne {
+	_u.mutation.SetCategoryID(id)
+	return _u
+}
+
+// SetNillableCategoryID sets the "category" edge to the Category entity by ID if the given value is not nil.
+func (_u *ProductUpdateOne) SetNillableCategoryID(id *uuid.UUID) *ProductUpdateOne {
+	if id != nil {
+		_u = _u.SetCategoryID(*id)
+	}
+	return _u
+}
+
+// SetCategory sets the "category" edge to the Category entity.
+func (_u *ProductUpdateOne) SetCategory(v *Category) *ProductUpdateOne {
+	return _u.SetCategoryID(v.ID)
+}
+
 // Mutation returns the ProductMutation object of the builder.
 func (_u *ProductUpdateOne) Mutation() *ProductMutation {
 	return _u.mutation
+}
+
+// ClearCategory clears the "category" edge to the Category entity.
+func (_u *ProductUpdateOne) ClearCategory() *ProductUpdateOne {
+	_u.mutation.ClearCategory()
+	return _u
 }
 
 // Where appends a list predicates to the ProductUpdate builder.
@@ -403,7 +574,20 @@ func (_u *ProductUpdateOne) defaults() {
 	}
 }
 
+// check runs all checks and user-defined validators on the builder.
+func (_u *ProductUpdateOne) check() error {
+	if v, ok := _u.mutation.Slug(); ok {
+		if err := product.SlugValidator(v); err != nil {
+			return &ValidationError{Name: "slug", err: fmt.Errorf(`ent: validator failed for field "Product.slug": %w`, err)}
+		}
+	}
+	return nil
+}
+
 func (_u *ProductUpdateOne) sqlSave(ctx context.Context) (_node *Product, err error) {
+	if err := _u.check(); err != nil {
+		return _node, err
+	}
 	_spec := sqlgraph.NewUpdateSpec(product.Table, product.Columns, sqlgraph.NewFieldSpec(product.FieldID, field.TypeUUID))
 	id, ok := _u.mutation.ID()
 	if !ok {
@@ -438,11 +622,20 @@ func (_u *ProductUpdateOne) sqlSave(ctx context.Context) (_node *Product, err er
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(product.FieldName, field.TypeString, value)
 	}
+	if value, ok := _u.mutation.Slug(); ok {
+		_spec.SetField(product.FieldSlug, field.TypeString, value)
+	}
 	if value, ok := _u.mutation.Description(); ok {
 		_spec.SetField(product.FieldDescription, field.TypeString, value)
 	}
 	if _u.mutation.DescriptionCleared() {
 		_spec.ClearField(product.FieldDescription, field.TypeString)
+	}
+	if value, ok := _u.mutation.ImageURL(); ok {
+		_spec.SetField(product.FieldImageURL, field.TypeString, value)
+	}
+	if _u.mutation.ImageURLCleared() {
+		_spec.ClearField(product.FieldImageURL, field.TypeString)
 	}
 	if value, ok := _u.mutation.Price(); ok {
 		_spec.SetField(product.FieldPrice, field.TypeFloat64, value)
@@ -461,6 +654,35 @@ func (_u *ProductUpdateOne) sqlSave(ctx context.Context) (_node *Product, err er
 	}
 	if value, ok := _u.mutation.AddedRemainingStock(); ok {
 		_spec.AddField(product.FieldRemainingStock, field.TypeInt64, value)
+	}
+	if _u.mutation.CategoryCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   product.CategoryTable,
+			Columns: []string{product.CategoryColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(category.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.CategoryIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   product.CategoryTable,
+			Columns: []string{product.CategoryColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(category.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	_node = &Product{config: _u.config}
 	_spec.Assign = _node.assignValues
