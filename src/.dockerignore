@@ -1,5 +1,0 @@
-storefront/node_modules
-storefront/.next
-storefront/.env.local
-**/*.md
-**/*_test.go
