@@ -1,4 +1,4 @@
-const CART_URL = process.env.CART_URL || "http://localhost:8889";
+const CART_URL = process.env.NEXT_PUBLIC_CART_URL || "http://localhost:9002";
 
 export interface CartItem {
   id: string;

@@ -15,3 +15,9 @@ Keycloak:
   ClientSecret: ""
   JWKSCacheTTL: 24h
 
+Telemetry:
+  Name: payment-api
+  Endpoint: http://localhost:4318
+  Sampler: 1.0
+  Batcher: otlphttp
+

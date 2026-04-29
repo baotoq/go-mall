@@ -10,7 +10,11 @@
     "format": "biome format --write"
   },
   "dependencies": {
+    "@opentelemetry/api-logs": "^0.215.0",
+    "@opentelemetry/instrumentation": "^0.215.0",
+    "@opentelemetry/sdk-logs": "^0.215.0",
     "@types/uuid": "^10.0.0",
+    "@vercel/otel": "^2.1.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^1.11.0",

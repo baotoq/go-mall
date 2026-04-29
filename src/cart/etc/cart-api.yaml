@@ -15,5 +15,11 @@ Keycloak:
   ClientSecret: "cart-secret"
   JWKSCacheTTL: 24h
 
+Telemetry:
+  Name: cart-api
+  Endpoint: http://localhost:4318
+  Sampler: 1.0
+  Batcher: otlphttp
+
 CatalogAppID: catalog-api
 PaymentAppID: payment-api

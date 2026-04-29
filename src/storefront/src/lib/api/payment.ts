@@ -18,7 +18,7 @@ export interface PaymentResponse {
   createdAt: number;
 }
 
-const PAYMENT_URL = process.env.PAYMENT_URL || "http://localhost:8890";
+const PAYMENT_URL = process.env.NEXT_PUBLIC_PAYMENT_URL || "http://localhost:9003";
 
 export async function createPayment(
   req: CreatePaymentRequest,

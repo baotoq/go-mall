@@ -22,7 +22,7 @@ export interface CategoryInfo {
 }
 
 const CATALOG_URL =
-  process.env.NEXT_PUBLIC_CATALOG_URL || "http://localhost:8001";
+  process.env.NEXT_PUBLIC_CATALOG_URL || "http://localhost:9001";
 
 export async function listProducts(params?: {
   keyword?: string;

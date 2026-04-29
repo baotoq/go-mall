@@ -15,6 +15,12 @@ Keycloak:
   ClientSecret: ""
   JWKSCacheTTL: 24h
 
+Telemetry:
+  Name: catalog-api
+  Endpoint: http://localhost:4318
+  Sampler: 1.0
+  Batcher: otlphttp
+
 # MySQL:
 #   DataSource: root:password@tcp(localhost:3306)/go_mall?parseTime=true
 
