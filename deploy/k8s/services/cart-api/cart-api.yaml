@@ -10,14 +10,14 @@ DevServer:
   Port: 9012
 
 Keycloak:
-  RealmURL: "http://localhost:8080/realms/go-mall"
+  RealmURL: "http://keycloak.go-mall.svc.cluster.local:8080/realms/go-mall"
   ClientID: "cart"
   ClientSecret: "cart-secret"
   JWKSCacheTTL: 24h
 
 Telemetry:
   Name: cart-api
-  Endpoint: http://localhost:4318
+  Endpoint: http://jaeger.go-mall.svc.cluster.local:4318
   Sampler: 1.0
   Batcher: otlphttp
 

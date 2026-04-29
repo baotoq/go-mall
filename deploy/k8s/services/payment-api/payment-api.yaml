@@ -10,14 +10,13 @@ DevServer:
   Port: 9013
 
 Keycloak:
-  RealmURL: "http://localhost:8080/realms/go-mall"
+  RealmURL: "http://keycloak.go-mall.svc.cluster.local:8080/realms/go-mall"
   ClientID: "payment"
   ClientSecret: ""
   JWKSCacheTTL: 24h
 
 Telemetry:
   Name: payment-api
-  Endpoint: http://localhost:4318
+  Endpoint: http://jaeger.go-mall.svc.cluster.local:4318
   Sampler: 1.0
   Batcher: otlphttp
-

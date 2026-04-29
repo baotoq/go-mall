@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: payment
+  template:
+    metadata:
+      labels:
+        app: payment
+      annotations:
+        dapr.io/enabled: "true"
+        dapr.io/app-id: "payment-api"
+        dapr.io/app-port: "8080"
+        dapr.io/app-protocol: "http"
+        dapr.io/config: "go-mall"
+    spec:
+      containers:
+        - name: payment
+          image: go-mall/payment
+          ports:
+            - containerPort: 8080
+          volumeMounts:
+            - name: config
+              mountPath: /app/etc
+          resources:
+            requests:
+              cpu: 100m
+              memory: 64Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+      volumes:
+        - name: config
+          configMap:
+            name: payment-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: payment
+spec:
+  selector:
+    app: payment
+  ports:
+    - port: 8080
+      targetPort: 8080

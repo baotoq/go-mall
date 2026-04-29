@@ -1,0 +1,24 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - catalog-api/catalog.yaml
+  - cart-api/cart.yaml
+  - payment-api/payment.yaml
+  - storefront.yaml
+
+configMapGenerator:
+  - name: catalog-config
+    options:
+      disableNameSuffixHash: true
+    files:
+      - catalog-api.yaml=catalog-api/catalog-api.yaml
+  - name: cart-config
+    options:
+      disableNameSuffixHash: true
+    files:
+      - cart-api.yaml=cart-api/cart-api.yaml
+  - name: payment-config
+    options:
+      disableNameSuffixHash: true
+    files:
+      - payment-api.yaml=payment-api/payment-api.yaml
