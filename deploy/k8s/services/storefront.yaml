@@ -35,11 +35,11 @@ spec:
             failureThreshold: 60
           readinessProbe:
             httpGet:
-              path: /
+              path: /api/readyz
               port: 3000
             periodSeconds: 10
             failureThreshold: 6
-            timeoutSeconds: 10
+            timeoutSeconds: 5
           livenessProbe:
             tcpSocket:
               port: 3000

@@ -6,6 +6,6 @@ export function register() {
   if (process.env.NODE_ENV === "development") {
     const _fetch = globalThis.fetch;
     globalThis.fetch = (url, opts) =>
-      _fetch(url, { cache: "no-store", ...opts });
+      _fetch(url, { cache: "no-store", signal: AbortSignal.timeout(10000), ...opts });
   }
 }

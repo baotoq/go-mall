@@ -1,6 +1,6 @@
 node_modules
 .next
 .env.local
+.git
+Dockerfile*
 *.md
-AGENTS.md
-CLAUDE.md

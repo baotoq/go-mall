@@ -1,6 +1,7 @@
 Name: payment-api
 Host: 0.0.0.0
 Port: 8080
+Timeout: 30000
 
 Log:
   Mode: console
@@ -17,7 +18,7 @@ Keycloak:
 
 Telemetry:
   Name: payment-api
-  Endpoint: http://jaeger.go-mall.svc.cluster.local:4318
+  Endpoint: jaeger.go-mall.svc.cluster.local:4318
   Sampler: 1.0
   Batcher: otlphttp
 

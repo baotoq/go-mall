@@ -40,7 +40,7 @@ export async function listProducts(params?: {
     url.searchParams.set("pageSize", params.pageSize.toString());
 
   const res = await fetch(url, {
-    next: { tags: ["products"], revalidate: 3600 },
+next: { tags: ["products"], revalidate: 3600 },
   });
   if (!res.ok) throw new Error("Failed to fetch products");
   return res.json();
@@ -48,7 +48,7 @@ export async function listProducts(params?: {
 
 export async function getProduct(id: string): Promise<ProductInfo> {
   const res = await fetch(`${CATALOG_URL}/api/v1/products/${id}`, {
-    next: { tags: [`product-${id}`], revalidate: 3600 },
+next: { tags: [`product-${id}`], revalidate: 3600 },
   });
   if (!res.ok) {
     if (res.status === 404) throw new Error("Product not found");
@@ -59,7 +59,7 @@ export async function getProduct(id: string): Promise<ProductInfo> {
 
 export async function getProductBySlug(slug: string): Promise<ProductInfo> {
   const res = await fetch(`${CATALOG_URL}/api/v1/products/by-slug/${slug}`, {
-    next: { tags: [`product-slug-${slug}`], revalidate: 3600 },
+next: { tags: [`product-slug-${slug}`], revalidate: 3600 },
   });
   if (!res.ok) {
     if (res.status === 404) return null as unknown as ProductInfo;
@@ -78,7 +78,7 @@ export async function listCategories(params?: {
     url.searchParams.set("pageSize", params.pageSize.toString());
 
   const res = await fetch(url, {
-    next: { tags: ["categories"], revalidate: 3600 },
+next: { tags: ["categories"], revalidate: 3600 },
   });
   if (!res.ok) throw new Error("Failed to fetch categories");
   return res.json();
