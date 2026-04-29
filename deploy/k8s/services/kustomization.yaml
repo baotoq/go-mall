@@ -8,17 +8,11 @@ resources:
 
 configMapGenerator:
   - name: catalog-config
-    options:
-      disableNameSuffixHash: true
     files:
-      - catalog-api.yaml=catalog-api/catalog-api.yaml
+      - catalog-api.yaml=catalog-api/config.yaml
   - name: cart-config
-    options:
-      disableNameSuffixHash: true
     files:
-      - cart-api.yaml=cart-api/cart-api.yaml
+      - cart-api.yaml=cart-api/config.yaml
   - name: payment-config
-    options:
-      disableNameSuffixHash: true
     files:
-      - payment-api.yaml=payment-api/payment-api.yaml
+      - payment-api.yaml=payment-api/config.yaml

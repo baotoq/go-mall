@@ -9,6 +9,12 @@ load('ext://helm_resource', 'helm_resource', 'helm_repo')
 
 # --- Dapr control plane (installs CRDs + sidecar injector) ---
 helm_repo('dapr-repo', 'https://dapr.github.io/helm-charts/', labels=['infra'])
+local_resource(
+    'dapr-crds-pre',
+    cmd='helm show crds dapr-repo/dapr | kubectl apply --server-side --force-conflicts -f -',
+    resource_deps=['dapr-repo'],
+    labels=['infra'],
+)
 helm_resource(
     'dapr',
     'dapr-repo/dapr',
@@ -16,8 +22,9 @@ helm_resource(
     flags=[
         '--create-namespace',
         '--set=global.ha.enabled=false',
+        '--skip-crds',
     ],
-    resource_deps=['dapr-repo'],
+    resource_deps=['dapr-repo', 'dapr-crds-pre'],
     labels=['infra'],
 )
 
@@ -50,8 +57,6 @@ docker_build(
 )
 
 # --- Kubernetes manifests via Kustomize ---
-# --load-restrictor=LoadRestrictionsNone allows keycloak realm-export.json
-# to be referenced from outside deploy/k8s/base/
 k8s_yaml(kustomize('deploy/k8s'))
 
 # --- Dapr CRDs: applied after Dapr helm install registers the CRD types ---
@@ -66,7 +71,7 @@ local_resource(
 # --- Resource configuration: port-forwards, deps, labels ---
 k8s_resource('redis',      labels=['infra'])
 k8s_resource('keycloak',   port_forwards=['8080:8080'], labels=['infra'])
-k8s_resource('jaeger',     port_forwards=['16686:16686', '4317:4317', '4318:4318', '9411:9411'], labels=['infra'])
+k8s_resource('jaeger',     port_forwards=['16686:16686'], labels=['infra'])
 
 k8s_resource(
     'catalog',

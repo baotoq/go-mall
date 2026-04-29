@@ -2,6 +2,9 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: cart
+  labels:
+    app.kubernetes.io/name: cart
+    app.kubernetes.io/component: api
 spec:
   replicas: 1
   selector:
@@ -21,8 +24,27 @@ spec:
       containers:
         - name: cart
           image: go-mall/cart
+          imagePullPolicy: Never
           ports:
             - containerPort: 8080
+          startupProbe:
+            httpGet:
+              path: /readyz
+              port: 8080
+            periodSeconds: 2
+            failureThreshold: 30
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8080
+            periodSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            periodSeconds: 10
+            failureThreshold: 3
           volumeMounts:
             - name: config
               mountPath: /app/etc
@@ -42,6 +64,9 @@ apiVersion: v1
 kind: Service
 metadata:
   name: cart
+  labels:
+    app.kubernetes.io/name: cart
+    app.kubernetes.io/component: api
 spec:
   selector:
     app: cart

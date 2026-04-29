@@ -5,3 +5,8 @@ resources:
   - namespace.yaml
   - infra
   - services
+labels:
+  - includeSelectors: false
+    pairs:
+      app.kubernetes.io/part-of: go-mall
+      app.kubernetes.io/managed-by: kustomize

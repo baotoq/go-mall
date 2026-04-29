@@ -18,13 +18,14 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 	"shared/auth"
 	sharedevent "shared/event"
+	"shared/health"
 
 	"github.com/zeromicro/go-zero/core/conf"
 	"github.com/zeromicro/go-zero/core/logx"
 	"github.com/zeromicro/go-zero/rest"
 )
 
-var configFile = flag.String("f", "etc/catalog-api.yaml", "the config file")
+var configFile = flag.String("f", "etc/config.yaml", "the config file")
 
 var (
 	increaseStockRE = regexp.MustCompile(`^/api/v1/products/.+/increase-stock$`)
@@ -52,11 +53,17 @@ func main() {
 		catalogevent.NewEntStore(db),
 	))
 	handler.RegisterHandlers(server, ctx)
+	health.Register(server, health.DaprProbe{Client: dapr})
 
 	server.Use(func(next http.HandlerFunc) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
 			path := r.URL.Path
 			method := r.Method
+
+			if path == "/healthz" || path == "/readyz" {
+				next(w, r)
+				return
+			}
 
 			// Public routes: GET products, GET categories
 			if (method == http.MethodGet && strings.HasPrefix(path, "/api/v1/products")) ||

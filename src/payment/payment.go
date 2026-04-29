@@ -7,6 +7,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"net/http"
 
 	"payment/ent"
 	"payment/internal/config"
@@ -14,6 +15,7 @@ import (
 	"payment/internal/handler"
 	"payment/internal/svc"
 	"shared/auth"
+	"shared/health"
 
 	dapr "github.com/dapr/go-sdk/client"
 	sharedevent "shared/event"
@@ -25,7 +27,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-var configFile = flag.String("f", "etc/payment-api.yaml", "the config file")
+var configFile = flag.String("f", "etc/config.yaml", "the config file")
 
 func main() {
 	flag.Parse()
@@ -51,8 +53,17 @@ func main() {
 		paymentevent.NewEntStore(db),
 	))
 	handler.RegisterHandlers(server, ctx)
+	health.Register(server, health.DaprProbe{Client: daprClient})
 
-	server.Use(auth.RequireServiceAuth(ctx.Validator))
+	server.Use(func(next http.HandlerFunc) http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path == "/healthz" || r.URL.Path == "/readyz" {
+				next(w, r)
+				return
+			}
+			auth.RequireServiceAuth(ctx.Validator)(next)(w, r)
+		}
+	})
 
 	fmt.Printf("Starting server at %s:%d...\n", c.Host, c.Port)
 	server.Start()

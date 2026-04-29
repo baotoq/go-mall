@@ -7,7 +7,5 @@ resources:
 
 configMapGenerator:
   - name: keycloak-realm
-    options:
-      disableNameSuffixHash: true
     files:
       - realm-export.json=keycloak/realm-export.json

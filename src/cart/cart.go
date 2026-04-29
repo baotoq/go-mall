@@ -19,13 +19,14 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 	sharedevent "shared/event"
 	"shared/auth"
+	"shared/health"
 
 	"github.com/zeromicro/go-zero/core/conf"
 	"github.com/zeromicro/go-zero/core/logx"
 	"github.com/zeromicro/go-zero/rest"
 )
 
-var configFile = flag.String("f", "etc/cart-api.yaml", "the config file")
+var configFile = flag.String("f", "etc/config.yaml", "the config file")
 
 func main() {
 	flag.Parse()
@@ -59,6 +60,7 @@ func main() {
 	}
 
 	handler.RegisterHandlers(server, ctx)
+	health.Register(server, health.DaprProbe{Client: daprClient})
 	server.Use(pathAuthMiddleware(ctx.Validator))
 
 	fmt.Printf("Starting server at %s:%d...\n", c.Host, c.Port)

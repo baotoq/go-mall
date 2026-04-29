@@ -34,7 +34,7 @@
         "uriFormat": "%s",
         "webRoot": "${workspaceFolder}/src/storefront"
       }
-    }
+    },
     {
       "name": "Go: attach catalog-api",
       "type": "go",
