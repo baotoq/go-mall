@@ -24,6 +24,8 @@ spec:
               value: admin
             - name: KEYCLOAK_ADMIN_PASSWORD
               value: admin
+            - name: JAVA_OPTS_APPEND
+              value: "-Xms128m -Xmx384m"
           ports:
             - containerPort: 8080
           volumeMounts:
@@ -40,10 +42,10 @@ spec:
           resources:
             requests:
               cpu: 200m
-              memory: 512Mi
+              memory: 256Mi
             limits:
               cpu: 1000m
-              memory: 1Gi
+              memory: 512Mi
       volumes:
         - name: realm
           configMap:

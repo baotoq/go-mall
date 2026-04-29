@@ -3,7 +3,7 @@
 import { Loader2, Minus, Plus } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { getProduct, type ProductInfo } from "@/lib/api/catalog";
 import { useCart } from "@/lib/store/cart";
@@ -12,24 +12,28 @@ export default function CartPage() {
   const { items, updateQuantity, removeItem, initialized } = useCart();
   const [products, setProducts] = useState<Record<string, ProductInfo>>({});
   const [loading, setLoading] = useState(true);
+  const fetchedIds = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     if (!initialized) return;
 
     const fetchProducts = async () => {
       setLoading(true);
-      const toFetch = items.filter((item) => !products[item.productId]);
+      const toFetch = items.filter((item) => !fetchedIds.current.has(item.productId));
 
       if (toFetch.length > 0) {
         try {
           const fetched = await Promise.all(
             toFetch.map((item) => getProduct(item.productId).catch(() => null)),
           );
-          const newProducts = { ...products };
+          const updates: Record<string, ProductInfo> = {};
           fetched.forEach((p) => {
-            if (p) newProducts[p.id] = p;
+            if (p) {
+              updates[p.id] = p;
+              fetchedIds.current.add(p.id);
+            }
           });
-          setProducts(newProducts);
+          setProducts((prev) => ({ ...prev, ...updates }));
         } catch (e) {
           console.error(e);
         }
@@ -38,7 +42,7 @@ export default function CartPage() {
     };
 
     fetchProducts();
-  }, [items, products, initialized]);
+  }, [items, initialized]);
 
   if (
     !initialized ||

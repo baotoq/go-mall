@@ -78,19 +78,18 @@ def go_service(name, debug):
         ],
     )
 
-# In debug mode: remove liveness probe (frozen goroutine at breakpoint = desired state,
+# In debug mode: remove liveness probe (frozen process at breakpoint = desired state,
 # not a failure). Readiness stays TCP so Service routing still works.
-_PATCH = encode_json([
-    {'op': 'remove',  'path': '/spec/template/spec/containers/0/livenessProbe'},
-    {'op': 'replace', 'path': '/spec/template/spec/containers/0/readinessProbe',
-     'value': {'tcpSocket': {'port': 8080}, 'periodSeconds': 5, 'failureThreshold': 3}},
-])
-
-def debug_probes(name):
+def debug_probes(name, port=8080, deps=None):
+    patch = encode_json([
+        {'op': 'remove',  'path': '/spec/template/spec/containers/0/livenessProbe'},
+        {'op': 'replace', 'path': '/spec/template/spec/containers/0/readinessProbe',
+         'value': {'tcpSocket': {'port': port}, 'periodSeconds': 5, 'failureThreshold': 3}},
+    ])
     local_resource(
         '%s-debug-probes' % name,
-        cmd="kubectl patch deployment %s -n go-mall --type=json -p '%s'" % (name, _PATCH),
-        deps=['deploy/k8s/services/%s-api/%s.yaml' % (name, name)],
+        cmd="kubectl patch deployment %s -n go-mall --type=json -p '%s'" % (name, patch),
+        deps=deps or ['deploy/k8s/services/%s-api/%s.yaml' % (name, name)],
         resource_deps=[name],
         labels=['debug'],
     )
@@ -102,10 +101,12 @@ GO_SERVICES = [
     {'name': 'payment', 'port': 9003, 'debug_port': 40003, 'path': '/api/v1/payments'},
 ]
 
+_sf_debug = 'storefront' in debug_services
 docker_build(
     'go-mall/storefront',
     'src/storefront',
     dockerfile='src/storefront/Dockerfile.dev',
+    build_args={'DEBUG': '1' if _sf_debug else '0'},
     live_update=[
         fall_back_on([
             'src/storefront/package.json',
@@ -114,6 +115,7 @@ docker_build(
             'src/storefront/tsconfig.json',
             'src/storefront/postcss.config.mjs',
             'src/storefront/Dockerfile.dev',
+            'src/storefront/entrypoint.sh',
         ]),
         sync('src/storefront/src', '/app/src'),
         sync('src/storefront/public', '/app/public'),
@@ -158,9 +160,11 @@ for s in GO_SERVICES:
         labels=['service'],
     )
 
+if _sf_debug:
+    debug_probes('storefront', port=3000, deps=['deploy/k8s/services/storefront.yaml'])
 k8s_resource(
     'storefront',
-    port_forwards=['3000:3000'],
+    port_forwards=['3000:3000'] + (['9229:9229', '9230:9230'] if _sf_debug else []),
     resource_deps=['catalog', 'cart', 'payment', 'keycloak'],
     links=[link('http://localhost:3000', 'storefront')],
     labels=['service'],

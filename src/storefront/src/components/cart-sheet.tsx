@@ -3,7 +3,7 @@
 import { Minus, Plus, Trash2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Sheet,
   SheetContent,
@@ -24,22 +24,26 @@ export function CartSheet({ open, onOpenChange }: CartSheetProps) {
   const { items, updateQuantity, removeItem } = useCart();
   const [products, setProducts] = useState<Record<string, ProductInfo>>({});
   const [loading, setLoading] = useState(false);
+  const fetchedIds = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     if (!open) return;
     const fetchProducts = async () => {
       setLoading(true);
-      const toFetch = items.filter((item) => !products[item.productId]);
+      const toFetch = items.filter((item) => !fetchedIds.current.has(item.productId));
       if (toFetch.length > 0) {
         try {
           const fetched = await Promise.all(
             toFetch.map((item) => getProduct(item.productId).catch(() => null)),
           );
-          const newProducts = { ...products };
+          const updates: Record<string, ProductInfo> = {};
           fetched.forEach((p) => {
-            if (p) newProducts[p.id] = p;
+            if (p) {
+              updates[p.id] = p;
+              fetchedIds.current.add(p.id);
+            }
           });
-          setProducts(newProducts);
+          setProducts((prev) => ({ ...prev, ...updates }));
         } catch (_e) {
           // ignore
         }
@@ -47,7 +51,7 @@ export function CartSheet({ open, onOpenChange }: CartSheetProps) {
       setLoading(false);
     };
     fetchProducts();
-  }, [open, items, products]);
+  }, [open, items]);
 
   const total = items.reduce((acc, item) => {
     const product = products[item.productId];

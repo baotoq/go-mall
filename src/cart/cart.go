@@ -34,7 +34,7 @@ func main() {
 	var c config.Config
 	conf.MustLoad(*configFile, &c)
 
-	server := rest.MustNewServer(c.RestConf, rest.WithCors("*"))
+	server := rest.MustNewServer(c.RestConf, rest.WithCors("*"), rest.WithCorsHeaders("x-session-id"))
 	defer server.Stop()
 
 	db := initDb(c.DB.DSN)
@@ -73,13 +73,12 @@ func pathAuthMiddleware(validator auth.TokenValidator) func(next http.HandlerFun
 			path := r.URL.Path
 			method := r.Method
 
-			if method == http.MethodGet && path == "/api/v1/cart/items" {
+			if method == http.MethodOptions {
 				next.ServeHTTP(w, r)
 				return
 			}
 
-			if strings.HasPrefix(path, "/api/v1/cart/items") ||
-				strings.HasPrefix(path, "/api/v1/cart/checkout") {
+			if strings.HasPrefix(path, "/api/v1/cart/checkout") {
 				auth.RequireAuth(validator)(next)(w, r)
 				return
 			}
