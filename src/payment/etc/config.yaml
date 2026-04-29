@@ -21,3 +21,6 @@ Telemetry:
   Sampler: 1.0
   Batcher: otlphttp
 
+DB:
+  DSN: "postgres://postgres:gomall@localhost:5432/payment?sslmode=disable"
+

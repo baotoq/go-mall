@@ -24,7 +24,7 @@ import (
 	"github.com/zeromicro/go-zero/core/logx"
 	"github.com/zeromicro/go-zero/rest"
 
-	_ "github.com/mattn/go-sqlite3"
+	_ "github.com/lib/pq"
 )
 
 var configFile = flag.String("f", "etc/config.yaml", "the config file")
@@ -38,7 +38,7 @@ func main() {
 	server := rest.MustNewServer(c.RestConf, rest.WithCors("*"))
 	defer server.Stop()
 
-	db := initDb()
+	db := initDb(c.DB.DSN)
 	if db != nil {
 		defer db.Close()
 	}
@@ -69,9 +69,8 @@ func main() {
 	server.Start()
 }
 
-func initDb() *ent.Client {
-	db, err := ent.Open("sqlite3", "file:ent?mode=memory&cache=shared&_fk=1")
-
+func initDb(dsn string) *ent.Client {
+	db, err := ent.Open("postgres", dsn)
 	if err != nil {
 		logx.Must(err)
 		return nil
@@ -80,7 +79,6 @@ func initDb() *ent.Client {
 		logx.Must(err)
 		return nil
 	}
-
 	return db
 }
 

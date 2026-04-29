@@ -21,21 +21,28 @@ spec:
           imagePullPolicy: Never
           ports:
             - containerPort: 3000
+          env:
+            - name: CATALOG_SERVICE_URL
+              value: "http://catalog:8080"
+            - name: CART_SERVICE_URL
+              value: "http://cart:8080"
+            - name: PAYMENT_SERVICE_URL
+              value: "http://payment:8080"
           startupProbe:
             httpGet:
-              path: /api/readyz
+              path: /
               port: 3000
             periodSeconds: 2
             failureThreshold: 30
           readinessProbe:
             httpGet:
-              path: /api/readyz
+              path: /
               port: 3000
             periodSeconds: 5
             failureThreshold: 3
           livenessProbe:
             httpGet:
-              path: /api/healthz
+              path: /
               port: 3000
             periodSeconds: 10
             failureThreshold: 3

@@ -4,6 +4,7 @@ resources:
   - redis.yaml
   - keycloak/keycloak.yaml
   - jaeger.yaml
+  - postgres.yaml
 
 configMapGenerator:
   - name: keycloak-realm

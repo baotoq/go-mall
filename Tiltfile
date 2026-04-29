@@ -72,23 +72,24 @@ local_resource(
 k8s_resource('redis',      labels=['infra'])
 k8s_resource('keycloak',   port_forwards=['8080:8080'], labels=['infra'])
 k8s_resource('jaeger',     port_forwards=['16686:16686'], labels=['infra'])
+k8s_resource('postgres',   port_forwards=['5432:5432'], labels=['infra'])
 
 k8s_resource(
     'catalog',
     port_forwards=['9001:8080'],
-    resource_deps=['dapr-crds', 'redis', 'keycloak', 'jaeger'],
+    resource_deps=['dapr-crds', 'redis', 'keycloak', 'jaeger', 'postgres'],
     labels=['service'],
 )
 k8s_resource(
     'cart',
     port_forwards=['9002:8080'],
-    resource_deps=['dapr-crds', 'redis', 'keycloak', 'jaeger'],
+    resource_deps=['dapr-crds', 'redis', 'keycloak', 'jaeger', 'postgres'],
     labels=['service'],
 )
 k8s_resource(
     'payment',
     port_forwards=['9003:8080'],
-    resource_deps=['dapr-crds', 'redis', 'keycloak', 'jaeger'],
+    resource_deps=['dapr-crds', 'redis', 'keycloak', 'jaeger', 'postgres'],
     labels=['service'],
 )
 k8s_resource(

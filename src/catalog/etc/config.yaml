@@ -21,8 +21,5 @@ Telemetry:
   Sampler: 1.0
   Batcher: otlphttp
 
-# MySQL:
-#   DataSource: root:password@tcp(localhost:3306)/go_mall?parseTime=true
-
-# Cache:
-#   - Host: localhost:6379
+DB:
+  DSN: "postgres://postgres:gomall@localhost:5432/catalog?sslmode=disable"

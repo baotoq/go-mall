@@ -15,7 +15,7 @@ import (
 	"catalog/internal/svc"
 
 	dapr "github.com/dapr/go-sdk/client"
-	_ "github.com/mattn/go-sqlite3"
+	_ "github.com/lib/pq"
 	"shared/auth"
 	sharedevent "shared/event"
 	"shared/health"
@@ -42,7 +42,7 @@ func main() {
 	server := rest.MustNewServer(c.RestConf)
 	defer server.Stop()
 
-	db := initDb()
+	db := initDb(c.DB.DSN)
 	defer db.Close()
 
 	dapr := initDaprClient()
@@ -102,8 +102,8 @@ func main() {
 	server.Start()
 }
 
-func initDb() *ent.Client {
-	db, err := ent.Open("sqlite3", "file:ent?mode=memory&cache=shared&_fk=1")
+func initDb(dsn string) *ent.Client {
+	db, err := ent.Open("postgres", dsn)
 	if err != nil {
 		logx.Must(err)
 		return nil

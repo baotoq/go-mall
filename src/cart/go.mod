@@ -6,7 +6,7 @@ require (
 	entgo.io/ent v0.14.6
 	github.com/dapr/go-sdk v1.14.2
 	github.com/google/uuid v1.6.0
-	github.com/mattn/go-sqlite3 v1.14.42
+	github.com/lib/pq v1.12.3
 	github.com/zeromicro/go-zero v1.10.1
 )
 
@@ -35,6 +35,7 @@ require (
 	github.com/klauspost/compress v1.18.3 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
+	github.com/mattn/go-sqlite3 v1.14.42 // indirect
 	github.com/mitchellh/go-wordwrap v1.0.1 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/openzipkin/zipkin-go v0.4.3 // indirect

@@ -16,9 +16,9 @@ import (
 	"cart/internal/svc"
 
 	dapr "github.com/dapr/go-sdk/client"
-	_ "github.com/mattn/go-sqlite3"
-	sharedevent "shared/event"
+	_ "github.com/lib/pq"
 	"shared/auth"
+	sharedevent "shared/event"
 	"shared/health"
 
 	"github.com/zeromicro/go-zero/core/conf"
@@ -37,7 +37,7 @@ func main() {
 	server := rest.MustNewServer(c.RestConf, rest.WithCors("*"))
 	defer server.Stop()
 
-	db := initDb()
+	db := initDb(c.DB.DSN)
 	defer db.Close()
 
 	daprClient := initDaprClient()
@@ -89,9 +89,8 @@ func pathAuthMiddleware(validator auth.TokenValidator) func(next http.HandlerFun
 	}
 }
 
-func initDb() *ent.Client {
-	db, err := ent.Open("sqlite3", "file:ent?mode=memory&cache=shared&_fk=1")
-
+func initDb(dsn string) *ent.Client {
+	db, err := ent.Open("postgres", dsn)
 	if err != nil {
 		logx.Must(err)
 		return nil
@@ -100,7 +99,6 @@ func initDb() *ent.Client {
 		logx.Must(err)
 		return nil
 	}
-
 	return db
 }
 

@@ -20,3 +20,6 @@ Telemetry:
   Endpoint: http://jaeger.go-mall.svc.cluster.local:4318
   Sampler: 1.0
   Batcher: otlphttp
+
+DB:
+  DSN: "postgres://postgres:gomall@postgres:5432/payment?sslmode=disable"
