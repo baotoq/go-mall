@@ -1,3 +1,0 @@
-[submodule ".claude/skills/zero-skills"]
-	path = .claude/skills/zero-skills
-	url = https://github.com/zeromicro/zero-skills.git
