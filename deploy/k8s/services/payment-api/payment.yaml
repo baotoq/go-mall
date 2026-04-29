@@ -31,20 +31,20 @@ spec:
             httpGet:
               path: /readyz
               port: 8080
-            periodSeconds: 2
+            periodSeconds: 5
             failureThreshold: 30
           readinessProbe:
             httpGet:
               path: /readyz
               port: 8080
-            periodSeconds: 5
-            failureThreshold: 3
+            periodSeconds: 10
+            failureThreshold: 5
           livenessProbe:
             httpGet:
               path: /healthz
               port: 8080
-            periodSeconds: 10
-            failureThreshold: 3
+            periodSeconds: 20
+            failureThreshold: 5
           volumeMounts:
             - name: config
               mountPath: /app/etc
@@ -54,7 +54,7 @@ spec:
               memory: 64Mi
             limits:
               cpu: 500m
-              memory: 256Mi
+              memory: 512Mi
       volumes:
         - name: config
           configMap:

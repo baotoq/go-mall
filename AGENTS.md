@@ -1,150 +1,113 @@
-# go-mall Agent Instructions
+# CLAUDE.md
 
-## Project Overview
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-**go-mall** is a microservices e-commerce platform:
-- **Backend**: Go 1.26.1 with go-zero framework
-- **Frontend**: Next.js with TypeScript, Tailwind CSS, shadcn/ui
-- **Monorepo**: Go workspace at `src/` directory
-
-## Services (ports)
-
-| Service | Port | Entry Point |
-|---------|------|-------------|
-| catalog | 8001 | `src/catalog/product.go -f etc/catalog-api.yaml` |
-| cart | 8002 | `src/cart/cart.go -f etc/cart-api.yaml` |
-| payment | 8003 | `src/payment/payment.go -f etc/payment-api.yaml` |
-
-## CRITICAL: goctl Style
-
-**Always use `snake_case` style** for goctl commands:
-```bash
-goctl api go -api product.api --dir . --style snakecase
-```
-
-Other styles (`go_zero`, `goZero`) produce wrong naming. This is the most commonly missed convention.
-
-## Code Generation
-
-### API services (from .api files)
-```bash
-# 1. Edit .api file
-# 2. Regenerate types/handlers/routes (safe to re-run)
-goctl api go -api product.api --dir . --style snakecase
-
-# 3. Implement business logic in internal/logic/
-# 4. Verify: cd src/catalog && go build ./...
-```
-
-### Ent ORM (from schema)
-```bash
-# After modifying ent/schema/*.go
-make generate-ent
-# or: cd src/catalog/ent && go generate ./...
-```
-
-## Module Names
-
-- **Catalog service**: module `catalog` (NOT `product`)
-- **Cart service**: module `cart`
-- **Payment service**: module `payment`
-- **Shared**: module `shared`
-- **Storefront**: Next.js module (workspace)
-
-## Common Commands
+## Commands
 
 ```bash
-# Build all services
+# Build all Go services
 make build
 
-# Tidy dependencies
+# Tidy dependencies for all services
 make tidy
 
-# Run a service locally
-cd src/catalog && go run product.go -f etc/catalog-api.yaml
+# Run individual services
+make catalog-api      # cd src/catalog && go run product.go -f etc/catalog-api.yaml
+make cart-api         # cd src/cart && go run cart.go -f etc/cart-api.yaml
+make payment-api      # cd src/payment && go run payment.go -f etc/payment-api.yaml
 
-# Local dev with live reload (requires Tilt + Docker)
+# Regenerate Ent ORM code (after modifying ent/schema/*.go)
+make generate-ent
+
+# Regenerate go-zero handlers/types/routes (after modifying .api files)
+# CRITICAL: always use --style snakecase — other styles produce wrong file names
+goctl api go -api product.api --dir . --style snakecase
+
+# Run tests in a service
+cd src/catalog && go test ./...
+
+# Local dev with live reload (requires Tilt + Docker Desktop/OrbStack)
 tilt up
+
+# Frontend
+cd src/storefront && npm run dev
+cd src/storefront && npm run lint
+cd src/storefront && npm run build
 ```
 
 ## Architecture
 
-### go-zero Service Structure
+### Monorepo layout
+
 ```
-src/catalog/
-├── product.api          # API spec (goctl source)
-├── product.go           # Entry point
-├── etc/*.yaml           # Config
-├── ent/                 # Ent ORM (auto-generated)
-│   └── schema/          # Database schemas
-└── internal/
-    ├── handler/         # HTTP handlers (generated)
-    ├── logic/           # Business logic (implement here)
-    ├── types/           # Generated types
-    └── config/          # Config struct
+src/                 # Go workspace (go.work)
+  catalog/           # Product catalog service — module: catalog (NOT product)
+  cart/              # Cart service — module: cart
+  payment/           # Payment service — module: payment
+  shared/            # Shared libs: auth, event, health, entschema
+  storefront/        # Next.js frontend
+deploy/k8s/          # Kubernetes manifests (Kustomize)
 ```
 
-### Frontend Structure
+### go-zero Handler → Logic pattern
+
+Each backend service uses the same layered structure:
+
 ```
-src/storefront/
-├── src/app/             # Next.js app router pages
-├── src/components/      # React components (shadcn/ui)
-└── src/lib/             # API clients, stores
+internal/
+  handler/<group>/   # HTTP handlers — auto-generated from .api file, do not hand-edit
+  logic/<group>/     # Business logic — implement here
+  types/             # Request/response types — auto-generated from .api file
+  svc/               # ServiceContext: dependency injection (DB client, config, event bus)
+  config/            # Config struct matching etc/*.yaml
+  domain/            # Domain models (hand-written)
+  event/             # Dapr event publishing (outbox pattern)
+ent/
+  schema/            # Ent entity definitions — hand-edit here
+  *.go               # Ent ORM code — auto-generated, do not hand-edit
 ```
 
-## Key Conventions
+**Source of truth**: `.api` files define types, routes, and handler names. goctl regenerates `handler/`, `types/`, and route registration safely. Business logic in `logic/` is never overwritten.
 
-### Go
-- Package naming: lowercase, no underscores
-- Type naming: MixedCaps (`CreateProductRequest`)
-- Imports: use module path (e.g., `catalog/internal/logic`)
+### Adding an endpoint
 
-### API Routes
-- Routes defined via `@server(group: ...)` in `.api` files
-- Prefix: `/api/v1` (catalog), `/api/v1/cart`, `/api/v1/payments`
+1. Add type + handler directive to the `.api` file
+2. Run `goctl api go -api <name>.api --dir . --style snakecase`
+3. Implement the generated `logic/<group>/<name>_logic.go`
 
-### Database
-- Ent ORM with SQLite by default (memory mode)
-- Commented MySQL config in `etc/catalog-api.yaml`
-- Dapr SDK integrated for event bus / outbox pattern
+### Database changes
 
-## Skills Available
+1. Edit `ent/schema/*.go`
+2. Run `make generate-ent` (or `cd src/<service>/ent && go generate ./...`)
+3. Update logic to use new fields
 
-Project skills in `.agents/skills/` and `.claude/skills/`:
+### Event bus
 
-**Go**: `golang`, `go-error-handling`, `go-naming`, `go-concurrency`, `golang-testing`, `golang-patterns`, `golang-pro`, `go-linting`, `zero-skills`, `testcontainers-go`
+Services publish domain events via Dapr pub/sub using the outbox pattern. `src/shared/event/` contains the publisher. Redis backs the Dapr state store and pub/sub in all environments.
 
-**Frontend**: `next-best-practices`, `vercel-react-best-practices`, `typescript-expert`, `tailwind-design-system`, `ui-ux-pro-max`
+### Authentication
 
-**Other**: `documentation-lookup`, `web-design-guidelines`
+Keycloak issues JWTs. `src/shared/auth/` validates tokens via JWKS. Each service's `main.go` wires role-based middleware:
+- Public: `GET /api/v1/products`, `GET /api/v1/categories`
+- Admin: requires `admin` role
+- Authenticated: all other routes
 
-Load skills explicitly when working in their domain.
+### Frontend
 
-## Design System
+Next.js App Router. API routes in `src/app/api/` reverse-proxy to backend services. State management via Zustand. Design system: Apple-inspired binary palette (`#000000` / `#f5f5f7`) with single accent `#0071e3`; see `DESIGN.md`.
 
-Frontend follows Apple-inspired design documented in `DESIGN.md`:
-- Binary color scheme: black (`#000000`) / light gray (`#f5f5f7`)
-- Single accent: Apple Blue (`#0071e3`)
-- Typography: SF Pro Display/Text (system fonts)
-- Pill-shaped CTAs with 980px radius
+## Key conventions
 
-## Troubleshooting
+- goctl style is always `snakecase` — forgetting this flag is the most common mistake
+- Catalog module is `catalog`, not `product` (was renamed; fix stale imports with `go mod tidy`)
+- Imports use module name as root: `catalog/internal/logic/catalog`, `shared/auth`
+- API route prefix: `/api/v1` for all services
+- Ent schemas use shared mixins from `shared/entschema` (timestamps, IDs)
 
-### Import errors after renaming
-- All `product/` imports should be `catalog/`
-- Run `go mod tidy` in affected services
+## Skills
 
-### goctl produces wrong file names
-- You forgot `--style snakecase`
-- Re-run with correct style flag
+Domain-specific guidance lives in `.claude/skills/` and `.agents/skills/`. Load with the `Skill` tool when working in that area:
 
-### Types not found
-- Types generated from `.api` via goctl
-- Update `.api` file, then regenerate
-- New types appear in `internal/types/`
-
-## Other Important Files
-
-- `copilot-instructions.md` - More detailed project overview
-- `DESIGN.md` - Design system reference
-- `.mcp.json` - MCP server configs (context7, go-zero, shadcn, stitch)
+- Go: `golang`, `go-error-handling`, `go-naming`, `go-concurrency`, `golang-testing`, `golang-patterns`, `golang-pro`, `go-linting`, `zero-skills`, `testcontainers-go`
+- Frontend: `next-best-practices`, `vercel-react-best-practices`, `typescript-expert`, `tailwind-design-system`, `ui-ux-pro-max`
+- Other: `documentation-lookup`, `web-design-guidelines`

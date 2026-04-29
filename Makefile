@@ -1,4 +1,4 @@
-.PHONY: generate-ent catalog-ent cart-ent payment-ent build tidy catalog-api cart-api payment-api
+.PHONY: generate-ent catalog-ent cart-ent payment-ent build tidy catalog-api cart-api payment-api debug-catalog debug-cart debug-payment debug-all
 
 generate-ent: catalog-ent cart-ent payment-ent
 
@@ -21,11 +21,5 @@ tidy:
 	cd src/cart && go mod tidy
 	cd src/payment && go mod tidy
 
-catalog-api:
-	cd src/catalog && go run product.go -f etc/catalog-api.yaml
-
-cart-api:
-	cd src/cart && go run cart.go -f etc/cart-api.yaml
-
-payment-api:
-	cd src/payment && go run payment.go -f etc/payment-api.yaml
+up-debug:
+	tilt up -- --debug=catalog --debug=cart --debug=payment
