@@ -105,3 +105,32 @@ func TestProductUsecase_List_returnsPaginated(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, int64(3), res.Total)
 }
+
+func TestProductUsecase_Update_notFound(t *testing.T) {
+	uc := biz.NewProductUsecase(newStubProductRepo())
+
+	_, err := uc.Update(context.Background(), &biz.Product{ID: uuid.New(), Name: "x"})
+
+	assert.ErrorIs(t, err, biz.ErrProductNotFound)
+}
+
+func TestProductUsecase_Update_persists(t *testing.T) {
+	repo := newStubProductRepo()
+	uc := biz.NewProductUsecase(repo)
+	created, _ := uc.Create(context.Background(), &biz.Product{Name: "old"})
+	created.Name = "new"
+
+	got, err := uc.Update(context.Background(), created)
+
+	require.NoError(t, err)
+	assert.Equal(t, "new", got.Name)
+}
+
+func TestProductUsecase_Delete(t *testing.T) {
+	repo := newStubProductRepo()
+	uc := biz.NewProductUsecase(repo)
+	created, _ := uc.Create(context.Background(), &biz.Product{Name: "x"})
+
+	require.NoError(t, uc.Delete(context.Background(), created.ID))
+	assert.ErrorIs(t, uc.Delete(context.Background(), created.ID), biz.ErrProductNotFound)
+}
