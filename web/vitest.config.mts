@@ -8,5 +8,10 @@ export default defineConfig({
     environment: "jsdom",
     globals: true,
     setupFiles: ["./src/test/setup.tsx"],
+    environmentOptions: {
+      jsdom: {
+        url: "http://localhost",
+      },
+    },
   },
 })
