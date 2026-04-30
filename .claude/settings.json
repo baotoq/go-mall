@@ -33,7 +33,9 @@
     "code-simplifier@claude-plugins-official": true,
     "code-review@claude-plugins-official": true,
     "feature-dev@claude-plugins-official": true,
-    "andrej-karpathy-skills@karpathy-skills": true
+    "andrej-karpathy-skills@karpathy-skills": true,
+    "sourcegraph@claude-plugins-official": true,
+    "remember@claude-plugins-official": true
   },
   "skipDangerousModePermissionPrompt": true
 }
