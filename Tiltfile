@@ -13,52 +13,64 @@ dlv_flags = '--headless --listen=:2345 --accept-multiclient --only-same-user=fal
 if dlv_continue:
     dlv_flags += ' --continue'
 
-entrypoint_greeter = ['sh', '-c', 'exec dlv exec /app/greeter ' + dlv_flags + ' -- -conf /data/conf']
-entrypoint_catalog = ['sh', '-c', 'exec dlv exec /app/catalog ' + dlv_flags + ' -- -conf /data/conf']
-entrypoint_cart = ['sh', '-c', 'exec dlv exec /app/cart ' + dlv_flags + ' -- -conf /data/conf']
-entrypoint_payment = ['sh', '-c', 'exec dlv exec /app/payment ' + dlv_flags + ' -- -conf /data/conf']
+# (name, http_host_port, grpc_host_port, dlv_host_port, extra_k8s_deps)
+SERVICES = [
+    ('greeter', 8000, 9000, 2345, ['postgres', 'redis']),
+    ('catalog', 8001, 9001, 2346, ['postgres']),
+    ('cart',    8002, 9002, 2347, ['postgres']),
+    ('payment', 8003, 9003, 2348, ['postgres']),
+]
 
-compile_greeter = 'mkdir -p dist && GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -gcflags="all=-N -l" -ldflags "-X main.Version=dev" -o ./dist/greeter ./app/greeter/cmd/server'
-compile_catalog = 'mkdir -p dist && GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -gcflags="all=-N -l" -ldflags "-X main.Version=dev" -o ./dist/catalog ./app/catalog/cmd/server'
-compile_cart = 'mkdir -p dist && GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -gcflags="all=-N -l" -ldflags "-X main.Version=dev" -o ./dist/cart ./app/cart/cmd/server'
-compile_payment = 'mkdir -p dist && GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -gcflags="all=-N -l" -ldflags "-X main.Version=dev" -o ./dist/payment ./app/payment/cmd/server'
+def compile_cmd(name):
+    return (
+        'mkdir -p dist && GOOS=linux GOARCH=arm64 CGO_ENABLED=0 ' +
+        'go build -gcflags="all=-N -l" -ldflags "-X main.Version=dev" ' +
+        '-o ./dist/{name} ./app/{name}/cmd/server'
+    ).format(name=name)
 
-# Compile locally on every Go source change.
-# Result is synced into the running container — no full image rebuild needed.
-local_resource('compile-greeter',
-    cmd=compile_greeter,
-    deps=['./app/greeter', './api/greeter', 'go.mod', 'go.sum'],
-    labels=['build'],
-)
+def dlv_entrypoint(name):
+    return ['sh', '-c', 'exec dlv exec /app/{name} {flags} -- -conf /data/conf'.format(
+        name=name, flags=dlv_flags,
+    )]
 
-local_resource('compile-catalog',
-    cmd=compile_catalog,
-    deps=['./app/catalog', './api/catalog', 'go.mod', 'go.sum'],
-    labels=['build'],
-)
+for svc in SERVICES:
+    name, http_port, grpc_port, dlv_port, extra_k8s_deps = svc
 
-local_resource('compile-cart',
-    cmd=compile_cart,
-    deps=['./app/cart', './api/cart', 'go.mod', 'go.sum'],
-    labels=['build'],
-)
+    local_resource(
+        'compile-' + name,
+        cmd=compile_cmd(name),
+        deps=['./app/' + name, './api/' + name, 'go.mod', 'go.sum'],
+        labels=['build'],
+    )
 
-local_resource('compile-payment',
-    cmd=compile_payment,
-    deps=['./app/payment', './api/payment', 'go.mod', 'go.sum'],
-    labels=['build'],
-)
+    docker_build_with_restart(
+        name,
+        '.',
+        entrypoint=dlv_entrypoint(name),
+        dockerfile='app/' + name + '/Dockerfile.dev.debug',
+        only=['./dist'],
+        live_update=[sync('./dist/' + name, '/app/' + name)],
+    )
 
-# Helm chart tarballs for postgres/redis. helm() below is evaluated at
-# Tiltfile load time, so this fetch must run synchronously here — a
-# local_resource would fire too late to affect the current load.
-local('[ -d deploy/helm/charts ] || helm dependency update deploy/helm', quiet=True)
+    k8s_resource(
+        name,
+        port_forwards=[
+            str(http_port) + ':8000',
+            str(grpc_port) + ':9000',
+            str(dlv_port) + ':2345',
+        ],
+        resource_deps=extra_k8s_deps + ['compile-' + name, 'dapr', 'dapr-components'],
+        labels=['app'],
+    )
+
+# Fetch/update all Helm subchart tarballs (postgres, redis).
+# helm() is evaluated at Tiltfile load time, so this must run synchronously.
+local('helm dependency update deploy/helm', quiet=True)
 
 helm_repo('dapr-repo', 'https://dapr.github.io/helm-charts/', labels=['infra'])
 
-# If Dapr is not yet installed via Helm, delete any pre-existing CRDs (e.g. from
-# `dapr init`) so Helm can claim field ownership cleanly. No-ops when Helm already
-# manages the release.
+# Delete any pre-existing Dapr CRDs (e.g. from `dapr init`) so Helm can claim
+# field ownership cleanly. No-ops when Helm already manages the release.
 local_resource('patch-dapr-crds',
     cmd="""
     helm status dapr -n dapr-system 2>/dev/null | grep -q 'STATUS: deployed' || \
@@ -81,53 +93,6 @@ helm_resource(
     labels=['infra'],
 )
 
-# Tilt-optimised Dockerfile contains no Go toolchain — it just copies ./dist/greeter.
-# only=['./dist'] means docker_build watches *only* that dir, so Go source
-# changes never trigger an image rebuild; they go through compile → sync instead.
-docker_build_with_restart(
-    'greeter',
-    '.',
-    entrypoint=entrypoint_greeter,
-    dockerfile='app/greeter/Dockerfile.dev.debug',
-    only=['./dist'],
-    live_update=[
-        sync('./dist/greeter', '/app/greeter'),
-    ],
-)
-
-docker_build_with_restart(
-    'catalog',
-    '.',
-    entrypoint=entrypoint_catalog,
-    dockerfile='app/catalog/Dockerfile.dev.debug',
-    only=['./dist'],
-    live_update=[
-        sync('./dist/catalog', '/app/catalog'),
-    ],
-)
-
-docker_build_with_restart(
-    'cart',
-    '.',
-    entrypoint=entrypoint_cart,
-    dockerfile='app/cart/Dockerfile.dev.debug',
-    only=['./dist'],
-    live_update=[
-        sync('./dist/cart', '/app/cart'),
-    ],
-)
-
-docker_build_with_restart(
-    'payment',
-    '.',
-    entrypoint=entrypoint_payment,
-    dockerfile='app/payment/Dockerfile.dev.debug',
-    only=['./dist'],
-    live_update=[
-        sync('./dist/payment', '/app/payment'),
-    ],
-)
-
 k8s_yaml(helm(
     'deploy/helm',
     name='deps',
@@ -139,67 +104,14 @@ k8s_yaml(kustomize('deploy/k8s/overlays/debug', flags=['--load-restrictor=LoadRe
 k8s_resource('postgres', port_forwards=['5432:5432'], labels=['infra'])
 k8s_resource('redis',    port_forwards=['6379:6379'], labels=['infra'])
 k8s_resource('pgadmin',  port_forwards=['5050:80'],   labels=['infra'], resource_deps=['postgres'])
-
-# Keycloak
-local_resource(
-    'keycloak-namespace',
-    cmd='kubectl apply -f deploy/k8s/base/infra/keycloak/namespace.yaml',
-    labels=['infra'],
-)
-
-local_resource(
-    'keycloak-secret',
-    cmd='kubectl apply -f deploy/k8s/base/infra/keycloak/secret.yaml',
-    deps=['deploy/k8s/base/infra/keycloak/secret.yaml'],
-    resource_deps=['keycloak-namespace'],
-    labels=['infra'],
-)
-
-helm_resource(
-    'keycloak',
-    'oci://registry-1.docker.io/bitnamicharts/keycloak',
-    namespace='keycloak',
-    flags=[
-        '--version=24.0.6',
-        '--set=auth.adminUser=admin',
-        '--set=auth.adminPassword=admin',
-        '--set=postgresql.enabled=true',
-    ],
-    resource_deps=['keycloak-namespace', 'keycloak-secret'],
-    labels=['infra'],
-    port_forwards=['8080:80'],
-)
+k8s_resource('keycloak', port_forwards=['8080:80'],   labels=['infra'])
 
 k8s_resource(
     objects=[
-        'pubsub:Component:greeter',
-        'secretstore:Component:greeter',
+        'pubsub:Component',
+        'secretstore:Component',
     ],
     new_name='dapr-components',
     resource_deps=['dapr'],
     labels=['infra'],
-)
-
-k8s_resource('greeter',
-    port_forwards=['8000:8000', '9000:9000', '2345:2345'],
-    resource_deps=['postgres', 'redis', 'compile-greeter', 'dapr', 'dapr-components'],
-    labels=['app'],
-)
-
-k8s_resource('catalog',
-    port_forwards=['8001:8000', '9001:9000', '2346:2345'],
-    resource_deps=['postgres', 'compile-catalog', 'dapr', 'dapr-components'],
-    labels=['app'],
-)
-
-k8s_resource('cart',
-    port_forwards=['8002:8000', '9002:9000', '2347:2345'],
-    resource_deps=['postgres', 'compile-cart', 'dapr', 'dapr-components'],
-    labels=['app'],
-)
-
-k8s_resource('payment',
-    port_forwards=['8003:8000', '9003:9000', '2348:2345'],
-    resource_deps=['postgres', 'compile-payment', 'dapr', 'dapr-components'],
-    labels=['app'],
 )
