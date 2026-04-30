@@ -13,12 +13,14 @@ ifeq ($(GOHOSTOS), windows)
     API_CATALOG_PROTO_FILES=$(shell $(Git_Bash) -c "find api/catalog -name *.proto")
     API_CART_PROTO_FILES=$(shell $(Git_Bash) -c "find api/cart -name *.proto")
     API_PAYMENT_PROTO_FILES=$(shell $(Git_Bash) -c "find api/payment -name *.proto")
+    API_ORDER_PROTO_FILES=$(shell $(Git_Bash) -c "find api/order -name *.proto")
 else
     INTERNAL_PROTO_FILES=$(shell find app -name *.proto -not -path "*/api/*.proto")
     API_GREETER_PROTO_FILES=$(shell find api/greeter -name *.proto)
     API_CATALOG_PROTO_FILES=$(shell find api/catalog -name *.proto)
     API_CART_PROTO_FILES=$(shell find api/cart -name *.proto)
     API_PAYMENT_PROTO_FILES=$(shell find api/payment -name *.proto)
+    API_ORDER_PROTO_FILES=$(shell find api/order -name *.proto)
 endif
 
 .PHONY: init
@@ -84,9 +86,20 @@ api-payment:
 	       --openapi_out=fq_schema_naming=true,default_response=false:app/payment \
 	       $(API_PAYMENT_PROTO_FILES)
 
+.PHONY: api-order
+# generate order api proto
+api-order:
+	protoc --proto_path=./api \
+	       --proto_path=./third_party \
+	       --go_out=paths=source_relative:./api \
+	       --go-http_out=paths=source_relative:./api \
+	       --go-grpc_out=paths=source_relative:./api \
+	       --openapi_out=fq_schema_naming=true,default_response=false:app/order \
+	       $(API_ORDER_PROTO_FILES)
+
 .PHONY: api
 # generate all api proto
-api: api-greeter api-catalog api-cart api-payment
+api: api-greeter api-catalog api-cart api-payment api-order
 
 .PHONY: build-greeter
 # build greeter
@@ -98,9 +111,19 @@ build-greeter:
 build-catalog:
 	mkdir -p bin/ && go build -ldflags "-X main.Version=$(VERSION)" -o ./bin/catalog ./app/catalog/cmd/server
 
+.PHONY: build-payment
+# build payment
+build-payment:
+	mkdir -p bin/ && go build -ldflags "-X main.Version=$(VERSION)" -o ./bin/payment ./app/payment/cmd/server
+
+.PHONY: build-order
+# build order
+build-order:
+	mkdir -p bin/ && go build -ldflags "-X main.Version=$(VERSION)" -o ./bin/order ./app/order/cmd/server
+
 .PHONY: build
 # build all services
-build: build-greeter build-catalog
+build: build-greeter build-catalog build-payment build-order
 
 .PHONY: generate
 # generate
