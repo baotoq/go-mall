@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	nethttp "net/http"
 
 	v1 "gomall/api/catalog/v1"
 	"gomall/app/catalog/internal/conf"
@@ -50,5 +51,8 @@ func NewHTTPServer(c *conf.Server, catalog *service.CatalogService, logger log.L
 	}
 	srv := http.NewServer(opts...)
 	v1.RegisterCatalogServiceHTTPServer(srv, catalog)
+	srv.HandleFunc("/healthz", func(w nethttp.ResponseWriter, _ *nethttp.Request) {
+		w.WriteHeader(nethttp.StatusOK)
+	})
 	return srv
 }

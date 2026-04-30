@@ -1,6 +1,8 @@
 package server
 
 import (
+	nethttp "net/http"
+
 	v1 "gomall/api/greeter/helloworld/v1"
 	"gomall/app/greeter/internal/conf"
 	"gomall/app/greeter/internal/service"
@@ -28,5 +30,8 @@ func NewHTTPServer(c *conf.Server, greeter *service.GreeterService, logger log.L
 	}
 	srv := http.NewServer(opts...)
 	v1.RegisterGreeterHTTPServer(srv, greeter)
+	srv.HandleFunc("/healthz", func(w nethttp.ResponseWriter, _ *nethttp.Request) {
+		w.WriteHeader(nethttp.StatusOK)
+	})
 	return srv
 }
