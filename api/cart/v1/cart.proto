@@ -1,0 +1,81 @@
+syntax = "proto3";
+
+package cart.v1;
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+
+option go_package = "greeter/api/cart/v1;v1";
+
+service CartService {
+  rpc GetCart(GetCartRequest) returns (Cart) {
+    option (google.api.http) = {get: "/v1/carts/{session_id}"};
+  }
+  rpc AddItem(AddItemRequest) returns (Cart) {
+    option (google.api.http) = {
+      post: "/v1/carts/{session_id}/items"
+      body: "*"
+    };
+  }
+  rpc UpdateItem(UpdateItemRequest) returns (Cart) {
+    option (google.api.http) = {
+      put: "/v1/carts/{session_id}/items/{product_id}"
+      body: "*"
+    };
+  }
+  rpc RemoveItem(RemoveItemRequest) returns (Cart) {
+    option (google.api.http) = {delete: "/v1/carts/{session_id}/items/{product_id}"};
+  }
+  rpc ClearCart(ClearCartRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {delete: "/v1/carts/{session_id}"};
+  }
+}
+
+message Cart {
+  string id = 1;
+  string session_id = 2;
+  repeated CartItem items = 3;
+  int64 total_cents = 4;
+  string created_at = 5;
+  string updated_at = 6;
+}
+
+message CartItem {
+  string id = 1;
+  string product_id = 2;
+  string name = 3;
+  int64 price_cents = 4;
+  string currency = 5;
+  string image_url = 6;
+  int32 quantity = 7;
+  int64 subtotal_cents = 8;
+}
+
+message GetCartRequest {
+  string session_id = 1;
+}
+
+message AddItemRequest {
+  string session_id = 1;
+  string product_id = 2;
+  string name = 3;
+  int64 price_cents = 4;
+  string currency = 5;
+  string image_url = 6;
+  int32 quantity = 7;
+}
+
+message UpdateItemRequest {
+  string session_id = 1;
+  string product_id = 2;
+  int32 quantity = 3;
+}
+
+message RemoveItemRequest {
+  string session_id = 1;
+  string product_id = 2;
+}
+
+message ClearCartRequest {
+  string session_id = 1;
+}

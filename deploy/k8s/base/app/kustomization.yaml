@@ -3,6 +3,7 @@ kind: Kustomization
 resources:
   - greeter.yaml
   - catalog.yaml
+  - cart.yaml
   - rbac.yaml
 configMapGenerator:
   - name: greeter-config

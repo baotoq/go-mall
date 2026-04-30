@@ -1,0 +1,61 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: cart
+spec:
+  ports:
+    - name: http
+      port: 8000
+    - name: grpc
+      port: 9000
+  selector:
+    app: cart
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cart
+spec:
+  selector:
+    matchLabels:
+      app: cart
+  template:
+    metadata:
+      labels:
+        app: cart
+      annotations:
+        dapr.io/enabled: "true"
+        dapr.io/app-id: "cart"
+        dapr.io/log-as-json: "true"
+    spec:
+      containers:
+        - name: cart
+          image: cart
+          ports:
+            - containerPort: 8000
+            - containerPort: 9000
+          volumeMounts:
+            - name: config
+              mountPath: /data/conf
+      volumes:
+        - name: config
+          configMap:
+            name: cart-config
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cart-config
+data:
+  config.yaml: |
+    server:
+      http:
+        addr: 0.0.0.0:8000
+        timeout: 200s
+      grpc:
+        addr: 0.0.0.0:9000
+        timeout: 200s
+    data:
+      database:
+        driver: postgres
+        source: ""

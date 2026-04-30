@@ -1,7 +1,7 @@
 syntax = "proto3";
-package catalog.conf;
+package cart.conf;
 
-option go_package = "greeter/app/catalog/internal/conf;conf";
+option go_package = "gomall/app/cart/internal/conf;conf";
 
 import "google/protobuf/duration.proto";
 
@@ -21,12 +21,8 @@ message Server {
     string addr = 2;
     google.protobuf.Duration timeout = 3;
   }
-  message Auth {
-    string secret = 1;
-  }
   HTTP http = 1;
   GRPC grpc = 2;
-  Auth auth = 3;
 }
 
 message Data {
@@ -34,17 +30,5 @@ message Data {
     string driver = 1;
     string source = 2;
   }
-  message Redis {
-    string network = 1;
-    string addr = 2;
-    google.protobuf.Duration read_timeout = 3;
-    google.protobuf.Duration write_timeout = 4;
-  }
-  message Pubsub {
-    string name = 1;
-    string topic = 2;
-  }
   Database database = 1;
-  Redis redis = 2;
-  Pubsub pubsub = 3;
 }

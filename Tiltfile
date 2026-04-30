@@ -15,9 +15,11 @@ if dlv_continue:
 
 entrypoint_greeter = ['sh', '-c', 'exec dlv exec /app/greeter ' + dlv_flags + ' -- -conf /data/conf']
 entrypoint_catalog = ['sh', '-c', 'exec dlv exec /app/catalog ' + dlv_flags + ' -- -conf /data/conf']
+entrypoint_cart = ['sh', '-c', 'exec dlv exec /app/cart ' + dlv_flags + ' -- -conf /data/conf']
 
 compile_greeter = 'mkdir -p dist && GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -gcflags="all=-N -l" -ldflags "-X main.Version=dev" -o ./dist/greeter ./app/greeter/cmd/server'
 compile_catalog = 'mkdir -p dist && GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -gcflags="all=-N -l" -ldflags "-X main.Version=dev" -o ./dist/catalog ./app/catalog/cmd/server'
+compile_cart = 'mkdir -p dist && GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -gcflags="all=-N -l" -ldflags "-X main.Version=dev" -o ./dist/cart ./app/cart/cmd/server'
 
 # Compile locally on every Go source change.
 # Result is synced into the running container — no full image rebuild needed.
@@ -30,6 +32,12 @@ local_resource('compile-greeter',
 local_resource('compile-catalog',
     cmd=compile_catalog,
     deps=['./app/catalog', './api/catalog', 'go.mod', 'go.sum'],
+    labels=['build'],
+)
+
+local_resource('compile-cart',
+    cmd=compile_cart,
+    deps=['./app/cart', './api/cart', 'go.mod', 'go.sum'],
     labels=['build'],
 )
 
@@ -90,6 +98,17 @@ docker_build_with_restart(
     ],
 )
 
+docker_build_with_restart(
+    'cart',
+    '.',
+    entrypoint=entrypoint_cart,
+    dockerfile='app/cart/Dockerfile.dev.debug',
+    only=['./dist'],
+    live_update=[
+        sync('./dist/cart', '/app/cart'),
+    ],
+)
+
 k8s_yaml(helm(
     'deploy/helm',
     name='deps',
@@ -121,5 +140,11 @@ k8s_resource('greeter',
 k8s_resource('catalog',
     port_forwards=['8001:8000', '9001:9000', '2346:2345'],
     resource_deps=['postgres', 'compile-catalog', 'dapr', 'dapr-components'],
+    labels=['app'],
+)
+
+k8s_resource('cart',
+    port_forwards=['8002:8000', '9002:9000', '2347:2345'],
+    resource_deps=['postgres', 'compile-cart', 'dapr', 'dapr-components'],
     labels=['app'],
 )

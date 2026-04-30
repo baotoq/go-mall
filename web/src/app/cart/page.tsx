@@ -1,14 +1,17 @@
 "use client"
 
 import Link from "next/link"
+import { useEffect } from "react"
 import { Trash2, ArrowLeft, ShoppingBag } from "lucide-react"
 import { useCartStore } from "@/store/cart"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
 export default function CartPage() {
-  const { items, removeItem, updateQuantity, totalItems, totalPrice } =
+  const { items, removeItem, updateQuantity, totalItems, totalPrice, loadCart } =
     useCartStore()
+
+  useEffect(() => { loadCart() }, [loadCart])
 
   if (items.length === 0) {
     return (

@@ -1,6 +1,8 @@
 "use client"
 
 import { create } from "zustand"
+import { addCartItem, updateCartItem, removeCartItem, clearCart as clearCartAPI, getCart } from "@/lib/api"
+import type { CartData } from "@/lib/types"
 
 export interface CartItem {
   id: string
@@ -8,6 +10,13 @@ export interface CartItem {
   priceCents: number
   imageUrl: string
   quantity: number
+}
+
+function getSessionId(): string {
+  if (typeof window === "undefined") return "ssr"
+  let id = localStorage.getItem("cart_session_id")
+  if (!id) { id = crypto.randomUUID(); localStorage.setItem("cart_session_id", id) }
+  return id
 }
 
 interface CartStore {
@@ -18,6 +27,8 @@ interface CartStore {
   totalItems: () => number
   totalPrice: () => number
   clearCart: () => void
+  loadCart: () => Promise<void>
+  syncFromBackend: (cart: CartData) => void
 }
 
 export const useCartStore = create<CartStore>((set, get) => ({
@@ -34,9 +45,20 @@ export const useCartStore = create<CartStore>((set, get) => ({
       }
       return { items: [...state.items, { ...item, quantity: 1 }] }
     })
+    const sessionId = getSessionId()
+    addCartItem(sessionId, {
+      productId: item.id,
+      name: item.name,
+      priceCents: item.priceCents,
+      currency: "USD",
+      imageUrl: item.imageUrl,
+      quantity: 1,
+    }).then((cart) => { if (cart) get().syncFromBackend(cart) })
   },
   removeItem: (id) => {
     set((state) => ({ items: state.items.filter((i) => i.id !== id) }))
+    const sessionId = getSessionId()
+    removeCartItem(sessionId, id).then((cart) => { if (cart) get().syncFromBackend(cart) })
   },
   updateQuantity: (id, quantity) => {
     if (quantity <= 0) {
@@ -46,9 +68,31 @@ export const useCartStore = create<CartStore>((set, get) => ({
     set((state) => ({
       items: state.items.map((i) => (i.id === id ? { ...i, quantity } : i)),
     }))
+    const sessionId = getSessionId()
+    updateCartItem(sessionId, id, quantity).then((cart) => { if (cart) get().syncFromBackend(cart) })
   },
   totalItems: () => get().items.reduce((acc, i) => acc + i.quantity, 0),
   totalPrice: () =>
     get().items.reduce((acc, i) => acc + (i.priceCents / 100) * i.quantity, 0),
-  clearCart: () => set({ items: [] }),
+  clearCart: () => {
+    set({ items: [] })
+    const sessionId = getSessionId()
+    clearCartAPI(sessionId)
+  },
+  loadCart: async () => {
+    const sessionId = getSessionId()
+    const cart = await getCart(sessionId)
+    if (cart) get().syncFromBackend(cart)
+  },
+  syncFromBackend: (cart: CartData) => {
+    set({
+      items: cart.items.map((item) => ({
+        id: item.productId,
+        name: item.name,
+        priceCents: item.priceCents,
+        imageUrl: item.imageUrl,
+        quantity: item.quantity,
+      })),
+    })
+  },
 }))

@@ -11,10 +11,12 @@ ifeq ($(GOHOSTOS), windows)
     INTERNAL_PROTO_FILES=$(shell $(Git_Bash) -c "find app -name *.proto -not -path '*/api/*.proto'")
     API_GREETER_PROTO_FILES=$(shell $(Git_Bash) -c "find api/greeter -name *.proto")
     API_CATALOG_PROTO_FILES=$(shell $(Git_Bash) -c "find api/catalog -name *.proto")
+    API_CART_PROTO_FILES=$(shell $(Git_Bash) -c "find api/cart -name *.proto")
 else
     INTERNAL_PROTO_FILES=$(shell find app -name *.proto -not -path "*/api/*.proto")
     API_GREETER_PROTO_FILES=$(shell find api/greeter -name *.proto)
     API_CATALOG_PROTO_FILES=$(shell find api/catalog -name *.proto)
+    API_CART_PROTO_FILES=$(shell find api/cart -name *.proto)
 endif
 
 .PHONY: init
@@ -58,9 +60,20 @@ api-catalog:
 	       --openapi_out=fq_schema_naming=true,default_response=false:app/catalog \
 	       $(API_CATALOG_PROTO_FILES)
 
+.PHONY: api-cart
+# generate cart api proto
+api-cart:
+	protoc --proto_path=./api \
+	       --proto_path=./third_party \
+	       --go_out=paths=source_relative:./api \
+	       --go-http_out=paths=source_relative:./api \
+	       --go-grpc_out=paths=source_relative:./api \
+	       --openapi_out=fq_schema_naming=true,default_response=false:app/cart \
+	       $(API_CART_PROTO_FILES)
+
 .PHONY: api
 # generate all api proto
-api: api-greeter api-catalog
+api: api-greeter api-catalog api-cart
 
 .PHONY: build-greeter
 # build greeter

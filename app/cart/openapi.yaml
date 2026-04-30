@@ -1,0 +1,184 @@
+# Generated with protoc-gen-openapi
+# https://github.com/google/gnostic/tree/master/cmd/protoc-gen-openapi
+
+openapi: 3.0.3
+info:
+    title: CartService API
+    version: 0.0.1
+paths:
+    /v1/carts/{sessionId}:
+        get:
+            tags:
+                - CartService
+            operationId: CartService_GetCart
+            parameters:
+                - name: sessionId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/cart.v1.Cart'
+        delete:
+            tags:
+                - CartService
+            operationId: CartService_ClearCart
+            parameters:
+                - name: sessionId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content: {}
+    /v1/carts/{sessionId}/items:
+        post:
+            tags:
+                - CartService
+            operationId: CartService_AddItem
+            parameters:
+                - name: sessionId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/cart.v1.AddItemRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/cart.v1.Cart'
+    /v1/carts/{sessionId}/items/{productId}:
+        put:
+            tags:
+                - CartService
+            operationId: CartService_UpdateItem
+            parameters:
+                - name: sessionId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                - name: productId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/cart.v1.UpdateItemRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/cart.v1.Cart'
+        delete:
+            tags:
+                - CartService
+            operationId: CartService_RemoveItem
+            parameters:
+                - name: sessionId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                - name: productId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/cart.v1.Cart'
+components:
+    schemas:
+        cart.v1.AddItemRequest:
+            type: object
+            properties:
+                sessionId:
+                    type: string
+                productId:
+                    type: string
+                name:
+                    type: string
+                priceCents:
+                    type: string
+                currency:
+                    type: string
+                imageUrl:
+                    type: string
+                quantity:
+                    type: integer
+                    format: int32
+        cart.v1.Cart:
+            type: object
+            properties:
+                id:
+                    type: string
+                sessionId:
+                    type: string
+                items:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/cart.v1.CartItem'
+                totalCents:
+                    type: string
+                createdAt:
+                    type: string
+                updatedAt:
+                    type: string
+        cart.v1.CartItem:
+            type: object
+            properties:
+                id:
+                    type: string
+                productId:
+                    type: string
+                name:
+                    type: string
+                priceCents:
+                    type: string
+                currency:
+                    type: string
+                imageUrl:
+                    type: string
+                quantity:
+                    type: integer
+                    format: int32
+                subtotalCents:
+                    type: string
+        cart.v1.UpdateItemRequest:
+            type: object
+            properties:
+                sessionId:
+                    type: string
+                productId:
+                    type: string
+                quantity:
+                    type: integer
+                    format: int32
+tags:
+    - name: CartService

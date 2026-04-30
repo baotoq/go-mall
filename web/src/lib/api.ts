@@ -1,4 +1,4 @@
-import type { Category, Product } from "./types"
+import type { Category, CartData, CartItemData, Product } from "./types"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8001"
 
@@ -70,4 +70,79 @@ export async function listCategories(): Promise<Category[]> {
   } catch {
     return []
   }
+}
+
+const CART_API_URL = process.env.NEXT_PUBLIC_CART_API_URL ?? "http://localhost:8002"
+
+function mapCartItem(raw: Record<string, unknown>): CartItemData {
+  return {
+    id: String(raw.id ?? ""),
+    productId: String(raw.product_id ?? ""),
+    name: String(raw.name ?? ""),
+    priceCents: Number(raw.price_cents ?? 0),
+    currency: String(raw.currency ?? "USD"),
+    imageUrl: String(raw.image_url ?? ""),
+    quantity: Number(raw.quantity ?? 0),
+    subtotalCents: Number(raw.subtotal_cents ?? 0),
+  }
+}
+
+function mapCart(raw: Record<string, unknown>): CartData {
+  return {
+    id: String(raw.id ?? ""),
+    sessionId: String(raw.session_id ?? ""),
+    items: ((raw.items ?? []) as Record<string, unknown>[]).map(mapCartItem),
+    totalCents: Number(raw.total_cents ?? 0),
+  }
+}
+
+export async function getCart(sessionId: string): Promise<CartData | null> {
+  try {
+    const res = await fetch(`${CART_API_URL}/v1/carts/${sessionId}`, { cache: "no-store" })
+    if (!res.ok) return null
+    return mapCart(await res.json())
+  } catch { return null }
+}
+
+export async function addCartItem(sessionId: string, item: {
+  productId: string; name: string; priceCents: number; currency: string; imageUrl: string; quantity: number
+}): Promise<CartData | null> {
+  try {
+    const res = await fetch(`${CART_API_URL}/v1/carts/${sessionId}/items`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        product_id: item.productId, name: item.name, price_cents: item.priceCents,
+        currency: item.currency, image_url: item.imageUrl, quantity: item.quantity,
+      }),
+    })
+    if (!res.ok) return null
+    return mapCart(await res.json())
+  } catch { return null }
+}
+
+export async function updateCartItem(sessionId: string, productId: string, quantity: number): Promise<CartData | null> {
+  try {
+    const res = await fetch(`${CART_API_URL}/v1/carts/${sessionId}/items/${productId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ quantity }),
+    })
+    if (!res.ok) return null
+    return mapCart(await res.json())
+  } catch { return null }
+}
+
+export async function removeCartItem(sessionId: string, productId: string): Promise<CartData | null> {
+  try {
+    const res = await fetch(`${CART_API_URL}/v1/carts/${sessionId}/items/${productId}`, { method: "DELETE" })
+    if (!res.ok) return null
+    return mapCart(await res.json())
+  } catch { return null }
+}
+
+export async function clearCart(sessionId: string): Promise<void> {
+  try {
+    await fetch(`${CART_API_URL}/v1/carts/${sessionId}`, { method: "DELETE" })
+  } catch {}
 }
