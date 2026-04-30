@@ -48,6 +48,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   ],
   callbacks: {
     ...authConfig.callbacks,
+    session({ session, token }) {
+      if (token.access_token) session.access_token = token.access_token
+      if (token.error) session.error = token.error
+      return session
+    },
     jwt({ token, user }) {
       if (user) {
         return {

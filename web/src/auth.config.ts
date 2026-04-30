@@ -11,11 +11,6 @@ export const authConfig: NextAuthConfig = {
       if (isCart && !isLoggedIn) return false
       return true
     },
-    session({ session, token }) {
-      if (token.access_token) session.access_token = token.access_token as string
-      if (token.error) session.error = token.error as "RefreshTokenError"
-      return session
-    },
   },
   providers: [],
 }
