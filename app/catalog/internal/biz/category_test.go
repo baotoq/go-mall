@@ -87,3 +87,45 @@ func TestCategoryUsecase_Get_notFound(t *testing.T) {
 	// Assert
 	assert.ErrorIs(t, err, biz.ErrCategoryNotFound)
 }
+
+func TestCategoryUsecase_Update_notFound(t *testing.T) {
+	uc := biz.NewCategoryUsecase(newStubCategoryRepo())
+
+	_, err := uc.Update(context.Background(), &biz.Category{ID: uuid.New(), Name: "x"})
+
+	assert.ErrorIs(t, err, biz.ErrCategoryNotFound)
+}
+
+func TestCategoryUsecase_Update_persists(t *testing.T) {
+	repo := newStubCategoryRepo()
+	uc := biz.NewCategoryUsecase(repo)
+	created, _ := uc.Create(context.Background(), &biz.Category{Name: "old"})
+	created.Name = "new"
+
+	got, err := uc.Update(context.Background(), created)
+
+	require.NoError(t, err)
+	assert.Equal(t, "new", got.Name)
+}
+
+func TestCategoryUsecase_Delete(t *testing.T) {
+	repo := newStubCategoryRepo()
+	uc := biz.NewCategoryUsecase(repo)
+	created, _ := uc.Create(context.Background(), &biz.Category{Name: "x"})
+
+	require.NoError(t, uc.Delete(context.Background(), created.ID))
+	assert.ErrorIs(t, uc.Delete(context.Background(), created.ID), biz.ErrCategoryNotFound)
+}
+
+func TestCategoryUsecase_List(t *testing.T) {
+	repo := newStubCategoryRepo()
+	uc := biz.NewCategoryUsecase(repo)
+	for i := 0; i < 2; i++ {
+		_, _ = uc.Create(context.Background(), &biz.Category{Name: "c"})
+	}
+
+	res, err := uc.List(context.Background(), biz.ListCategoriesFilter{Page: 1, PageSize: 10})
+
+	require.NoError(t, err)
+	assert.Equal(t, int64(2), res.Total)
+}
