@@ -84,6 +84,10 @@ ent ORM with PostgreSQL (`lib/pq` driver). Schema lives in `internal/data/ent/sc
 
 Port forwards: HTTP `8000`, gRPC `9000`, Delve `2345`, Postgres `5432`, Redis `6379`, pgAdmin `5050`.
 
+## Testing
+
+Write tests after implementation. Do not write maintenance-heavy tests (no exhaustive mocks, no tests that re-assert framework behavior, no tests that break on every refactor). Test behavior, not implementation.
+
 ### Proto conventions
 
 - API protos: `api/<app>/<domain>/v<N>/<name>.proto` → `make api`
