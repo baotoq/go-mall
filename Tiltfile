@@ -120,7 +120,36 @@ k8s_yaml(kustomize('deploy/k8s/overlays/debug', flags=['--load-restrictor=LoadRe
 k8s_resource('postgres', port_forwards=['5432:5432'], labels=['infra'])
 k8s_resource('redis',    port_forwards=['6379:6379'], labels=['infra'])
 k8s_resource('pgadmin',  port_forwards=['5050:80'],   labels=['infra'], resource_deps=['postgres'])
-k8s_resource('keycloak', port_forwards=['8080:8080'], labels=['infra'])
+
+# Keycloak
+local_resource(
+    'keycloak-namespace',
+    cmd='kubectl apply -f deploy/k8s/base/infra/keycloak/namespace.yaml',
+    labels=['infra'],
+)
+
+local_resource(
+    'keycloak-secret',
+    cmd='kubectl apply -f deploy/k8s/base/infra/keycloak/secret.yaml',
+    deps=['deploy/k8s/base/infra/keycloak/secret.yaml'],
+    resource_deps=['keycloak-namespace'],
+    labels=['infra'],
+)
+
+helm_resource(
+    'keycloak',
+    'oci://registry-1.docker.io/bitnamicharts/keycloak',
+    namespace='keycloak',
+    flags=[
+        '--version=24.0.6',
+        '--set=auth.adminUser=admin',
+        '--set=auth.adminPassword=admin',
+        '--set=postgresql.enabled=true',
+    ],
+    resource_deps=['keycloak-namespace', 'keycloak-secret'],
+    labels=['infra'],
+    port_forwards=['8080:80'],
+)
 
 k8s_resource(
     objects=[
