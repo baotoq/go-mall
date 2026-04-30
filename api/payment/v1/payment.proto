@@ -1,0 +1,76 @@
+syntax = "proto3";
+
+package payment.v1;
+
+import "google/api/annotations.proto";
+
+option go_package = "gomall/api/payment/v1;v1";
+
+service PaymentService {
+  rpc CreatePayment(CreatePaymentRequest) returns (Payment) {
+    option (google.api.http) = {
+      post: "/v1/payments"
+      body: "*"
+    };
+  }
+  rpc GetPayment(GetPaymentRequest) returns (Payment) {
+    option (google.api.http) = {get: "/v1/payments/{id}"};
+  }
+  rpc ListPayments(ListPaymentsRequest) returns (ListPaymentsResponse) {
+    option (google.api.http) = {get: "/v1/payments"};
+  }
+  rpc RefundPayment(RefundPaymentRequest) returns (Payment) {
+    option (google.api.http) = {
+      post: "/v1/payments/{id}/refund"
+      body: "*"
+    };
+  }
+}
+
+enum PaymentStatus {
+  PAYMENT_STATUS_UNSPECIFIED = 0;
+  PENDING = 1;
+  COMPLETED = 2;
+  FAILED = 3;
+  REFUNDED = 4;
+}
+
+message Payment {
+  string id = 1;
+  string order_id = 2;
+  string user_id = 3;
+  int64 amount_cents = 4;
+  string currency = 5;
+  PaymentStatus status = 6;
+  string provider = 7;
+  string created_at = 8;
+  string updated_at = 9;
+}
+
+message CreatePaymentRequest {
+  string order_id = 1;
+  string user_id = 2;
+  int64 amount_cents = 3;
+  string currency = 4;
+  string provider = 5;
+}
+
+message GetPaymentRequest {
+  string id = 1;
+}
+
+message ListPaymentsRequest {
+  string user_id = 1;
+  string order_id = 2;
+  int32 page_size = 3;
+  int32 page = 4;
+}
+
+message ListPaymentsResponse {
+  repeated Payment payments = 1;
+  int32 total = 2;
+}
+
+message RefundPaymentRequest {
+  string id = 1;
+}

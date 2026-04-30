@@ -16,10 +16,12 @@ if dlv_continue:
 entrypoint_greeter = ['sh', '-c', 'exec dlv exec /app/greeter ' + dlv_flags + ' -- -conf /data/conf']
 entrypoint_catalog = ['sh', '-c', 'exec dlv exec /app/catalog ' + dlv_flags + ' -- -conf /data/conf']
 entrypoint_cart = ['sh', '-c', 'exec dlv exec /app/cart ' + dlv_flags + ' -- -conf /data/conf']
+entrypoint_payment = ['sh', '-c', 'exec dlv exec /app/payment ' + dlv_flags + ' -- -conf /data/conf']
 
 compile_greeter = 'mkdir -p dist && GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -gcflags="all=-N -l" -ldflags "-X main.Version=dev" -o ./dist/greeter ./app/greeter/cmd/server'
 compile_catalog = 'mkdir -p dist && GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -gcflags="all=-N -l" -ldflags "-X main.Version=dev" -o ./dist/catalog ./app/catalog/cmd/server'
 compile_cart = 'mkdir -p dist && GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -gcflags="all=-N -l" -ldflags "-X main.Version=dev" -o ./dist/cart ./app/cart/cmd/server'
+compile_payment = 'mkdir -p dist && GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -gcflags="all=-N -l" -ldflags "-X main.Version=dev" -o ./dist/payment ./app/payment/cmd/server'
 
 # Compile locally on every Go source change.
 # Result is synced into the running container — no full image rebuild needed.
@@ -38,6 +40,12 @@ local_resource('compile-catalog',
 local_resource('compile-cart',
     cmd=compile_cart,
     deps=['./app/cart', './api/cart', 'go.mod', 'go.sum'],
+    labels=['build'],
+)
+
+local_resource('compile-payment',
+    cmd=compile_payment,
+    deps=['./app/payment', './api/payment', 'go.mod', 'go.sum'],
     labels=['build'],
 )
 
@@ -109,6 +117,17 @@ docker_build_with_restart(
     ],
 )
 
+docker_build_with_restart(
+    'payment',
+    '.',
+    entrypoint=entrypoint_payment,
+    dockerfile='app/payment/Dockerfile.dev.debug',
+    only=['./dist'],
+    live_update=[
+        sync('./dist/payment', '/app/payment'),
+    ],
+)
+
 k8s_yaml(helm(
     'deploy/helm',
     name='deps',
@@ -176,5 +195,11 @@ k8s_resource('catalog',
 k8s_resource('cart',
     port_forwards=['8002:8000', '9002:9000', '2347:2345'],
     resource_deps=['postgres', 'compile-cart', 'dapr', 'dapr-components'],
+    labels=['app'],
+)
+
+k8s_resource('payment',
+    port_forwards=['8003:8000', '9003:9000', '2348:2345'],
+    resource_deps=['postgres', 'compile-payment', 'dapr', 'dapr-components'],
     labels=['app'],
 )
