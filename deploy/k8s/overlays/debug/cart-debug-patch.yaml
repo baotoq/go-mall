@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cart
+spec:
+  template:
+    spec:
+      containers:
+        - name: cart
+          ports:
+            - containerPort: 8000
+            - containerPort: 9000
+            - containerPort: 2345
+              name: dlv
+          readinessProbe: null
+          livenessProbe: null
+          securityContext:
+            capabilities:
+              add: ["SYS_PTRACE"]

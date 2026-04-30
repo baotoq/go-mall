@@ -7,11 +7,11 @@ patches:
     target:
       kind: Deployment
       name: greeter
-  - path: greeter-svc-debug-patch.yaml
-    target:
-      kind: Service
-      name: greeter
   - path: catalog-debug-patch.yaml
     target:
       kind: Deployment
       name: catalog
+  - path: cart-debug-patch.yaml
+    target:
+      kind: Deployment
+      name: cart
