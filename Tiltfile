@@ -104,7 +104,7 @@ k8s_yaml(kustomize('deploy/k8s/overlays/debug', flags=['--load-restrictor=LoadRe
 k8s_resource('postgres', port_forwards=['5432:5432'], labels=['infra'])
 k8s_resource('redis',    port_forwards=['6379:6379'], labels=['infra'])
 k8s_resource('pgadmin',  port_forwards=['5050:80'],   labels=['infra'], resource_deps=['postgres'])
-k8s_resource('keycloak', port_forwards=['8080:80'],   labels=['infra'])
+k8s_resource('keycloak', port_forwards=['8080:8080'], labels=['infra'])
 
 k8s_resource(
     objects=[
