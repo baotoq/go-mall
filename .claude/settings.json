@@ -35,7 +35,8 @@
     "feature-dev@claude-plugins-official": true,
     "andrej-karpathy-skills@karpathy-skills": true,
     "sourcegraph@claude-plugins-official": true,
-    "remember@claude-plugins-official": true
+    "remember@claude-plugins-official": true,
+    "oh-my-claudecode@omc": true
   },
   "skipDangerousModePermissionPrompt": true
 }
