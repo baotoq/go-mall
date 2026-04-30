@@ -83,7 +83,7 @@ generate:
 	go mod tidy
 
 .PHONY: dev
-# start dev environment with tilt
+# start dev environment, Delve starts immediately
 dev:
 	tilt up -- --continue
 
