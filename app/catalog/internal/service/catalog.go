@@ -15,10 +15,11 @@ type CatalogService struct {
 	v1.UnimplementedCatalogServiceServer
 	puc *biz.ProductUsecase
 	cuc *biz.CategoryUsecase
+	ruc *biz.ReservationUsecase
 }
 
-func NewCatalogService(puc *biz.ProductUsecase, cuc *biz.CategoryUsecase) *CatalogService {
-	return &CatalogService{puc: puc, cuc: cuc}
+func NewCatalogService(puc *biz.ProductUsecase, cuc *biz.CategoryUsecase, ruc *biz.ReservationUsecase) *CatalogService {
+	return &CatalogService{puc: puc, cuc: cuc, ruc: ruc}
 }
 
 var validSorts = map[string]bool{"": true, "price_asc": true, "price_desc": true, "created_desc": true}
@@ -258,5 +259,95 @@ func bizToCategory(c *biz.Category) *v1.Category {
 		Description: c.Description,
 		CreatedAt:   c.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
 		UpdatedAt:   c.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
+	}
+}
+
+func (s *CatalogService) ReserveStock(ctx context.Context, req *v1.ReserveStockRequest) (*v1.ReserveStockResponse, error) {
+	cartID, err := uuid.Parse(req.CartId)
+	if err != nil {
+		return nil, errors.BadRequest(v1.ErrorReason_INVALID_ARGUMENT.String(), "invalid cart_id")
+	}
+	productID, err := uuid.Parse(req.ProductId)
+	if err != nil {
+		return nil, errors.BadRequest(v1.ErrorReason_INVALID_ARGUMENT.String(), "invalid product_id")
+	}
+	if req.Quantity <= 0 {
+		return nil, errors.BadRequest(v1.ErrorReason_INVALID_ARGUMENT.String(), "quantity must be positive")
+	}
+	r, err := s.ruc.Reserve(ctx, cartID, productID, int(req.Quantity))
+	if err != nil {
+		return nil, err
+	}
+	return &v1.ReserveStockResponse{Reservation: bizToReservation(r)}, nil
+}
+
+func (s *CatalogService) ReleaseStock(ctx context.Context, req *v1.ReleaseStockRequest) (*emptypb.Empty, error) {
+	cartID, err := uuid.Parse(req.CartId)
+	if err != nil {
+		return nil, errors.BadRequest(v1.ErrorReason_INVALID_ARGUMENT.String(), "invalid cart_id")
+	}
+	productID, err := uuid.Parse(req.ProductId)
+	if err != nil {
+		return nil, errors.BadRequest(v1.ErrorReason_INVALID_ARGUMENT.String(), "invalid product_id")
+	}
+	if err := s.ruc.Release(ctx, cartID, productID); err != nil {
+		return nil, err
+	}
+	return &emptypb.Empty{}, nil
+}
+
+func (s *CatalogService) AdjustReservation(ctx context.Context, req *v1.AdjustReservationRequest) (*v1.ReserveStockResponse, error) {
+	cartID, err := uuid.Parse(req.CartId)
+	if err != nil {
+		return nil, errors.BadRequest(v1.ErrorReason_INVALID_ARGUMENT.String(), "invalid cart_id")
+	}
+	productID, err := uuid.Parse(req.ProductId)
+	if err != nil {
+		return nil, errors.BadRequest(v1.ErrorReason_INVALID_ARGUMENT.String(), "invalid product_id")
+	}
+	if req.Quantity <= 0 {
+		return nil, errors.BadRequest(v1.ErrorReason_INVALID_ARGUMENT.String(), "quantity must be positive")
+	}
+	r, err := s.ruc.Adjust(ctx, cartID, productID, int(req.Quantity))
+	if err != nil {
+		return nil, err
+	}
+	return &v1.ReserveStockResponse{Reservation: bizToReservation(r)}, nil
+}
+
+func (s *CatalogService) CommitReservation(ctx context.Context, req *v1.CommitReservationRequest) (*emptypb.Empty, error) {
+	cartID, err := uuid.Parse(req.CartId)
+	if err != nil {
+		return nil, errors.BadRequest(v1.ErrorReason_INVALID_ARGUMENT.String(), "invalid cart_id")
+	}
+	productID, err := uuid.Parse(req.ProductId)
+	if err != nil {
+		return nil, errors.BadRequest(v1.ErrorReason_INVALID_ARGUMENT.String(), "invalid product_id")
+	}
+	if err := s.ruc.Commit(ctx, cartID, productID); err != nil {
+		return nil, err
+	}
+	return &emptypb.Empty{}, nil
+}
+
+func (s *CatalogService) ReleaseAllReservations(ctx context.Context, req *v1.ReleaseAllReservationsRequest) (*emptypb.Empty, error) {
+	cartID, err := uuid.Parse(req.CartId)
+	if err != nil {
+		return nil, errors.BadRequest(v1.ErrorReason_INVALID_ARGUMENT.String(), "invalid cart_id")
+	}
+	if err := s.ruc.ReleaseAll(ctx, cartID); err != nil {
+		return nil, err
+	}
+	return &emptypb.Empty{}, nil
+}
+
+func bizToReservation(r *biz.Reservation) *v1.Reservation {
+	return &v1.Reservation{
+		Id:        r.ID.String(),
+		CartId:    r.CartID.String(),
+		ProductId: r.ProductID.String(),
+		Quantity:  int32(r.Quantity),
+		Status:    string(r.Status),
+		ExpiresAt: r.ExpiresAt.Format("2006-01-02T15:04:05Z07:00"),
 	}
 }

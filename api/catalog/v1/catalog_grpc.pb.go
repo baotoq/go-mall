@@ -20,16 +20,21 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	CatalogService_ListProducts_FullMethodName   = "/catalog.v1.CatalogService/ListProducts"
-	CatalogService_GetProduct_FullMethodName     = "/catalog.v1.CatalogService/GetProduct"
-	CatalogService_CreateProduct_FullMethodName  = "/catalog.v1.CatalogService/CreateProduct"
-	CatalogService_UpdateProduct_FullMethodName  = "/catalog.v1.CatalogService/UpdateProduct"
-	CatalogService_DeleteProduct_FullMethodName  = "/catalog.v1.CatalogService/DeleteProduct"
-	CatalogService_ListCategories_FullMethodName = "/catalog.v1.CatalogService/ListCategories"
-	CatalogService_GetCategory_FullMethodName    = "/catalog.v1.CatalogService/GetCategory"
-	CatalogService_CreateCategory_FullMethodName = "/catalog.v1.CatalogService/CreateCategory"
-	CatalogService_UpdateCategory_FullMethodName = "/catalog.v1.CatalogService/UpdateCategory"
-	CatalogService_DeleteCategory_FullMethodName = "/catalog.v1.CatalogService/DeleteCategory"
+	CatalogService_ListProducts_FullMethodName           = "/catalog.v1.CatalogService/ListProducts"
+	CatalogService_GetProduct_FullMethodName             = "/catalog.v1.CatalogService/GetProduct"
+	CatalogService_CreateProduct_FullMethodName          = "/catalog.v1.CatalogService/CreateProduct"
+	CatalogService_UpdateProduct_FullMethodName          = "/catalog.v1.CatalogService/UpdateProduct"
+	CatalogService_DeleteProduct_FullMethodName          = "/catalog.v1.CatalogService/DeleteProduct"
+	CatalogService_ListCategories_FullMethodName         = "/catalog.v1.CatalogService/ListCategories"
+	CatalogService_GetCategory_FullMethodName            = "/catalog.v1.CatalogService/GetCategory"
+	CatalogService_CreateCategory_FullMethodName         = "/catalog.v1.CatalogService/CreateCategory"
+	CatalogService_UpdateCategory_FullMethodName         = "/catalog.v1.CatalogService/UpdateCategory"
+	CatalogService_DeleteCategory_FullMethodName         = "/catalog.v1.CatalogService/DeleteCategory"
+	CatalogService_ReserveStock_FullMethodName           = "/catalog.v1.CatalogService/ReserveStock"
+	CatalogService_ReleaseStock_FullMethodName           = "/catalog.v1.CatalogService/ReleaseStock"
+	CatalogService_AdjustReservation_FullMethodName      = "/catalog.v1.CatalogService/AdjustReservation"
+	CatalogService_CommitReservation_FullMethodName      = "/catalog.v1.CatalogService/CommitReservation"
+	CatalogService_ReleaseAllReservations_FullMethodName = "/catalog.v1.CatalogService/ReleaseAllReservations"
 )
 
 // CatalogServiceClient is the client API for CatalogService service.
@@ -46,6 +51,11 @@ type CatalogServiceClient interface {
 	CreateCategory(ctx context.Context, in *CreateCategoryRequest, opts ...grpc.CallOption) (*Category, error)
 	UpdateCategory(ctx context.Context, in *UpdateCategoryRequest, opts ...grpc.CallOption) (*Category, error)
 	DeleteCategory(ctx context.Context, in *DeleteCategoryRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	ReserveStock(ctx context.Context, in *ReserveStockRequest, opts ...grpc.CallOption) (*ReserveStockResponse, error)
+	ReleaseStock(ctx context.Context, in *ReleaseStockRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	AdjustReservation(ctx context.Context, in *AdjustReservationRequest, opts ...grpc.CallOption) (*ReserveStockResponse, error)
+	CommitReservation(ctx context.Context, in *CommitReservationRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	ReleaseAllReservations(ctx context.Context, in *ReleaseAllReservationsRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type catalogServiceClient struct {
@@ -156,6 +166,56 @@ func (c *catalogServiceClient) DeleteCategory(ctx context.Context, in *DeleteCat
 	return out, nil
 }
 
+func (c *catalogServiceClient) ReserveStock(ctx context.Context, in *ReserveStockRequest, opts ...grpc.CallOption) (*ReserveStockResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ReserveStockResponse)
+	err := c.cc.Invoke(ctx, CatalogService_ReserveStock_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *catalogServiceClient) ReleaseStock(ctx context.Context, in *ReleaseStockRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, CatalogService_ReleaseStock_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *catalogServiceClient) AdjustReservation(ctx context.Context, in *AdjustReservationRequest, opts ...grpc.CallOption) (*ReserveStockResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ReserveStockResponse)
+	err := c.cc.Invoke(ctx, CatalogService_AdjustReservation_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *catalogServiceClient) CommitReservation(ctx context.Context, in *CommitReservationRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, CatalogService_CommitReservation_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *catalogServiceClient) ReleaseAllReservations(ctx context.Context, in *ReleaseAllReservationsRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, CatalogService_ReleaseAllReservations_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // CatalogServiceServer is the server API for CatalogService service.
 // All implementations must embed UnimplementedCatalogServiceServer
 // for forward compatibility.
@@ -170,6 +230,11 @@ type CatalogServiceServer interface {
 	CreateCategory(context.Context, *CreateCategoryRequest) (*Category, error)
 	UpdateCategory(context.Context, *UpdateCategoryRequest) (*Category, error)
 	DeleteCategory(context.Context, *DeleteCategoryRequest) (*emptypb.Empty, error)
+	ReserveStock(context.Context, *ReserveStockRequest) (*ReserveStockResponse, error)
+	ReleaseStock(context.Context, *ReleaseStockRequest) (*emptypb.Empty, error)
+	AdjustReservation(context.Context, *AdjustReservationRequest) (*ReserveStockResponse, error)
+	CommitReservation(context.Context, *CommitReservationRequest) (*emptypb.Empty, error)
+	ReleaseAllReservations(context.Context, *ReleaseAllReservationsRequest) (*emptypb.Empty, error)
 	mustEmbedUnimplementedCatalogServiceServer()
 }
 
@@ -209,6 +274,21 @@ func (UnimplementedCatalogServiceServer) UpdateCategory(context.Context, *Update
 }
 func (UnimplementedCatalogServiceServer) DeleteCategory(context.Context, *DeleteCategoryRequest) (*emptypb.Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method DeleteCategory not implemented")
+}
+func (UnimplementedCatalogServiceServer) ReserveStock(context.Context, *ReserveStockRequest) (*ReserveStockResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ReserveStock not implemented")
+}
+func (UnimplementedCatalogServiceServer) ReleaseStock(context.Context, *ReleaseStockRequest) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method ReleaseStock not implemented")
+}
+func (UnimplementedCatalogServiceServer) AdjustReservation(context.Context, *AdjustReservationRequest) (*ReserveStockResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method AdjustReservation not implemented")
+}
+func (UnimplementedCatalogServiceServer) CommitReservation(context.Context, *CommitReservationRequest) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method CommitReservation not implemented")
+}
+func (UnimplementedCatalogServiceServer) ReleaseAllReservations(context.Context, *ReleaseAllReservationsRequest) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method ReleaseAllReservations not implemented")
 }
 func (UnimplementedCatalogServiceServer) mustEmbedUnimplementedCatalogServiceServer() {}
 func (UnimplementedCatalogServiceServer) testEmbeddedByValue()                        {}
@@ -411,6 +491,96 @@ func _CatalogService_DeleteCategory_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CatalogService_ReserveStock_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReserveStockRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CatalogServiceServer).ReserveStock(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CatalogService_ReserveStock_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CatalogServiceServer).ReserveStock(ctx, req.(*ReserveStockRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CatalogService_ReleaseStock_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReleaseStockRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CatalogServiceServer).ReleaseStock(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CatalogService_ReleaseStock_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CatalogServiceServer).ReleaseStock(ctx, req.(*ReleaseStockRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CatalogService_AdjustReservation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AdjustReservationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CatalogServiceServer).AdjustReservation(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CatalogService_AdjustReservation_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CatalogServiceServer).AdjustReservation(ctx, req.(*AdjustReservationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CatalogService_CommitReservation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CommitReservationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CatalogServiceServer).CommitReservation(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CatalogService_CommitReservation_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CatalogServiceServer).CommitReservation(ctx, req.(*CommitReservationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CatalogService_ReleaseAllReservations_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReleaseAllReservationsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CatalogServiceServer).ReleaseAllReservations(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CatalogService_ReleaseAllReservations_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CatalogServiceServer).ReleaseAllReservations(ctx, req.(*ReleaseAllReservationsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // CatalogService_ServiceDesc is the grpc.ServiceDesc for CatalogService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -457,6 +627,26 @@ var CatalogService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteCategory",
 			Handler:    _CatalogService_DeleteCategory_Handler,
+		},
+		{
+			MethodName: "ReserveStock",
+			Handler:    _CatalogService_ReserveStock_Handler,
+		},
+		{
+			MethodName: "ReleaseStock",
+			Handler:    _CatalogService_ReleaseStock_Handler,
+		},
+		{
+			MethodName: "AdjustReservation",
+			Handler:    _CatalogService_AdjustReservation_Handler,
+		},
+		{
+			MethodName: "CommitReservation",
+			Handler:    _CatalogService_CommitReservation_Handler,
+		},
+		{
+			MethodName: "ReleaseAllReservations",
+			Handler:    _CatalogService_ReleaseAllReservations_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

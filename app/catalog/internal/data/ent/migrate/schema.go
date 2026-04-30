@@ -59,10 +59,45 @@ var (
 			},
 		},
 	}
+	// StockReservationsColumns holds the columns for the "stock_reservations" table.
+	StockReservationsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "cart_id", Type: field.TypeUUID},
+		{Name: "product_id", Type: field.TypeUUID},
+		{Name: "quantity", Type: field.TypeInt},
+		{Name: "status", Type: field.TypeEnum, Enums: []string{"ACTIVE", "RELEASED", "EXPIRED", "COMMITTED"}, Default: "ACTIVE"},
+		{Name: "expires_at", Type: field.TypeTime},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+	}
+	// StockReservationsTable holds the schema information for the "stock_reservations" table.
+	StockReservationsTable = &schema.Table{
+		Name:       "stock_reservations",
+		Columns:    StockReservationsColumns,
+		PrimaryKey: []*schema.Column{StockReservationsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "stockreservation_cart_id_product_id_status",
+				Unique:  false,
+				Columns: []*schema.Column{StockReservationsColumns[1], StockReservationsColumns[2], StockReservationsColumns[4]},
+			},
+			{
+				Name:    "stockreservation_product_id_status",
+				Unique:  false,
+				Columns: []*schema.Column{StockReservationsColumns[2], StockReservationsColumns[4]},
+			},
+			{
+				Name:    "stockreservation_expires_at_status",
+				Unique:  false,
+				Columns: []*schema.Column{StockReservationsColumns[5], StockReservationsColumns[4]},
+			},
+		},
+	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
 		CategoriesTable,
 		ProductsTable,
+		StockReservationsTable,
 	}
 )
 

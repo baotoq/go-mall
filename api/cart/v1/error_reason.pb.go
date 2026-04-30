@@ -28,6 +28,7 @@ const (
 	ErrorReason_CART_NOT_FOUND   ErrorReason = 1
 	ErrorReason_ITEM_NOT_FOUND   ErrorReason = 2
 	ErrorReason_INVALID_ARGUMENT ErrorReason = 3
+	ErrorReason_OUT_OF_STOCK     ErrorReason = 4
 )
 
 // Enum value maps for ErrorReason.
@@ -37,12 +38,14 @@ var (
 		1: "CART_NOT_FOUND",
 		2: "ITEM_NOT_FOUND",
 		3: "INVALID_ARGUMENT",
+		4: "OUT_OF_STOCK",
 	}
 	ErrorReason_value = map[string]int32{
 		"ER_UNSPECIFIED":   0,
 		"CART_NOT_FOUND":   1,
 		"ITEM_NOT_FOUND":   2,
 		"INVALID_ARGUMENT": 3,
+		"OUT_OF_STOCK":     4,
 	}
 )
 
@@ -77,12 +80,13 @@ var File_cart_v1_error_reason_proto protoreflect.FileDescriptor
 
 const file_cart_v1_error_reason_proto_rawDesc = "" +
 	"\n" +
-	"\x1acart/v1/error_reason.proto\x12\acart.v1*_\n" +
+	"\x1acart/v1/error_reason.proto\x12\acart.v1*q\n" +
 	"\vErrorReason\x12\x12\n" +
 	"\x0eER_UNSPECIFIED\x10\x00\x12\x12\n" +
 	"\x0eCART_NOT_FOUND\x10\x01\x12\x12\n" +
 	"\x0eITEM_NOT_FOUND\x10\x02\x12\x14\n" +
-	"\x10INVALID_ARGUMENT\x10\x03B\x18Z\x16greeter/api/cart/v1;v1b\x06proto3"
+	"\x10INVALID_ARGUMENT\x10\x03\x12\x10\n" +
+	"\fOUT_OF_STOCK\x10\x04B\x18Z\x16greeter/api/cart/v1;v1b\x06proto3"
 
 var (
 	file_cart_v1_error_reason_proto_rawDescOnce sync.Once

@@ -30,5 +30,10 @@ message Data {
     string driver = 1;
     string source = 2;
   }
+  message CatalogService {
+    string addr = 1;
+    google.protobuf.Duration timeout = 2;
+  }
   Database database = 1;
+  CatalogService catalog_service = 2;
 }

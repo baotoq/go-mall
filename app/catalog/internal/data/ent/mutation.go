@@ -9,6 +9,7 @@ import (
 	"gomall/app/catalog/internal/data/ent/category"
 	"gomall/app/catalog/internal/data/ent/predicate"
 	"gomall/app/catalog/internal/data/ent/product"
+	"gomall/app/catalog/internal/data/ent/stockreservation"
 	"sync"
 	"time"
 
@@ -26,8 +27,9 @@ const (
 	OpUpdateOne = ent.OpUpdateOne
 
 	// Node types.
-	TypeCategory = "Category"
-	TypeProduct  = "Product"
+	TypeCategory         = "Category"
+	TypeProduct          = "Product"
+	TypeStockReservation = "StockReservation"
 )
 
 // CategoryMutation represents an operation that mutates the Category nodes in the graph.
@@ -1746,4 +1748,696 @@ func (m *ProductMutation) ResetEdge(name string) error {
 		return nil
 	}
 	return fmt.Errorf("unknown Product edge %s", name)
+}
+
+// StockReservationMutation represents an operation that mutates the StockReservation nodes in the graph.
+type StockReservationMutation struct {
+	config
+	op            Op
+	typ           string
+	id            *uuid.UUID
+	cart_id       *uuid.UUID
+	product_id    *uuid.UUID
+	quantity      *int
+	addquantity   *int
+	status        *stockreservation.Status
+	expires_at    *time.Time
+	created_at    *time.Time
+	updated_at    *time.Time
+	clearedFields map[string]struct{}
+	done          bool
+	oldValue      func(context.Context) (*StockReservation, error)
+	predicates    []predicate.StockReservation
+}
+
+var _ ent.Mutation = (*StockReservationMutation)(nil)
+
+// stockreservationOption allows management of the mutation configuration using functional options.
+type stockreservationOption func(*StockReservationMutation)
+
+// newStockReservationMutation creates new mutation for the StockReservation entity.
+func newStockReservationMutation(c config, op Op, opts ...stockreservationOption) *StockReservationMutation {
+	m := &StockReservationMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeStockReservation,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withStockReservationID sets the ID field of the mutation.
+func withStockReservationID(id uuid.UUID) stockreservationOption {
+	return func(m *StockReservationMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *StockReservation
+		)
+		m.oldValue = func(ctx context.Context) (*StockReservation, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().StockReservation.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withStockReservation sets the old StockReservation of the mutation.
+func withStockReservation(node *StockReservation) stockreservationOption {
+	return func(m *StockReservationMutation) {
+		m.oldValue = func(context.Context) (*StockReservation, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m StockReservationMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m StockReservationMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of StockReservation entities.
+func (m *StockReservationMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *StockReservationMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *StockReservationMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().StockReservation.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCartID sets the "cart_id" field.
+func (m *StockReservationMutation) SetCartID(u uuid.UUID) {
+	m.cart_id = &u
+}
+
+// CartID returns the value of the "cart_id" field in the mutation.
+func (m *StockReservationMutation) CartID() (r uuid.UUID, exists bool) {
+	v := m.cart_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCartID returns the old "cart_id" field's value of the StockReservation entity.
+// If the StockReservation object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *StockReservationMutation) OldCartID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCartID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCartID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCartID: %w", err)
+	}
+	return oldValue.CartID, nil
+}
+
+// ResetCartID resets all changes to the "cart_id" field.
+func (m *StockReservationMutation) ResetCartID() {
+	m.cart_id = nil
+}
+
+// SetProductID sets the "product_id" field.
+func (m *StockReservationMutation) SetProductID(u uuid.UUID) {
+	m.product_id = &u
+}
+
+// ProductID returns the value of the "product_id" field in the mutation.
+func (m *StockReservationMutation) ProductID() (r uuid.UUID, exists bool) {
+	v := m.product_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldProductID returns the old "product_id" field's value of the StockReservation entity.
+// If the StockReservation object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *StockReservationMutation) OldProductID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldProductID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldProductID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldProductID: %w", err)
+	}
+	return oldValue.ProductID, nil
+}
+
+// ResetProductID resets all changes to the "product_id" field.
+func (m *StockReservationMutation) ResetProductID() {
+	m.product_id = nil
+}
+
+// SetQuantity sets the "quantity" field.
+func (m *StockReservationMutation) SetQuantity(i int) {
+	m.quantity = &i
+	m.addquantity = nil
+}
+
+// Quantity returns the value of the "quantity" field in the mutation.
+func (m *StockReservationMutation) Quantity() (r int, exists bool) {
+	v := m.quantity
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldQuantity returns the old "quantity" field's value of the StockReservation entity.
+// If the StockReservation object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *StockReservationMutation) OldQuantity(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldQuantity is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldQuantity requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldQuantity: %w", err)
+	}
+	return oldValue.Quantity, nil
+}
+
+// AddQuantity adds i to the "quantity" field.
+func (m *StockReservationMutation) AddQuantity(i int) {
+	if m.addquantity != nil {
+		*m.addquantity += i
+	} else {
+		m.addquantity = &i
+	}
+}
+
+// AddedQuantity returns the value that was added to the "quantity" field in this mutation.
+func (m *StockReservationMutation) AddedQuantity() (r int, exists bool) {
+	v := m.addquantity
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetQuantity resets all changes to the "quantity" field.
+func (m *StockReservationMutation) ResetQuantity() {
+	m.quantity = nil
+	m.addquantity = nil
+}
+
+// SetStatus sets the "status" field.
+func (m *StockReservationMutation) SetStatus(s stockreservation.Status) {
+	m.status = &s
+}
+
+// Status returns the value of the "status" field in the mutation.
+func (m *StockReservationMutation) Status() (r stockreservation.Status, exists bool) {
+	v := m.status
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStatus returns the old "status" field's value of the StockReservation entity.
+// If the StockReservation object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *StockReservationMutation) OldStatus(ctx context.Context) (v stockreservation.Status, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStatus is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStatus requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStatus: %w", err)
+	}
+	return oldValue.Status, nil
+}
+
+// ResetStatus resets all changes to the "status" field.
+func (m *StockReservationMutation) ResetStatus() {
+	m.status = nil
+}
+
+// SetExpiresAt sets the "expires_at" field.
+func (m *StockReservationMutation) SetExpiresAt(t time.Time) {
+	m.expires_at = &t
+}
+
+// ExpiresAt returns the value of the "expires_at" field in the mutation.
+func (m *StockReservationMutation) ExpiresAt() (r time.Time, exists bool) {
+	v := m.expires_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldExpiresAt returns the old "expires_at" field's value of the StockReservation entity.
+// If the StockReservation object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *StockReservationMutation) OldExpiresAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldExpiresAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldExpiresAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldExpiresAt: %w", err)
+	}
+	return oldValue.ExpiresAt, nil
+}
+
+// ResetExpiresAt resets all changes to the "expires_at" field.
+func (m *StockReservationMutation) ResetExpiresAt() {
+	m.expires_at = nil
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *StockReservationMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *StockReservationMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the StockReservation entity.
+// If the StockReservation object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *StockReservationMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *StockReservationMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *StockReservationMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *StockReservationMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the StockReservation entity.
+// If the StockReservation object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *StockReservationMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *StockReservationMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// Where appends a list predicates to the StockReservationMutation builder.
+func (m *StockReservationMutation) Where(ps ...predicate.StockReservation) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the StockReservationMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *StockReservationMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.StockReservation, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *StockReservationMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *StockReservationMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (StockReservation).
+func (m *StockReservationMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *StockReservationMutation) Fields() []string {
+	fields := make([]string, 0, 7)
+	if m.cart_id != nil {
+		fields = append(fields, stockreservation.FieldCartID)
+	}
+	if m.product_id != nil {
+		fields = append(fields, stockreservation.FieldProductID)
+	}
+	if m.quantity != nil {
+		fields = append(fields, stockreservation.FieldQuantity)
+	}
+	if m.status != nil {
+		fields = append(fields, stockreservation.FieldStatus)
+	}
+	if m.expires_at != nil {
+		fields = append(fields, stockreservation.FieldExpiresAt)
+	}
+	if m.created_at != nil {
+		fields = append(fields, stockreservation.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, stockreservation.FieldUpdatedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *StockReservationMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case stockreservation.FieldCartID:
+		return m.CartID()
+	case stockreservation.FieldProductID:
+		return m.ProductID()
+	case stockreservation.FieldQuantity:
+		return m.Quantity()
+	case stockreservation.FieldStatus:
+		return m.Status()
+	case stockreservation.FieldExpiresAt:
+		return m.ExpiresAt()
+	case stockreservation.FieldCreatedAt:
+		return m.CreatedAt()
+	case stockreservation.FieldUpdatedAt:
+		return m.UpdatedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *StockReservationMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case stockreservation.FieldCartID:
+		return m.OldCartID(ctx)
+	case stockreservation.FieldProductID:
+		return m.OldProductID(ctx)
+	case stockreservation.FieldQuantity:
+		return m.OldQuantity(ctx)
+	case stockreservation.FieldStatus:
+		return m.OldStatus(ctx)
+	case stockreservation.FieldExpiresAt:
+		return m.OldExpiresAt(ctx)
+	case stockreservation.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case stockreservation.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown StockReservation field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *StockReservationMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case stockreservation.FieldCartID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCartID(v)
+		return nil
+	case stockreservation.FieldProductID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetProductID(v)
+		return nil
+	case stockreservation.FieldQuantity:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetQuantity(v)
+		return nil
+	case stockreservation.FieldStatus:
+		v, ok := value.(stockreservation.Status)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStatus(v)
+		return nil
+	case stockreservation.FieldExpiresAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetExpiresAt(v)
+		return nil
+	case stockreservation.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case stockreservation.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown StockReservation field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *StockReservationMutation) AddedFields() []string {
+	var fields []string
+	if m.addquantity != nil {
+		fields = append(fields, stockreservation.FieldQuantity)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *StockReservationMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case stockreservation.FieldQuantity:
+		return m.AddedQuantity()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *StockReservationMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case stockreservation.FieldQuantity:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddQuantity(v)
+		return nil
+	}
+	return fmt.Errorf("unknown StockReservation numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *StockReservationMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *StockReservationMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *StockReservationMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown StockReservation nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *StockReservationMutation) ResetField(name string) error {
+	switch name {
+	case stockreservation.FieldCartID:
+		m.ResetCartID()
+		return nil
+	case stockreservation.FieldProductID:
+		m.ResetProductID()
+		return nil
+	case stockreservation.FieldQuantity:
+		m.ResetQuantity()
+		return nil
+	case stockreservation.FieldStatus:
+		m.ResetStatus()
+		return nil
+	case stockreservation.FieldExpiresAt:
+		m.ResetExpiresAt()
+		return nil
+	case stockreservation.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case stockreservation.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown StockReservation field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *StockReservationMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *StockReservationMutation) AddedIDs(name string) []ent.Value {
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *StockReservationMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *StockReservationMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *StockReservationMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *StockReservationMutation) EdgeCleared(name string) bool {
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *StockReservationMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown StockReservation unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *StockReservationMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown StockReservation edge %s", name)
 }

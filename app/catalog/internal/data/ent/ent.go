@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"gomall/app/catalog/internal/data/ent/category"
 	"gomall/app/catalog/internal/data/ent/product"
+	"gomall/app/catalog/internal/data/ent/stockreservation"
 	"reflect"
 	"sync"
 
@@ -74,8 +75,9 @@ var (
 func checkColumn(t, c string) error {
 	initCheck.Do(func() {
 		columnCheck = sql.NewColumnCheck(map[string]func(string) bool{
-			category.Table: category.ValidColumn,
-			product.Table:  product.ValidColumn,
+			category.Table:         category.ValidColumn,
+			product.Table:          product.ValidColumn,
+			stockreservation.Table: stockreservation.ValidColumn,
 		})
 	})
 	return columnCheck(t, c)

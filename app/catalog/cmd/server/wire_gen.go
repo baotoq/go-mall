@@ -31,11 +31,20 @@ func wireApp(confServer *conf.Server, confData *conf.Data, logger log.Logger) (*
 	productUsecase := biz.NewProductUsecase(productRepo)
 	categoryRepo := data.NewCategoryRepo(dataData, logger)
 	categoryUsecase := biz.NewCategoryUsecase(categoryRepo)
-	catalogService := service.NewCatalogService(productUsecase, categoryUsecase)
+	reservationRepo := data.NewReservationRepo(dataData, logger)
+	reservationUsecase := biz.NewReservationUsecase(reservationRepo)
+	sweeper := data.NewSweeperServer(reservationRepo, logger)
+	_, cleanup2, err := data.NewDaprClient()
+	if err != nil {
+		cleanup()
+		return nil, nil, err
+	}
+	catalogService := service.NewCatalogService(productUsecase, categoryUsecase, reservationUsecase)
 	grpcServer := server.NewGRPCServer(confServer, catalogService, logger)
 	httpServer := server.NewHTTPServer(confServer, catalogService, logger)
-	app := newApp(logger, grpcServer, httpServer)
+	app := newApp(logger, grpcServer, httpServer, sweeper)
 	return app, func() {
+		cleanup2()
 		cleanup()
 	}, nil
 }

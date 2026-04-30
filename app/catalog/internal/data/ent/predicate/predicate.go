@@ -11,3 +11,6 @@ type Category func(*sql.Selector)
 
 // Product is the predicate function for product builders.
 type Product func(*sql.Selector)
+
+// StockReservation is the predicate function for stockreservation builders.
+type StockReservation func(*sql.Selector)

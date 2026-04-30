@@ -3,8 +3,83 @@
 
 openapi: 3.0.3
 info:
-    title: ""
+    title: Greeter API
     version: 0.0.1
-paths: {}
+paths:
+    /greeter/create/{hello}:
+        get:
+            tags:
+                - Greeter
+            operationId: Greeter_CreateGreeter
+            parameters:
+                - name: hello
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/helloworld.v1.CreateGreeterReply'
+    /greeter/{id}:
+        get:
+            tags:
+                - Greeter
+            operationId: Greeter_GetGreeter
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/helloworld.v1.GetGreeterReply'
+    /helloworld/{name}:
+        get:
+            tags:
+                - Greeter
+            operationId: Greeter_SayHello
+            parameters:
+                - name: name
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/helloworld.v1.HelloReply'
 components:
-    schemas: {}
+    schemas:
+        helloworld.v1.CreateGreeterReply:
+            type: object
+            properties:
+                id:
+                    type: string
+                hello:
+                    type: string
+        helloworld.v1.GetGreeterReply:
+            type: object
+            properties:
+                id:
+                    type: string
+                hello:
+                    type: string
+        helloworld.v1.HelloReply:
+            type: object
+            properties:
+                message:
+                    type: string
+tags:
+    - name: Greeter

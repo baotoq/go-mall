@@ -51,6 +51,37 @@ service CatalogService {
   rpc DeleteCategory(DeleteCategoryRequest) returns (google.protobuf.Empty) {
     option (google.api.http) = {delete: "/v1/categories/{id}"};
   }
+
+  rpc ReserveStock(ReserveStockRequest) returns (ReserveStockResponse) {
+    option (google.api.http) = {
+      post: "/v1/reservations"
+      body: "*"
+    };
+  }
+  rpc ReleaseStock(ReleaseStockRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/v1/reservations/release"
+      body: "*"
+    };
+  }
+  rpc AdjustReservation(AdjustReservationRequest) returns (ReserveStockResponse) {
+    option (google.api.http) = {
+      post: "/v1/reservations/adjust"
+      body: "*"
+    };
+  }
+  rpc CommitReservation(CommitReservationRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/v1/reservations/commit"
+      body: "*"
+    };
+  }
+  rpc ReleaseAllReservations(ReleaseAllReservationsRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/v1/reservations/release-all"
+      body: "*"
+    };
+  }
 }
 
 message Category {
@@ -158,4 +189,43 @@ message UpdateCategoryRequest {
 
 message DeleteCategoryRequest {
   string id = 1;
+}
+
+message Reservation {
+  string id = 1;
+  string cart_id = 2;
+  string product_id = 3;
+  int32 quantity = 4;
+  string status = 5;
+  string expires_at = 6;
+}
+
+message ReserveStockRequest {
+  string cart_id = 1;
+  string product_id = 2;
+  int32 quantity = 3;
+}
+
+message ReserveStockResponse {
+  Reservation reservation = 1;
+}
+
+message ReleaseStockRequest {
+  string cart_id = 1;
+  string product_id = 2;
+}
+
+message AdjustReservationRequest {
+  string cart_id = 1;
+  string product_id = 2;
+  int32 quantity = 3;
+}
+
+message CommitReservationRequest {
+  string cart_id = 1;
+  string product_id = 2;
+}
+
+message ReleaseAllReservationsRequest {
+  string cart_id = 1;
 }

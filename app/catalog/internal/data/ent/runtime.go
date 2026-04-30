@@ -6,6 +6,7 @@ import (
 	"gomall/app/catalog/internal/data/ent/category"
 	"gomall/app/catalog/internal/data/ent/product"
 	"gomall/app/catalog/internal/data/ent/schema"
+	"gomall/app/catalog/internal/data/ent/stockreservation"
 	"time"
 
 	"github.com/google/uuid"
@@ -91,4 +92,24 @@ func init() {
 	productDescID := productFields[0].Descriptor()
 	// product.DefaultID holds the default value on creation for the id field.
 	product.DefaultID = productDescID.Default.(func() uuid.UUID)
+	stockreservationFields := schema.StockReservation{}.Fields()
+	_ = stockreservationFields
+	// stockreservationDescQuantity is the schema descriptor for quantity field.
+	stockreservationDescQuantity := stockreservationFields[3].Descriptor()
+	// stockreservation.QuantityValidator is a validator for the "quantity" field. It is called by the builders before save.
+	stockreservation.QuantityValidator = stockreservationDescQuantity.Validators[0].(func(int) error)
+	// stockreservationDescCreatedAt is the schema descriptor for created_at field.
+	stockreservationDescCreatedAt := stockreservationFields[6].Descriptor()
+	// stockreservation.DefaultCreatedAt holds the default value on creation for the created_at field.
+	stockreservation.DefaultCreatedAt = stockreservationDescCreatedAt.Default.(func() time.Time)
+	// stockreservationDescUpdatedAt is the schema descriptor for updated_at field.
+	stockreservationDescUpdatedAt := stockreservationFields[7].Descriptor()
+	// stockreservation.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	stockreservation.DefaultUpdatedAt = stockreservationDescUpdatedAt.Default.(func() time.Time)
+	// stockreservation.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	stockreservation.UpdateDefaultUpdatedAt = stockreservationDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// stockreservationDescID is the schema descriptor for id field.
+	stockreservationDescID := stockreservationFields[0].Descriptor()
+	// stockreservation.DefaultID holds the default value on creation for the id field.
+	stockreservation.DefaultID = stockreservationDescID.Default.(func() uuid.UUID)
 }

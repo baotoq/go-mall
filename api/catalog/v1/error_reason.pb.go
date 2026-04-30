@@ -24,11 +24,13 @@ const (
 type ErrorReason int32
 
 const (
-	ErrorReason_ER_UNSPECIFIED     ErrorReason = 0
-	ErrorReason_PRODUCT_NOT_FOUND  ErrorReason = 1
-	ErrorReason_CATEGORY_NOT_FOUND ErrorReason = 2
-	ErrorReason_INVALID_ARGUMENT   ErrorReason = 3
-	ErrorReason_CONFLICT           ErrorReason = 4
+	ErrorReason_ER_UNSPECIFIED        ErrorReason = 0
+	ErrorReason_PRODUCT_NOT_FOUND     ErrorReason = 1
+	ErrorReason_CATEGORY_NOT_FOUND    ErrorReason = 2
+	ErrorReason_INVALID_ARGUMENT      ErrorReason = 3
+	ErrorReason_CONFLICT              ErrorReason = 4
+	ErrorReason_OUT_OF_STOCK          ErrorReason = 5
+	ErrorReason_RESERVATION_NOT_FOUND ErrorReason = 6
 )
 
 // Enum value maps for ErrorReason.
@@ -39,13 +41,17 @@ var (
 		2: "CATEGORY_NOT_FOUND",
 		3: "INVALID_ARGUMENT",
 		4: "CONFLICT",
+		5: "OUT_OF_STOCK",
+		6: "RESERVATION_NOT_FOUND",
 	}
 	ErrorReason_value = map[string]int32{
-		"ER_UNSPECIFIED":     0,
-		"PRODUCT_NOT_FOUND":  1,
-		"CATEGORY_NOT_FOUND": 2,
-		"INVALID_ARGUMENT":   3,
-		"CONFLICT":           4,
+		"ER_UNSPECIFIED":        0,
+		"PRODUCT_NOT_FOUND":     1,
+		"CATEGORY_NOT_FOUND":    2,
+		"INVALID_ARGUMENT":      3,
+		"CONFLICT":              4,
+		"OUT_OF_STOCK":          5,
+		"RESERVATION_NOT_FOUND": 6,
 	}
 )
 
@@ -81,13 +87,15 @@ var File_catalog_v1_error_reason_proto protoreflect.FileDescriptor
 const file_catalog_v1_error_reason_proto_rawDesc = "" +
 	"\n" +
 	"\x1dcatalog/v1/error_reason.proto\x12\n" +
-	"catalog.v1*t\n" +
+	"catalog.v1*\xa1\x01\n" +
 	"\vErrorReason\x12\x12\n" +
 	"\x0eER_UNSPECIFIED\x10\x00\x12\x15\n" +
 	"\x11PRODUCT_NOT_FOUND\x10\x01\x12\x16\n" +
 	"\x12CATEGORY_NOT_FOUND\x10\x02\x12\x14\n" +
 	"\x10INVALID_ARGUMENT\x10\x03\x12\f\n" +
-	"\bCONFLICT\x10\x04B\x1bZ\x19greeter/api/catalog/v1;v1b\x06proto3"
+	"\bCONFLICT\x10\x04\x12\x10\n" +
+	"\fOUT_OF_STOCK\x10\x05\x12\x19\n" +
+	"\x15RESERVATION_NOT_FOUND\x10\x06B\x1bZ\x19greeter/api/catalog/v1;v1b\x06proto3"
 
 var (
 	file_catalog_v1_error_reason_proto_rawDescOnce sync.Once

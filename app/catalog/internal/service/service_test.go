@@ -52,10 +52,24 @@ func (r *nopCategoryRepo) List(_ context.Context, f biz.ListCategoriesFilter) (*
 	return &biz.ListCategoriesResult{Page: f.Page, PageSize: f.PageSize}, nil
 }
 
+type nopReservationRepo struct{}
+
+func (r *nopReservationRepo) Reserve(_ context.Context, _, _ uuid.UUID, _ int, _ time.Duration) (*biz.Reservation, error) {
+	return &biz.Reservation{ID: uuid.New()}, nil
+}
+func (r *nopReservationRepo) Release(_ context.Context, _, _ uuid.UUID) error    { return nil }
+func (r *nopReservationRepo) Adjust(_ context.Context, _, _ uuid.UUID, _ int) (*biz.Reservation, error) {
+	return &biz.Reservation{ID: uuid.New()}, nil
+}
+func (r *nopReservationRepo) Commit(_ context.Context, _, _ uuid.UUID) error     { return nil }
+func (r *nopReservationRepo) ReleaseAll(_ context.Context, _ uuid.UUID) error    { return nil }
+func (r *nopReservationRepo) ExpireStale(_ context.Context) (int, error)         { return 0, nil }
+
 func newSvc(prodErr error) *service.CatalogService {
 	return service.NewCatalogService(
 		biz.NewProductUsecase(&nopProductRepo{err: prodErr}),
 		biz.NewCategoryUsecase(&nopCategoryRepo{}),
+		biz.NewReservationUsecase(&nopReservationRepo{}),
 	)
 }
 

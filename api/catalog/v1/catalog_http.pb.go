@@ -20,6 +20,8 @@ var _ = binding.EncodeURL
 
 const _ = http.SupportPackageIsVersion1
 
+const OperationCatalogServiceAdjustReservation = "/catalog.v1.CatalogService/AdjustReservation"
+const OperationCatalogServiceCommitReservation = "/catalog.v1.CatalogService/CommitReservation"
 const OperationCatalogServiceCreateCategory = "/catalog.v1.CatalogService/CreateCategory"
 const OperationCatalogServiceCreateProduct = "/catalog.v1.CatalogService/CreateProduct"
 const OperationCatalogServiceDeleteCategory = "/catalog.v1.CatalogService/DeleteCategory"
@@ -28,10 +30,15 @@ const OperationCatalogServiceGetCategory = "/catalog.v1.CatalogService/GetCatego
 const OperationCatalogServiceGetProduct = "/catalog.v1.CatalogService/GetProduct"
 const OperationCatalogServiceListCategories = "/catalog.v1.CatalogService/ListCategories"
 const OperationCatalogServiceListProducts = "/catalog.v1.CatalogService/ListProducts"
+const OperationCatalogServiceReleaseAllReservations = "/catalog.v1.CatalogService/ReleaseAllReservations"
+const OperationCatalogServiceReleaseStock = "/catalog.v1.CatalogService/ReleaseStock"
+const OperationCatalogServiceReserveStock = "/catalog.v1.CatalogService/ReserveStock"
 const OperationCatalogServiceUpdateCategory = "/catalog.v1.CatalogService/UpdateCategory"
 const OperationCatalogServiceUpdateProduct = "/catalog.v1.CatalogService/UpdateProduct"
 
 type CatalogServiceHTTPServer interface {
+	AdjustReservation(context.Context, *AdjustReservationRequest) (*ReserveStockResponse, error)
+	CommitReservation(context.Context, *CommitReservationRequest) (*emptypb.Empty, error)
 	CreateCategory(context.Context, *CreateCategoryRequest) (*Category, error)
 	CreateProduct(context.Context, *CreateProductRequest) (*Product, error)
 	DeleteCategory(context.Context, *DeleteCategoryRequest) (*emptypb.Empty, error)
@@ -40,6 +47,9 @@ type CatalogServiceHTTPServer interface {
 	GetProduct(context.Context, *GetProductRequest) (*Product, error)
 	ListCategories(context.Context, *ListCategoriesRequest) (*ListCategoriesResponse, error)
 	ListProducts(context.Context, *ListProductsRequest) (*ListProductsResponse, error)
+	ReleaseAllReservations(context.Context, *ReleaseAllReservationsRequest) (*emptypb.Empty, error)
+	ReleaseStock(context.Context, *ReleaseStockRequest) (*emptypb.Empty, error)
+	ReserveStock(context.Context, *ReserveStockRequest) (*ReserveStockResponse, error)
 	UpdateCategory(context.Context, *UpdateCategoryRequest) (*Category, error)
 	UpdateProduct(context.Context, *UpdateProductRequest) (*Product, error)
 }
@@ -56,6 +66,11 @@ func RegisterCatalogServiceHTTPServer(s *http.Server, srv CatalogServiceHTTPServ
 	r.POST("/v1/categories", _CatalogService_CreateCategory0_HTTP_Handler(srv))
 	r.PUT("/v1/categories/{id}", _CatalogService_UpdateCategory0_HTTP_Handler(srv))
 	r.DELETE("/v1/categories/{id}", _CatalogService_DeleteCategory0_HTTP_Handler(srv))
+	r.POST("/v1/reservations", _CatalogService_ReserveStock0_HTTP_Handler(srv))
+	r.POST("/v1/reservations/release", _CatalogService_ReleaseStock0_HTTP_Handler(srv))
+	r.POST("/v1/reservations/adjust", _CatalogService_AdjustReservation0_HTTP_Handler(srv))
+	r.POST("/v1/reservations/commit", _CatalogService_CommitReservation0_HTTP_Handler(srv))
+	r.POST("/v1/reservations/release-all", _CatalogService_ReleaseAllReservations0_HTTP_Handler(srv))
 }
 
 func _CatalogService_ListProducts0_HTTP_Handler(srv CatalogServiceHTTPServer) func(ctx http.Context) error {
@@ -278,7 +293,119 @@ func _CatalogService_DeleteCategory0_HTTP_Handler(srv CatalogServiceHTTPServer) 
 	}
 }
 
+func _CatalogService_ReserveStock0_HTTP_Handler(srv CatalogServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in ReserveStockRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationCatalogServiceReserveStock)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.ReserveStock(ctx, req.(*ReserveStockRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*ReserveStockResponse)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _CatalogService_ReleaseStock0_HTTP_Handler(srv CatalogServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in ReleaseStockRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationCatalogServiceReleaseStock)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.ReleaseStock(ctx, req.(*ReleaseStockRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*emptypb.Empty)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _CatalogService_AdjustReservation0_HTTP_Handler(srv CatalogServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in AdjustReservationRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationCatalogServiceAdjustReservation)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.AdjustReservation(ctx, req.(*AdjustReservationRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*ReserveStockResponse)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _CatalogService_CommitReservation0_HTTP_Handler(srv CatalogServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in CommitReservationRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationCatalogServiceCommitReservation)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.CommitReservation(ctx, req.(*CommitReservationRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*emptypb.Empty)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _CatalogService_ReleaseAllReservations0_HTTP_Handler(srv CatalogServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in ReleaseAllReservationsRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationCatalogServiceReleaseAllReservations)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.ReleaseAllReservations(ctx, req.(*ReleaseAllReservationsRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*emptypb.Empty)
+		return ctx.Result(200, reply)
+	}
+}
+
 type CatalogServiceHTTPClient interface {
+	AdjustReservation(ctx context.Context, req *AdjustReservationRequest, opts ...http.CallOption) (rsp *ReserveStockResponse, err error)
+	CommitReservation(ctx context.Context, req *CommitReservationRequest, opts ...http.CallOption) (rsp *emptypb.Empty, err error)
 	CreateCategory(ctx context.Context, req *CreateCategoryRequest, opts ...http.CallOption) (rsp *Category, err error)
 	CreateProduct(ctx context.Context, req *CreateProductRequest, opts ...http.CallOption) (rsp *Product, err error)
 	DeleteCategory(ctx context.Context, req *DeleteCategoryRequest, opts ...http.CallOption) (rsp *emptypb.Empty, err error)
@@ -287,6 +414,9 @@ type CatalogServiceHTTPClient interface {
 	GetProduct(ctx context.Context, req *GetProductRequest, opts ...http.CallOption) (rsp *Product, err error)
 	ListCategories(ctx context.Context, req *ListCategoriesRequest, opts ...http.CallOption) (rsp *ListCategoriesResponse, err error)
 	ListProducts(ctx context.Context, req *ListProductsRequest, opts ...http.CallOption) (rsp *ListProductsResponse, err error)
+	ReleaseAllReservations(ctx context.Context, req *ReleaseAllReservationsRequest, opts ...http.CallOption) (rsp *emptypb.Empty, err error)
+	ReleaseStock(ctx context.Context, req *ReleaseStockRequest, opts ...http.CallOption) (rsp *emptypb.Empty, err error)
+	ReserveStock(ctx context.Context, req *ReserveStockRequest, opts ...http.CallOption) (rsp *ReserveStockResponse, err error)
 	UpdateCategory(ctx context.Context, req *UpdateCategoryRequest, opts ...http.CallOption) (rsp *Category, err error)
 	UpdateProduct(ctx context.Context, req *UpdateProductRequest, opts ...http.CallOption) (rsp *Product, err error)
 }
@@ -297,6 +427,32 @@ type CatalogServiceHTTPClientImpl struct {
 
 func NewCatalogServiceHTTPClient(client *http.Client) CatalogServiceHTTPClient {
 	return &CatalogServiceHTTPClientImpl{client}
+}
+
+func (c *CatalogServiceHTTPClientImpl) AdjustReservation(ctx context.Context, in *AdjustReservationRequest, opts ...http.CallOption) (*ReserveStockResponse, error) {
+	var out ReserveStockResponse
+	pattern := "/v1/reservations/adjust"
+	path := binding.EncodeURL(pattern, in, false)
+	opts = append(opts, http.Operation(OperationCatalogServiceAdjustReservation))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *CatalogServiceHTTPClientImpl) CommitReservation(ctx context.Context, in *CommitReservationRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
+	var out emptypb.Empty
+	pattern := "/v1/reservations/commit"
+	path := binding.EncodeURL(pattern, in, false)
+	opts = append(opts, http.Operation(OperationCatalogServiceCommitReservation))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
 }
 
 func (c *CatalogServiceHTTPClientImpl) CreateCategory(ctx context.Context, in *CreateCategoryRequest, opts ...http.CallOption) (*Category, error) {
@@ -397,6 +553,45 @@ func (c *CatalogServiceHTTPClientImpl) ListProducts(ctx context.Context, in *Lis
 	opts = append(opts, http.Operation(OperationCatalogServiceListProducts))
 	opts = append(opts, http.PathTemplate(pattern))
 	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *CatalogServiceHTTPClientImpl) ReleaseAllReservations(ctx context.Context, in *ReleaseAllReservationsRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
+	var out emptypb.Empty
+	pattern := "/v1/reservations/release-all"
+	path := binding.EncodeURL(pattern, in, false)
+	opts = append(opts, http.Operation(OperationCatalogServiceReleaseAllReservations))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *CatalogServiceHTTPClientImpl) ReleaseStock(ctx context.Context, in *ReleaseStockRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
+	var out emptypb.Empty
+	pattern := "/v1/reservations/release"
+	path := binding.EncodeURL(pattern, in, false)
+	opts = append(opts, http.Operation(OperationCatalogServiceReleaseStock))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *CatalogServiceHTTPClientImpl) ReserveStock(ctx context.Context, in *ReserveStockRequest, opts ...http.CallOption) (*ReserveStockResponse, error) {
+	var out ReserveStockResponse
+	pattern := "/v1/reservations"
+	path := binding.EncodeURL(pattern, in, false)
+	opts = append(opts, http.Operation(OperationCatalogServiceReserveStock))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
 	if err != nil {
 		return nil, err
 	}

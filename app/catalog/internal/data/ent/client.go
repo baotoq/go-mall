@@ -13,6 +13,7 @@ import (
 
 	"gomall/app/catalog/internal/data/ent/category"
 	"gomall/app/catalog/internal/data/ent/product"
+	"gomall/app/catalog/internal/data/ent/stockreservation"
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect"
@@ -30,6 +31,8 @@ type Client struct {
 	Category *CategoryClient
 	// Product is the client for interacting with the Product builders.
 	Product *ProductClient
+	// StockReservation is the client for interacting with the StockReservation builders.
+	StockReservation *StockReservationClient
 }
 
 // NewClient creates a new client configured with the given options.
@@ -43,6 +46,7 @@ func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
 	c.Category = NewCategoryClient(c.config)
 	c.Product = NewProductClient(c.config)
+	c.StockReservation = NewStockReservationClient(c.config)
 }
 
 type (
@@ -133,10 +137,11 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	cfg := c.config
 	cfg.driver = tx
 	return &Tx{
-		ctx:      ctx,
-		config:   cfg,
-		Category: NewCategoryClient(cfg),
-		Product:  NewProductClient(cfg),
+		ctx:              ctx,
+		config:           cfg,
+		Category:         NewCategoryClient(cfg),
+		Product:          NewProductClient(cfg),
+		StockReservation: NewStockReservationClient(cfg),
 	}, nil
 }
 
@@ -154,10 +159,11 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	cfg := c.config
 	cfg.driver = &txDriver{tx: tx, drv: c.driver}
 	return &Tx{
-		ctx:      ctx,
-		config:   cfg,
-		Category: NewCategoryClient(cfg),
-		Product:  NewProductClient(cfg),
+		ctx:              ctx,
+		config:           cfg,
+		Category:         NewCategoryClient(cfg),
+		Product:          NewProductClient(cfg),
+		StockReservation: NewStockReservationClient(cfg),
 	}, nil
 }
 
@@ -188,6 +194,7 @@ func (c *Client) Close() error {
 func (c *Client) Use(hooks ...Hook) {
 	c.Category.Use(hooks...)
 	c.Product.Use(hooks...)
+	c.StockReservation.Use(hooks...)
 }
 
 // Intercept adds the query interceptors to all the entity clients.
@@ -195,6 +202,7 @@ func (c *Client) Use(hooks ...Hook) {
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	c.Category.Intercept(interceptors...)
 	c.Product.Intercept(interceptors...)
+	c.StockReservation.Intercept(interceptors...)
 }
 
 // Mutate implements the ent.Mutator interface.
@@ -204,6 +212,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Category.mutate(ctx, m)
 	case *ProductMutation:
 		return c.Product.mutate(ctx, m)
+	case *StockReservationMutation:
+		return c.StockReservation.mutate(ctx, m)
 	default:
 		return nil, fmt.Errorf("ent: unknown mutation type %T", m)
 	}
@@ -507,12 +517,145 @@ func (c *ProductClient) mutate(ctx context.Context, m *ProductMutation) (Value, 
 	}
 }
 
+// StockReservationClient is a client for the StockReservation schema.
+type StockReservationClient struct {
+	config
+}
+
+// NewStockReservationClient returns a client for the StockReservation from the given config.
+func NewStockReservationClient(c config) *StockReservationClient {
+	return &StockReservationClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `stockreservation.Hooks(f(g(h())))`.
+func (c *StockReservationClient) Use(hooks ...Hook) {
+	c.hooks.StockReservation = append(c.hooks.StockReservation, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `stockreservation.Intercept(f(g(h())))`.
+func (c *StockReservationClient) Intercept(interceptors ...Interceptor) {
+	c.inters.StockReservation = append(c.inters.StockReservation, interceptors...)
+}
+
+// Create returns a builder for creating a StockReservation entity.
+func (c *StockReservationClient) Create() *StockReservationCreate {
+	mutation := newStockReservationMutation(c.config, OpCreate)
+	return &StockReservationCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of StockReservation entities.
+func (c *StockReservationClient) CreateBulk(builders ...*StockReservationCreate) *StockReservationCreateBulk {
+	return &StockReservationCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *StockReservationClient) MapCreateBulk(slice any, setFunc func(*StockReservationCreate, int)) *StockReservationCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &StockReservationCreateBulk{err: fmt.Errorf("calling to StockReservationClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*StockReservationCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &StockReservationCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for StockReservation.
+func (c *StockReservationClient) Update() *StockReservationUpdate {
+	mutation := newStockReservationMutation(c.config, OpUpdate)
+	return &StockReservationUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *StockReservationClient) UpdateOne(_m *StockReservation) *StockReservationUpdateOne {
+	mutation := newStockReservationMutation(c.config, OpUpdateOne, withStockReservation(_m))
+	return &StockReservationUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *StockReservationClient) UpdateOneID(id uuid.UUID) *StockReservationUpdateOne {
+	mutation := newStockReservationMutation(c.config, OpUpdateOne, withStockReservationID(id))
+	return &StockReservationUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for StockReservation.
+func (c *StockReservationClient) Delete() *StockReservationDelete {
+	mutation := newStockReservationMutation(c.config, OpDelete)
+	return &StockReservationDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *StockReservationClient) DeleteOne(_m *StockReservation) *StockReservationDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *StockReservationClient) DeleteOneID(id uuid.UUID) *StockReservationDeleteOne {
+	builder := c.Delete().Where(stockreservation.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &StockReservationDeleteOne{builder}
+}
+
+// Query returns a query builder for StockReservation.
+func (c *StockReservationClient) Query() *StockReservationQuery {
+	return &StockReservationQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeStockReservation},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a StockReservation entity by its id.
+func (c *StockReservationClient) Get(ctx context.Context, id uuid.UUID) (*StockReservation, error) {
+	return c.Query().Where(stockreservation.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *StockReservationClient) GetX(ctx context.Context, id uuid.UUID) *StockReservation {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *StockReservationClient) Hooks() []Hook {
+	return c.hooks.StockReservation
+}
+
+// Interceptors returns the client interceptors.
+func (c *StockReservationClient) Interceptors() []Interceptor {
+	return c.inters.StockReservation
+}
+
+func (c *StockReservationClient) mutate(ctx context.Context, m *StockReservationMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&StockReservationCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&StockReservationUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&StockReservationUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&StockReservationDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown StockReservation mutation op: %q", m.Op())
+	}
+}
+
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		Category, Product []ent.Hook
+		Category, Product, StockReservation []ent.Hook
 	}
 	inters struct {
-		Category, Product []ent.Interceptor
+		Category, Product, StockReservation []ent.Interceptor
 	}
 )

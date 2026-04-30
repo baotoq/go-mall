@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"gomall/app/catalog/internal/conf"
+	"gomall/app/catalog/internal/data"
 
 	dapr "github.com/dapr/go-sdk/client"
 	"github.com/go-kratos/kratos/v2"
@@ -33,14 +34,14 @@ func init() {
 	flag.StringVar(&flagconf, "conf", "../../configs", "config path, eg: -conf config.yaml")
 }
 
-func newApp(logger log.Logger, gs *grpc.Server, hs *http.Server) *kratos.App {
+func newApp(logger log.Logger, gs *grpc.Server, hs *http.Server, sw *data.Sweeper) *kratos.App {
 	return kratos.New(
 		kratos.ID(id),
 		kratos.Name(Name),
 		kratos.Version(Version),
 		kratos.Metadata(map[string]string{}),
 		kratos.Logger(logger),
-		kratos.Server(gs, hs),
+		kratos.Server(gs, hs, sw),
 	)
 }
 

@@ -3,8 +3,500 @@
 
 openapi: 3.0.3
 info:
-    title: ""
+    title: CatalogService API
     version: 0.0.1
-paths: {}
+paths:
+    /v1/categories:
+        get:
+            tags:
+                - CatalogService
+            operationId: CatalogService_ListCategories
+            parameters:
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/catalog.v1.ListCategoriesResponse'
+        post:
+            tags:
+                - CatalogService
+            operationId: CatalogService_CreateCategory
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/catalog.v1.CreateCategoryRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/catalog.v1.Category'
+    /v1/categories/{id}:
+        get:
+            tags:
+                - CatalogService
+            operationId: CatalogService_GetCategory
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/catalog.v1.Category'
+        put:
+            tags:
+                - CatalogService
+            operationId: CatalogService_UpdateCategory
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/catalog.v1.UpdateCategoryRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/catalog.v1.Category'
+        delete:
+            tags:
+                - CatalogService
+            operationId: CatalogService_DeleteCategory
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content: {}
+    /v1/products:
+        get:
+            tags:
+                - CatalogService
+            operationId: CatalogService_ListProducts
+            parameters:
+                - name: q
+                  in: query
+                  schema:
+                    type: string
+                - name: categoryId
+                  in: query
+                  schema:
+                    type: string
+                - name: minPrice
+                  in: query
+                  schema:
+                    type: string
+                - name: maxPrice
+                  in: query
+                  schema:
+                    type: string
+                - name: sort
+                  in: query
+                  schema:
+                    type: string
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/catalog.v1.ListProductsResponse'
+        post:
+            tags:
+                - CatalogService
+            operationId: CatalogService_CreateProduct
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/catalog.v1.CreateProductRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/catalog.v1.Product'
+    /v1/products/{id}:
+        get:
+            tags:
+                - CatalogService
+            operationId: CatalogService_GetProduct
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/catalog.v1.Product'
+        put:
+            tags:
+                - CatalogService
+            operationId: CatalogService_UpdateProduct
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/catalog.v1.UpdateProductRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/catalog.v1.Product'
+        delete:
+            tags:
+                - CatalogService
+            operationId: CatalogService_DeleteProduct
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content: {}
+    /v1/reservations:
+        post:
+            tags:
+                - CatalogService
+            operationId: CatalogService_ReserveStock
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/catalog.v1.ReserveStockRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/catalog.v1.ReserveStockResponse'
+    /v1/reservations/adjust:
+        post:
+            tags:
+                - CatalogService
+            operationId: CatalogService_AdjustReservation
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/catalog.v1.AdjustReservationRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/catalog.v1.ReserveStockResponse'
+    /v1/reservations/commit:
+        post:
+            tags:
+                - CatalogService
+            operationId: CatalogService_CommitReservation
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/catalog.v1.CommitReservationRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content: {}
+    /v1/reservations/release:
+        post:
+            tags:
+                - CatalogService
+            operationId: CatalogService_ReleaseStock
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/catalog.v1.ReleaseStockRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content: {}
+    /v1/reservations/release-all:
+        post:
+            tags:
+                - CatalogService
+            operationId: CatalogService_ReleaseAllReservations
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/catalog.v1.ReleaseAllReservationsRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content: {}
 components:
-    schemas: {}
+    schemas:
+        catalog.v1.AdjustReservationRequest:
+            type: object
+            properties:
+                cartId:
+                    type: string
+                productId:
+                    type: string
+                quantity:
+                    type: integer
+                    format: int32
+        catalog.v1.Category:
+            type: object
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
+                slug:
+                    type: string
+                description:
+                    type: string
+                createdAt:
+                    type: string
+                updatedAt:
+                    type: string
+        catalog.v1.CommitReservationRequest:
+            type: object
+            properties:
+                cartId:
+                    type: string
+                productId:
+                    type: string
+        catalog.v1.CreateCategoryRequest:
+            type: object
+            properties:
+                name:
+                    type: string
+                slug:
+                    type: string
+                description:
+                    type: string
+        catalog.v1.CreateProductRequest:
+            type: object
+            properties:
+                name:
+                    type: string
+                slug:
+                    type: string
+                description:
+                    type: string
+                priceCents:
+                    type: string
+                currency:
+                    type: string
+                imageUrl:
+                    type: string
+                theme:
+                    type: string
+                stock:
+                    type: integer
+                    format: int32
+                categoryId:
+                    type: string
+        catalog.v1.ListCategoriesResponse:
+            type: object
+            properties:
+                categories:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/catalog.v1.Category'
+                page:
+                    type: integer
+                    format: int32
+                pageSize:
+                    type: integer
+                    format: int32
+                total:
+                    type: string
+        catalog.v1.ListProductsResponse:
+            type: object
+            properties:
+                products:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/catalog.v1.Product'
+                page:
+                    type: integer
+                    format: int32
+                pageSize:
+                    type: integer
+                    format: int32
+                total:
+                    type: string
+        catalog.v1.Product:
+            type: object
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
+                slug:
+                    type: string
+                description:
+                    type: string
+                priceCents:
+                    type: string
+                currency:
+                    type: string
+                imageUrl:
+                    type: string
+                theme:
+                    type: string
+                stock:
+                    type: integer
+                    format: int32
+                categoryId:
+                    type: string
+                createdAt:
+                    type: string
+                updatedAt:
+                    type: string
+        catalog.v1.ReleaseAllReservationsRequest:
+            type: object
+            properties:
+                cartId:
+                    type: string
+        catalog.v1.ReleaseStockRequest:
+            type: object
+            properties:
+                cartId:
+                    type: string
+                productId:
+                    type: string
+        catalog.v1.Reservation:
+            type: object
+            properties:
+                id:
+                    type: string
+                cartId:
+                    type: string
+                productId:
+                    type: string
+                quantity:
+                    type: integer
+                    format: int32
+                status:
+                    type: string
+                expiresAt:
+                    type: string
+        catalog.v1.ReserveStockRequest:
+            type: object
+            properties:
+                cartId:
+                    type: string
+                productId:
+                    type: string
+                quantity:
+                    type: integer
+                    format: int32
+        catalog.v1.ReserveStockResponse:
+            type: object
+            properties:
+                reservation:
+                    $ref: '#/components/schemas/catalog.v1.Reservation'
+        catalog.v1.UpdateCategoryRequest:
+            type: object
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
+                slug:
+                    type: string
+                description:
+                    type: string
+        catalog.v1.UpdateProductRequest:
+            type: object
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
+                slug:
+                    type: string
+                description:
+                    type: string
+                priceCents:
+                    type: string
+                currency:
+                    type: string
+                imageUrl:
+                    type: string
+                theme:
+                    type: string
+                stock:
+                    type: integer
+                    format: int32
+                categoryId:
+                    type: string
+tags:
+    - name: CatalogService

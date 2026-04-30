@@ -66,6 +66,7 @@ func TestMain(m *testing.M) {
 func truncate(t *testing.T) {
 	t.Helper()
 	ctx := context.Background()
+	testClient.StockReservation.Delete().ExecX(ctx)
 	testClient.Product.Delete().ExecX(ctx)
 	testClient.Category.Delete().ExecX(ctx)
 }
