@@ -8,8 +8,6 @@ import (
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/go-kratos/kratos/v2/middleware/recovery"
 	"github.com/go-kratos/kratos/v2/transport/grpc"
-	"google.golang.org/grpc/health"
-	healthpb "google.golang.org/grpc/health/grpc_health_v1"
 )
 
 func NewGRPCServer(c *conf.Server, payment *service.PaymentService, logger log.Logger) *grpc.Server {
@@ -29,6 +27,5 @@ func NewGRPCServer(c *conf.Server, payment *service.PaymentService, logger log.L
 	}
 	srv := grpc.NewServer(opts...)
 	v1.RegisterPaymentServiceServer(srv, payment)
-	healthpb.RegisterHealthServer(srv, health.NewServer())
 	return srv
 }

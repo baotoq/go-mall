@@ -14,8 +14,6 @@ import (
 	"github.com/go-kratos/kratos/v2/middleware/selector"
 	"github.com/go-kratos/kratos/v2/transport/grpc"
 	jwtv5 "github.com/golang-jwt/jwt/v5"
-	"google.golang.org/grpc/health"
-	healthpb "google.golang.org/grpc/health/grpc_health_v1"
 )
 
 func NewGRPCServer(c *conf.Server, catalog *service.CatalogService, logger log.Logger) *grpc.Server {
@@ -45,6 +43,5 @@ func NewGRPCServer(c *conf.Server, catalog *service.CatalogService, logger log.L
 	}
 	srv := grpc.NewServer(opts...)
 	v1.RegisterCatalogServiceServer(srv, catalog)
-	healthpb.RegisterHealthServer(srv, health.NewServer())
 	return srv
 }
