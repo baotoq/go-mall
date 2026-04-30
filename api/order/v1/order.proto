@@ -1,0 +1,106 @@
+syntax = "proto3";
+
+package order.v1;
+
+import "google/api/annotations.proto";
+
+option go_package = "gomall/api/order/v1;v1";
+
+service OrderService {
+  rpc CreateOrder(CreateOrderRequest) returns (Order) {
+    option (google.api.http) = {
+      post: "/v1/orders"
+      body: "*"
+    };
+  }
+  rpc GetOrder(GetOrderRequest) returns (Order) {
+    option (google.api.http) = {get: "/v1/orders/{id}"};
+  }
+  rpc ListOrders(ListOrdersRequest) returns (ListOrdersResponse) {
+    option (google.api.http) = {get: "/v1/orders"};
+  }
+  rpc UpdateOrderStatus(UpdateOrderStatusRequest) returns (Order) {
+    option (google.api.http) = {
+      post: "/v1/orders/{id}/status"
+      body: "*"
+    };
+  }
+  rpc CancelOrder(CancelOrderRequest) returns (Order) {
+    option (google.api.http) = {
+      post: "/v1/orders/{id}/cancel"
+      body: "*"
+    };
+  }
+}
+
+enum OrderStatus {
+  ORDER_STATUS_UNSPECIFIED = 0;
+  PENDING = 1;
+  PAID = 2;
+  SHIPPED = 3;
+  DELIVERED = 4;
+  CANCELLED = 5;
+}
+
+message OrderItem {
+  string product_id = 1;
+  string name = 2;
+  int64 price_cents = 3;
+  string currency = 4;
+  string image_url = 5;
+  int32 quantity = 6;
+  int64 subtotal_cents = 7;
+}
+
+message Order {
+  string id = 1;
+  string user_id = 2;
+  string session_id = 3;
+  repeated OrderItem items = 4;
+  int64 total_cents = 5;
+  string currency = 6;
+  OrderStatus status = 7;
+  string payment_id = 8;
+  string created_at = 9;
+  string updated_at = 10;
+}
+
+message CreateOrderItem {
+  string product_id = 1;
+  string name = 2;
+  int64 price_cents = 3;
+  string image_url = 4;
+  int32 quantity = 5;
+}
+
+message CreateOrderRequest {
+  string user_id = 1;
+  string session_id = 2;
+  repeated CreateOrderItem items = 3;
+  string currency = 4;
+}
+
+message GetOrderRequest {
+  string id = 1;
+}
+
+message ListOrdersRequest {
+  string user_id = 1;
+  OrderStatus status = 2;
+  int32 page_size = 3;
+  int32 page = 4;
+}
+
+message ListOrdersResponse {
+  repeated Order orders = 1;
+  int32 total = 2;
+}
+
+message UpdateOrderStatusRequest {
+  string id = 1;
+  OrderStatus status = 2;
+}
+
+message CancelOrderRequest {
+  string id = 1;
+}
