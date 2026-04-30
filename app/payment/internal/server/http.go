@@ -1,6 +1,8 @@
 package server
 
 import (
+	nethttp "net/http"
+
 	v1 "gomall/api/payment/v1"
 	"gomall/app/payment/internal/conf"
 	"gomall/app/payment/internal/service"
@@ -27,5 +29,8 @@ func NewHTTPServer(c *conf.Server, payment *service.PaymentService, logger log.L
 	}
 	srv := http.NewServer(opts...)
 	v1.RegisterPaymentServiceHTTPServer(srv, payment)
+	srv.HandleFunc("/healthz", func(w nethttp.ResponseWriter, _ *nethttp.Request) {
+		w.WriteHeader(nethttp.StatusOK)
+	})
 	return srv
 }

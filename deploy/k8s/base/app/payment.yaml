@@ -34,6 +34,18 @@ spec:
           ports:
             - containerPort: 8000
             - containerPort: 9000
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 5
           volumeMounts:
             - name: config
               mountPath: /data/conf
