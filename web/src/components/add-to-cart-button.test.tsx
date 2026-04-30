@@ -1,18 +1,19 @@
-import React from "react"
 import { render, screen, fireEvent } from "@testing-library/react"
 import { beforeEach, describe, expect, it } from "vitest"
 import { AddToCartButton } from "@/components/add-to-cart-button"
 import { useCartStore } from "@/store/cart"
 
 const product = {
-  id: 3,
+  id: "abc-123",
   name: "Laptop Stand",
-  price: 39.99,
-  category: "electronics",
-  description: "Aluminum stand",
-  emoji: "💻",
-  rating: 4.7,
-  reviews: 203,
+  slug: "laptop-stand",
+  description: "Adjustable aluminum laptop stand",
+  priceCents: 3999,
+  currency: "USD",
+  imageUrl: "",
+  theme: "",
+  stock: 10,
+  categoryId: "cat-1",
 }
 
 beforeEach(() => {

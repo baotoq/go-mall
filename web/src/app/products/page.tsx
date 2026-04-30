@@ -1,6 +1,6 @@
 import Link from "next/link"
 import { ProductCard } from "@/components/product-card"
-import { categories, getProductsByCategory } from "@/lib/mock-data"
+import { listProducts, listCategories } from "@/lib/api"
 import { cn } from "@/lib/utils"
 
 export default async function ProductsPage({
@@ -9,7 +9,10 @@ export default async function ProductsPage({
   searchParams: Promise<{ category?: string }>
 }) {
   const { category } = await searchParams
-  const products = getProductsByCategory(category)
+  const [{ products }, categories] = await Promise.all([
+    listProducts({ categoryId: category }),
+    listCategories(),
+  ])
 
   return (
     <div className="flex-1 py-8 px-4">
@@ -38,13 +41,12 @@ export default async function ProductsPage({
                   key={cat.id}
                   href={`/products?category=${cat.id}`}
                   className={cn(
-                    "flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors",
+                    "block px-3 py-2 rounded-lg text-sm transition-colors",
                     category === cat.id
                       ? "bg-primary text-primary-foreground font-medium"
                       : "hover:bg-muted",
                   )}
                 >
-                  <span>{cat.emoji}</span>
                   {cat.name}
                 </Link>
               ))}

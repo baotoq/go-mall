@@ -2,11 +2,14 @@ import Link from "next/link"
 import { ArrowRight } from "lucide-react"
 import { buttonVariants } from "@/components/ui/button"
 import { ProductCard } from "@/components/product-card"
-import { categories, getFeaturedProducts } from "@/lib/mock-data"
+import { listProducts, listCategories } from "@/lib/api"
 import { cn } from "@/lib/utils"
 
-export default function Home() {
-  const featured = getFeaturedProducts()
+export default async function Home() {
+  const [{ products: featured }, categories] = await Promise.all([
+    listProducts({ pageSize: 4 }),
+    listCategories(),
+  ])
 
   return (
     <div className="flex-1">
@@ -46,11 +49,10 @@ export default function Home() {
                 href={`/products?category=${cat.id}`}
                 className="rounded-xl border bg-card p-6 text-center hover:shadow-md hover:border-primary/30 transition-all"
               >
-                <div className="text-4xl mb-3">{cat.emoji}</div>
-                <div className="font-semibold">{cat.name}</div>
-                <div className="text-sm text-muted-foreground mt-0.5">
-                  {cat.count} items
+                <div className="text-4xl font-bold text-muted-foreground/20 mb-3 select-none">
+                  {cat.name.charAt(0)}
                 </div>
+                <div className="font-semibold">{cat.name}</div>
               </Link>
             ))}
           </div>

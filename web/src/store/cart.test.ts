@@ -2,10 +2,10 @@ import { beforeEach, describe, expect, it } from "vitest"
 import { useCartStore } from "@/store/cart"
 
 const sampleItem = {
-  id: 1,
+  id: "abc-123",
   name: "Wireless Headphones",
-  price: 79.99,
-  emoji: "🎧",
+  priceCents: 7999,
+  imageUrl: "",
 }
 
 beforeEach(() => {
@@ -53,11 +53,11 @@ describe("totals", () => {
   it("totalItems sums quantities", () => {
     useCartStore.getState().addItem(sampleItem)
     useCartStore.getState().addItem(sampleItem)
-    useCartStore.getState().addItem({ id: 2, name: "Watch", price: 50, emoji: "⌚" })
+    useCartStore.getState().addItem({ id: "def-456", name: "Watch", priceCents: 5000, imageUrl: "" })
     expect(useCartStore.getState().totalItems()).toBe(3)
   })
 
-  it("totalPrice sums price × quantity", () => {
+  it("totalPrice sums priceCents/100 × quantity", () => {
     useCartStore.getState().addItem(sampleItem)
     useCartStore.getState().addItem(sampleItem)
     expect(useCartStore.getState().totalPrice()).toBeCloseTo(159.98)

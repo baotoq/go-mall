@@ -1,19 +1,19 @@
-import React from "react"
 import { render, screen, fireEvent } from "@testing-library/react"
-import { beforeEach, describe, expect, it, vi } from "vitest"
+import { beforeEach, describe, expect, it } from "vitest"
 import { ProductCard } from "@/components/product-card"
 import { useCartStore } from "@/store/cart"
 
 const product = {
-  id: 1,
+  id: "abc-123",
   name: "Wireless Headphones",
-  price: 79.99,
-  category: "electronics",
+  slug: "wireless-headphones",
   description: "Great headphones",
-  emoji: "🎧",
-  rating: 4.5,
-  reviews: 128,
-  badge: "Best Seller",
+  priceCents: 7999,
+  currency: "USD",
+  imageUrl: "",
+  theme: "",
+  stock: 50,
+  categoryId: "cat-1",
 }
 
 beforeEach(() => {
@@ -27,21 +27,15 @@ describe("ProductCard", () => {
     expect(screen.getByText("$79.99")).toBeDefined()
   })
 
-  it("renders badge when present", () => {
+  it("renders description excerpt", () => {
     render(<ProductCard product={product} />)
-    expect(screen.getByText("Best Seller")).toBeDefined()
-  })
-
-  it("does not render badge when absent", () => {
-    const noBadge = { ...product, badge: undefined }
-    render(<ProductCard product={noBadge} />)
-    expect(screen.queryByText("Best Seller")).toBeNull()
+    expect(screen.getByText("Great headphones")).toBeDefined()
   })
 
   it("adds item to cart on click", () => {
     render(<ProductCard product={product} />)
     fireEvent.click(screen.getByRole("button", { name: /add/i }))
     expect(useCartStore.getState().items).toHaveLength(1)
-    expect(useCartStore.getState().items[0].id).toBe(1)
+    expect(useCartStore.getState().items[0].id).toBe("abc-123")
   })
 })

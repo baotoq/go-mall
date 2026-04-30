@@ -1,9 +1,8 @@
 import { notFound } from "next/navigation"
 import Link from "next/link"
-import { Star, ArrowLeft } from "lucide-react"
-import { getProductById, categories } from "@/lib/mock-data"
+import { ArrowLeft } from "lucide-react"
+import { getProduct, listCategories } from "@/lib/api"
 import { AddToCartButton } from "@/components/add-to-cart-button"
-import { cn } from "@/lib/utils"
 
 export default async function ProductPage({
   params,
@@ -11,10 +10,13 @@ export default async function ProductPage({
   params: Promise<{ id: string }>
 }) {
   const { id } = await params
-  const product = getProductById(Number(id))
+  const [product, categories] = await Promise.all([
+    getProduct(id),
+    listCategories(),
+  ])
   if (!product) notFound()
 
-  const category = categories.find((c) => c.id === product.category)
+  const category = categories.find((c) => c.id === product.categoryId)
 
   return (
     <div className="flex-1 py-8 px-4">
@@ -29,45 +31,40 @@ export default async function ProductPage({
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
           {/* Image */}
-          <div className="aspect-square rounded-2xl bg-muted flex items-center justify-center text-[8rem] select-none">
-            {product.emoji}
+          <div className="aspect-square rounded-2xl bg-muted flex items-center justify-center overflow-hidden">
+            {product.imageUrl ? (
+              <img
+                src={product.imageUrl}
+                alt={product.name}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <span className="text-[8rem] font-bold text-muted-foreground/20 select-none">
+                {product.name.charAt(0).toUpperCase()}
+              </span>
+            )}
           </div>
 
           {/* Info */}
           <div className="space-y-5">
             <div className="space-y-1">
-              {product.badge && (
-                <span className="inline-block text-xs font-semibold bg-primary text-primary-foreground px-2.5 py-0.5 rounded-full mb-2">
-                  {product.badge}
-                </span>
+              {category && (
+                <p className="text-sm text-muted-foreground">{category.name}</p>
               )}
-              <p className="text-sm text-muted-foreground">
-                {category?.emoji} {category?.name}
-              </p>
               <h1 className="text-3xl font-bold">{product.name}</h1>
             </div>
 
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-0.5">
-                {[...Array(5)].map((_, i) => (
-                  <Star
-                    key={i}
-                    className={cn(
-                      "size-4",
-                      i < Math.floor(product.rating)
-                        ? "fill-amber-400 text-amber-400"
-                        : "text-muted-foreground/30 fill-muted-foreground/30",
-                    )}
-                  />
-                ))}
-              </div>
-              <span className="text-sm font-medium">{product.rating}</span>
-              <span className="text-sm text-muted-foreground">
-                ({product.reviews} reviews)
-              </span>
-            </div>
+            <p className="text-4xl font-bold">
+              ${(product.priceCents / 100).toFixed(2)}
+            </p>
 
-            <p className="text-4xl font-bold">${product.price}</p>
+            {product.stock > 0 ? (
+              <p className="text-sm text-green-600 font-medium">
+                In stock ({product.stock} available)
+              </p>
+            ) : (
+              <p className="text-sm text-destructive font-medium">Out of stock</p>
+            )}
 
             <p className="text-muted-foreground leading-relaxed">
               {product.description}

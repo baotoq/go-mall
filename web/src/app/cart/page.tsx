@@ -49,8 +49,18 @@ export default function CartPage() {
               key={item.id}
               className="flex items-center gap-4 rounded-xl border bg-card p-4"
             >
-              <div className="size-16 rounded-lg bg-muted flex items-center justify-center text-3xl shrink-0 select-none">
-                {item.emoji}
+              <div className="size-16 rounded-lg bg-muted flex items-center justify-center shrink-0 overflow-hidden">
+                {item.imageUrl ? (
+                  <img
+                    src={item.imageUrl}
+                    alt={item.name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-xl font-bold text-muted-foreground/30 select-none">
+                    {item.name.charAt(0).toUpperCase()}
+                  </span>
+                )}
               </div>
               <div className="flex-1 min-w-0">
                 <Link
@@ -60,7 +70,7 @@ export default function CartPage() {
                   {item.name}
                 </Link>
                 <p className="text-sm text-muted-foreground">
-                  ${item.price} each
+                  ${(item.priceCents / 100).toFixed(2)} each
                 </p>
               </div>
               <div className="flex items-center gap-2 shrink-0">
@@ -83,7 +93,7 @@ export default function CartPage() {
                 </Button>
               </div>
               <p className="w-20 text-right font-bold shrink-0">
-                ${(item.price * item.quantity).toFixed(2)}
+                ${((item.priceCents / 100) * item.quantity).toFixed(2)}
               </p>
               <Button
                 variant="ghost"

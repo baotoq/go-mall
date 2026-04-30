@@ -1,4 +1,3 @@
-import React from "react"
 import { render, screen } from "@testing-library/react"
 import { beforeEach, describe, expect, it } from "vitest"
 import { Header } from "@/components/header"
@@ -28,7 +27,7 @@ describe("Header", () => {
 
   it("shows item count badge when cart has items", () => {
     useCartStore.setState({
-      items: [{ id: 1, name: "Test", price: 10, emoji: "📦", quantity: 2 }],
+      items: [{ id: "test-1", name: "Test", priceCents: 1000, imageUrl: "", quantity: 2 }],
     })
     render(<Header />)
     expect(screen.getByText("2")).toBeDefined()

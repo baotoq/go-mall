@@ -4,7 +4,7 @@ import { ShoppingCart, Check } from "lucide-react"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { useCartStore } from "@/store/cart"
-import type { Product } from "@/lib/mock-data"
+import type { Product } from "@/lib/types"
 
 export function AddToCartButton({ product }: { product: Product }) {
   const [added, setAdded] = useState(false)
@@ -14,8 +14,8 @@ export function AddToCartButton({ product }: { product: Product }) {
     addItem({
       id: product.id,
       name: product.name,
-      price: product.price,
-      emoji: product.emoji,
+      priceCents: product.priceCents,
+      imageUrl: product.imageUrl,
     })
     setAdded(true)
     setTimeout(() => setAdded(false), 1500)

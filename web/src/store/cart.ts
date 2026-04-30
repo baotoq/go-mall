@@ -3,18 +3,18 @@
 import { create } from "zustand"
 
 export interface CartItem {
-  id: number
+  id: string
   name: string
-  price: number
-  emoji: string
+  priceCents: number
+  imageUrl: string
   quantity: number
 }
 
 interface CartStore {
   items: CartItem[]
   addItem: (item: Omit<CartItem, "quantity">) => void
-  removeItem: (id: number) => void
-  updateQuantity: (id: number, quantity: number) => void
+  removeItem: (id: string) => void
+  updateQuantity: (id: string, quantity: number) => void
   totalItems: () => number
   totalPrice: () => number
   clearCart: () => void
@@ -49,6 +49,6 @@ export const useCartStore = create<CartStore>((set, get) => ({
   },
   totalItems: () => get().items.reduce((acc, i) => acc + i.quantity, 0),
   totalPrice: () =>
-    get().items.reduce((acc, i) => acc + i.price * i.quantity, 0),
+    get().items.reduce((acc, i) => acc + (i.priceCents / 100) * i.quantity, 0),
   clearCart: () => set({ items: [] }),
 }))
