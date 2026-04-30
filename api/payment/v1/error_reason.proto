@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package payment.v1;
+
+option go_package = "gomall/api/payment/v1;v1";
+
+enum ErrorReason {
+  ER_UNSPECIFIED = 0;
+  PAYMENT_NOT_FOUND = 1;
+  INVALID_ARGUMENT = 2;
+  PAYMENT_ALREADY_COMPLETED = 3;
+  PAYMENT_CANNOT_REFUND = 4;
+}

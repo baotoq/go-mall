@@ -4,6 +4,7 @@ resources:
   - greeter.yaml
   - catalog.yaml
   - cart.yaml
+  - payment.yaml
   - rbac.yaml
 configMapGenerator:
   - name: greeter-config

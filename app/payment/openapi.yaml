@@ -1,0 +1,152 @@
+# Generated with protoc-gen-openapi
+# https://github.com/google/gnostic/tree/master/cmd/protoc-gen-openapi
+
+openapi: 3.0.3
+info:
+    title: PaymentService API
+    version: 0.0.1
+paths:
+    /v1/payments:
+        get:
+            tags:
+                - PaymentService
+            operationId: PaymentService_ListPayments
+            parameters:
+                - name: userId
+                  in: query
+                  schema:
+                    type: string
+                - name: orderId
+                  in: query
+                  schema:
+                    type: string
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/payment.v1.ListPaymentsResponse'
+        post:
+            tags:
+                - PaymentService
+            operationId: PaymentService_CreatePayment
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/payment.v1.CreatePaymentRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/payment.v1.Payment'
+    /v1/payments/{id}:
+        get:
+            tags:
+                - PaymentService
+            operationId: PaymentService_GetPayment
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/payment.v1.Payment'
+    /v1/payments/{id}/refund:
+        post:
+            tags:
+                - PaymentService
+            operationId: PaymentService_RefundPayment
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/payment.v1.RefundPaymentRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/payment.v1.Payment'
+components:
+    schemas:
+        payment.v1.CreatePaymentRequest:
+            type: object
+            properties:
+                orderId:
+                    type: string
+                userId:
+                    type: string
+                amountCents:
+                    type: string
+                currency:
+                    type: string
+                provider:
+                    type: string
+        payment.v1.ListPaymentsResponse:
+            type: object
+            properties:
+                payments:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/payment.v1.Payment'
+                total:
+                    type: integer
+                    format: int32
+        payment.v1.Payment:
+            type: object
+            properties:
+                id:
+                    type: string
+                orderId:
+                    type: string
+                userId:
+                    type: string
+                amountCents:
+                    type: string
+                currency:
+                    type: string
+                status:
+                    type: integer
+                    format: enum
+                provider:
+                    type: string
+                createdAt:
+                    type: string
+                updatedAt:
+                    type: string
+        payment.v1.RefundPaymentRequest:
+            type: object
+            properties:
+                id:
+                    type: string
+tags:
+    - name: PaymentService
