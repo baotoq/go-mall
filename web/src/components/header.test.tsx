@@ -1,7 +1,12 @@
 import { render, screen } from "@testing-library/react"
-import { beforeEach, describe, expect, it } from "vitest"
+import { beforeEach, describe, expect, it, vi } from "vitest"
 import { Header } from "@/components/header"
 import { useCartStore } from "@/store/cart"
+
+vi.mock("next-auth/react", () => ({
+  useSession: () => ({ data: null, status: "unauthenticated" }),
+  signOut: vi.fn(),
+}))
 
 beforeEach(() => {
   useCartStore.setState({ items: [] })
