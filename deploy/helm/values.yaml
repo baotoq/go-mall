@@ -16,6 +16,21 @@ postgres:
   metrics:
     enabled: false
 
+keycloak:
+  image:
+    registry: quay.io
+    repository: keycloak/keycloak
+    tag: "26.3.3"
+  auth:
+    adminUser: admin
+    adminPassword: admin
+  resources:
+    requests:
+      cpu: 100m
+      memory: 512Mi
+    limits:
+      memory: 1Gi
+
 redis:
   fullnameOverride: redis
   architecture: standalone
