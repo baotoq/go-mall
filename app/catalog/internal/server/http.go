@@ -7,6 +7,7 @@ import (
 	"gomall/app/catalog/internal/conf"
 	"gomall/app/catalog/internal/service"
 
+	"github.com/MicahParks/keyfunc/v3"
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/go-kratos/kratos/v2/middleware/auth/jwt"
 	"github.com/go-kratos/kratos/v2/middleware/recovery"
@@ -23,14 +24,15 @@ var publicRoutes = map[string]struct{}{
 }
 
 func NewHTTPServer(c *conf.Server, catalog *service.CatalogService, logger log.Logger) *http.Server {
-	secret := []byte(c.GetAuth().GetSecret())
+	jwks, err := keyfunc.NewDefault([]string{c.GetAuth().GetJwksUrl()})
+	if err != nil {
+		panic(err)
+	}
 	var opts = []http.ServerOption{
 		http.Middleware(
 			recovery.Recovery(),
 			selector.Server(
-				jwt.Server(func(_ *jwtv5.Token) (interface{}, error) {
-					return secret, nil
-				}),
+				jwt.Server(jwks.Keyfunc, jwt.WithSigningMethod(jwtv5.SigningMethodRS256)),
 			).Match(func(_ context.Context, op string) bool {
 				_, public := publicRoutes[op]
 				return !public

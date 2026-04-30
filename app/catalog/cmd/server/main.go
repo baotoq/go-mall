@@ -107,6 +107,14 @@ func main() {
 		bc.Data.Database.Source = v
 	}
 
+	// Inject Keycloak JWKS URL from Dapr secret store.
+	if v := secret["KEYCLOAK_JWKS_URL"]; v != "" {
+		if bc.Server.Auth == nil {
+			bc.Server.Auth = &conf.Server_Auth{}
+		}
+		bc.Server.Auth.JwksUrl = v
+	}
+
 	app, cleanup, err := wireApp(bc.Server, bc.Data, logger)
 	if err != nil {
 		panic(err)

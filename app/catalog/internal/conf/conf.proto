@@ -22,7 +22,7 @@ message Server {
     google.protobuf.Duration timeout = 3;
   }
   message Auth {
-    string secret = 1;
+    string jwks_url = 1;
   }
   HTTP http = 1;
   GRPC grpc = 2;

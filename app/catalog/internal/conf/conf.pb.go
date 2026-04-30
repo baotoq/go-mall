@@ -316,7 +316,7 @@ func (x *Server_GRPC) GetTimeout() *durationpb.Duration {
 
 type Server_Auth struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Secret        string                 `protobuf:"bytes,1,opt,name=secret,proto3" json:"secret,omitempty"`
+	JwksUrl       string                 `protobuf:"bytes,1,opt,name=jwks_url,json=jwksUrl,proto3" json:"jwks_url,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -351,9 +351,9 @@ func (*Server_Auth) Descriptor() ([]byte, []int) {
 	return file_app_catalog_internal_conf_conf_proto_rawDescGZIP(), []int{1, 2}
 }
 
-func (x *Server_Auth) GetSecret() string {
+func (x *Server_Auth) GetJwksUrl() string {
 	if x != nil {
-		return x.Secret
+		return x.JwksUrl
 	}
 	return ""
 }
@@ -537,7 +537,7 @@ const file_app_catalog_internal_conf_conf_proto_rawDesc = "" +
 	"$app/catalog/internal/conf/conf.proto\x12\fcatalog.conf\x1a\x1egoogle/protobuf/duration.proto\"a\n" +
 	"\tBootstrap\x12,\n" +
 	"\x06server\x18\x01 \x01(\v2\x14.catalog.conf.ServerR\x06server\x12&\n" +
-	"\x04data\x18\x02 \x01(\v2\x12.catalog.conf.DataR\x04data\"\x8b\x03\n" +
+	"\x04data\x18\x02 \x01(\v2\x12.catalog.conf.DataR\x04data\"\x8e\x03\n" +
 	"\x06Server\x12-\n" +
 	"\x04http\x18\x01 \x01(\v2\x19.catalog.conf.Server.HTTPR\x04http\x12-\n" +
 	"\x04grpc\x18\x02 \x01(\v2\x19.catalog.conf.Server.GRPCR\x04grpc\x12-\n" +
@@ -549,9 +549,9 @@ const file_app_catalog_internal_conf_conf_proto_rawDesc = "" +
 	"\x04GRPC\x12\x18\n" +
 	"\anetwork\x18\x01 \x01(\tR\anetwork\x12\x12\n" +
 	"\x04addr\x18\x02 \x01(\tR\x04addr\x123\n" +
-	"\atimeout\x18\x03 \x01(\v2\x19.google.protobuf.DurationR\atimeout\x1a\x1e\n" +
-	"\x04Auth\x12\x16\n" +
-	"\x06secret\x18\x01 \x01(\tR\x06secret\"\xc8\x03\n" +
+	"\atimeout\x18\x03 \x01(\v2\x19.google.protobuf.DurationR\atimeout\x1a!\n" +
+	"\x04Auth\x12\x19\n" +
+	"\bjwks_url\x18\x01 \x01(\tR\ajwksUrl\"\xc8\x03\n" +
 	"\x04Data\x127\n" +
 	"\bdatabase\x18\x01 \x01(\v2\x1b.catalog.conf.Data.DatabaseR\bdatabase\x12.\n" +
 	"\x05redis\x18\x02 \x01(\v2\x18.catalog.conf.Data.RedisR\x05redis\x121\n" +
