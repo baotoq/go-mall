@@ -4,7 +4,7 @@ package ent
 
 import (
 	"fmt"
-	"greeter/app/greeter/internal/data/ent/greeter"
+	"gomall/app/greeter/internal/data/ent/greeter"
 	"strings"
 
 	"entgo.io/ent"

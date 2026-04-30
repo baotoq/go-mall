@@ -9,11 +9,11 @@ package main
 import (
 	"github.com/go-kratos/kratos/v2"
 	"github.com/go-kratos/kratos/v2/log"
-	"greeter/app/greeter/internal/biz"
-	"greeter/app/greeter/internal/conf"
-	"greeter/app/greeter/internal/data"
-	"greeter/app/greeter/internal/server"
-	"greeter/app/greeter/internal/service"
+	"gomall/app/greeter/internal/biz"
+	"gomall/app/greeter/internal/conf"
+	"gomall/app/greeter/internal/data"
+	"gomall/app/greeter/internal/server"
+	"gomall/app/greeter/internal/service"
 )
 
 import (

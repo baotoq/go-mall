@@ -6,7 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"greeter/app/greeter/internal/data/ent/greeter"
+	"gomall/app/greeter/internal/data/ent/greeter"
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"

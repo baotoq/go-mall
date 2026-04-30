@@ -2,6 +2,15 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "Attach to catalog in k8s",
+      "type": "go",
+      "request": "attach",
+      "mode": "remote",
+      "debugAdapter": "legacy",
+      "host": "127.0.0.1",
+      "port": 2346
+    },
+    {
       "name": "Attach to greeter in k8s",
       "type": "go",
       "request": "attach",
@@ -9,6 +18,12 @@
       "debugAdapter": "legacy",
       "host": "127.0.0.1",
       "port": 2345
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Attach to all",
+      "configurations": ["Attach to greeter in k8s", "Attach to catalog in k8s"]
     }
   ]
 }

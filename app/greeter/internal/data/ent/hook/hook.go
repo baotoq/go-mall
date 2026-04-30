@@ -5,7 +5,7 @@ package hook
 import (
 	"context"
 	"fmt"
-	"greeter/app/greeter/internal/data/ent"
+	"gomall/app/greeter/internal/data/ent"
 )
 
 // The GreeterFunc type is an adapter to allow the use of ordinary

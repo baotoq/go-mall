@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package catalog.v1;
+
+option go_package = "greeter/api/catalog/v1;v1";
+
+enum ErrorReason {
+  ER_UNSPECIFIED = 0;
+  PRODUCT_NOT_FOUND = 1;
+  CATEGORY_NOT_FOUND = 2;
+  INVALID_ARGUMENT = 3;
+  CONFLICT = 4;
+}

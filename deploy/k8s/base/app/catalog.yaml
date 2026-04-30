@@ -1,0 +1,43 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: catalog
+spec:
+  ports:
+    - name: http
+      port: 8000
+    - name: grpc
+      port: 9000
+  selector:
+    app: catalog
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: catalog
+spec:
+  selector:
+    matchLabels:
+      app: catalog
+  template:
+    metadata:
+      labels:
+        app: catalog
+      annotations:
+        dapr.io/enabled: "true"
+        dapr.io/app-id: "catalog"
+        dapr.io/log-as-json: "true"
+    spec:
+      containers:
+        - name: catalog
+          image: catalog
+          ports:
+            - containerPort: 8000
+            - containerPort: 9000
+          volumeMounts:
+            - name: config
+              mountPath: /data/conf
+      volumes:
+        - name: config
+          configMap:
+            name: catalog-config

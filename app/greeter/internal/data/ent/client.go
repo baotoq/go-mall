@@ -9,9 +9,9 @@ import (
 	"log"
 	"reflect"
 
-	"greeter/app/greeter/internal/data/ent/migrate"
+	"gomall/app/greeter/internal/data/ent/migrate"
 
-	"greeter/app/greeter/internal/data/ent/greeter"
+	"gomall/app/greeter/internal/data/ent/greeter"
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect"

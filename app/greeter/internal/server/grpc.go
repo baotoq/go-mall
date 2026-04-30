@@ -1,9 +1,9 @@
 package server
 
 import (
-	v1 "greeter/api/greeter/helloworld/v1"
-	"greeter/app/greeter/internal/conf"
-	"greeter/app/greeter/internal/service"
+	v1 "gomall/api/greeter/helloworld/v1"
+	"gomall/app/greeter/internal/conf"
+	"gomall/app/greeter/internal/service"
 
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/go-kratos/kratos/v2/middleware/recovery"

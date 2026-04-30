@@ -12,7 +12,7 @@ wire:
 .PHONY: ent
 # generate ent
 ent:
-	cd internal/data && ent generate ./ent/schema
+	cd internal/data && go run -mod=mod entgo.io/ent/cmd/ent generate ./ent/schema
 
 .PHONY: run
 # run app

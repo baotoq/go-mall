@@ -3,8 +3,8 @@ package service
 import (
 	"context"
 
-	v1 "greeter/api/greeter/helloworld/v1"
-	"greeter/app/greeter/internal/biz"
+	v1 "gomall/api/greeter/helloworld/v1"
+	"gomall/app/greeter/internal/biz"
 )
 
 type GreeterService struct {

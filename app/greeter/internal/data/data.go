@@ -2,8 +2,8 @@ package data
 
 import (
 	"context"
-	"greeter/app/greeter/internal/data/ent"
-	"greeter/app/greeter/internal/conf"
+	"gomall/app/greeter/internal/data/ent"
+	"gomall/app/greeter/internal/conf"
 
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/google/wire"

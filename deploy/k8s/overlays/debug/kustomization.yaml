@@ -11,3 +11,7 @@ patches:
     target:
       kind: Service
       name: greeter
+  - path: catalog-debug-patch.yaml
+    target:
+      kind: Deployment
+      name: catalog

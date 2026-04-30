@@ -6,7 +6,7 @@ import (
 	"os"
 	"time"
 
-	"greeter/app/greeter/internal/conf"
+	"gomall/app/greeter/internal/conf"
 
 	dapr "github.com/dapr/go-sdk/client"
 	"github.com/go-kratos/kratos/v2"

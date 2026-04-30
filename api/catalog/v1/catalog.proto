@@ -1,0 +1,161 @@
+syntax = "proto3";
+
+package catalog.v1;
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+
+option go_package = "greeter/api/catalog/v1;v1";
+
+service CatalogService {
+  rpc ListProducts(ListProductsRequest) returns (ListProductsResponse) {
+    option (google.api.http) = {get: "/v1/products"};
+  }
+  rpc GetProduct(GetProductRequest) returns (Product) {
+    option (google.api.http) = {get: "/v1/products/{id}"};
+  }
+  rpc CreateProduct(CreateProductRequest) returns (Product) {
+    option (google.api.http) = {
+      post: "/v1/products"
+      body: "*"
+    };
+  }
+  rpc UpdateProduct(UpdateProductRequest) returns (Product) {
+    option (google.api.http) = {
+      put: "/v1/products/{id}"
+      body: "*"
+    };
+  }
+  rpc DeleteProduct(DeleteProductRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {delete: "/v1/products/{id}"};
+  }
+
+  rpc ListCategories(ListCategoriesRequest) returns (ListCategoriesResponse) {
+    option (google.api.http) = {get: "/v1/categories"};
+  }
+  rpc GetCategory(GetCategoryRequest) returns (Category) {
+    option (google.api.http) = {get: "/v1/categories/{id}"};
+  }
+  rpc CreateCategory(CreateCategoryRequest) returns (Category) {
+    option (google.api.http) = {
+      post: "/v1/categories"
+      body: "*"
+    };
+  }
+  rpc UpdateCategory(UpdateCategoryRequest) returns (Category) {
+    option (google.api.http) = {
+      put: "/v1/categories/{id}"
+      body: "*"
+    };
+  }
+  rpc DeleteCategory(DeleteCategoryRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {delete: "/v1/categories/{id}"};
+  }
+}
+
+message Category {
+  string id = 1;
+  string name = 2;
+  string slug = 3;
+  string description = 4;
+  string created_at = 5;
+  string updated_at = 6;
+}
+
+message Product {
+  string id = 1;
+  string name = 2;
+  string slug = 3;
+  string description = 4;
+  int64 price_cents = 5;
+  string currency = 6;
+  string image_url = 7;
+  string theme = 8;
+  int32 stock = 9;
+  string category_id = 10;
+  string created_at = 11;
+  string updated_at = 12;
+}
+
+message ListProductsRequest {
+  string q = 1;
+  string category_id = 2;
+  int64 min_price = 3;
+  int64 max_price = 4;
+  string sort = 5;
+  int32 page = 6;
+  int32 page_size = 7;
+}
+
+message ListProductsResponse {
+  repeated Product products = 1;
+  int32 page = 2;
+  int32 page_size = 3;
+  int64 total = 4;
+}
+
+message GetProductRequest {
+  string id = 1;
+}
+
+message CreateProductRequest {
+  string name = 1;
+  string slug = 2;
+  string description = 3;
+  int64 price_cents = 4;
+  string currency = 5;
+  string image_url = 6;
+  string theme = 7;
+  int32 stock = 8;
+  string category_id = 9;
+}
+
+message UpdateProductRequest {
+  string id = 1;
+  string name = 2;
+  string slug = 3;
+  string description = 4;
+  int64 price_cents = 5;
+  string currency = 6;
+  string image_url = 7;
+  string theme = 8;
+  int32 stock = 9;
+  string category_id = 10;
+}
+
+message DeleteProductRequest {
+  string id = 1;
+}
+
+message ListCategoriesRequest {
+  int32 page = 1;
+  int32 page_size = 2;
+}
+
+message ListCategoriesResponse {
+  repeated Category categories = 1;
+  int32 page = 2;
+  int32 page_size = 3;
+  int64 total = 4;
+}
+
+message GetCategoryRequest {
+  string id = 1;
+}
+
+message CreateCategoryRequest {
+  string name = 1;
+  string slug = 2;
+  string description = 3;
+}
+
+message UpdateCategoryRequest {
+  string id = 1;
+  string name = 2;
+  string slug = 3;
+  string description = 4;
+}
+
+message DeleteCategoryRequest {
+  string id = 1;
+}

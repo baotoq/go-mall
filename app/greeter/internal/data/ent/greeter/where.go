@@ -3,7 +3,7 @@
 package greeter
 
 import (
-	"greeter/app/greeter/internal/data/ent/predicate"
+	"gomall/app/greeter/internal/data/ent/predicate"
 
 	"entgo.io/ent/dialect/sql"
 )

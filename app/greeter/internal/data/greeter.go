@@ -3,7 +3,7 @@ package data
 import (
 	"context"
 
-	"greeter/app/greeter/internal/biz"
+	"gomall/app/greeter/internal/biz"
 
 	"github.com/go-kratos/kratos/v2/log"
 )

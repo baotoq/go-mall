@@ -13,15 +13,23 @@ dlv_flags = '--headless --listen=:2345 --api-version=2 --accept-multiclient --on
 if dlv_continue:
     dlv_flags += ' --continue'
 
-entrypoint = ['sh', '-c', 'exec dlv exec /app/greeter ' + dlv_flags + ' -- -conf /data/conf']
+entrypoint_greeter = ['sh', '-c', 'exec dlv exec /app/greeter ' + dlv_flags + ' -- -conf /data/conf']
+entrypoint_catalog = ['sh', '-c', 'exec dlv exec /app/catalog ' + dlv_flags + ' -- -conf /data/conf']
 
-compile_cmd = 'mkdir -p dist && GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -gcflags="all=-N -l" -ldflags "-X main.Version=dev" -o ./dist/greeter ./app/greeter/cmd/server'
+compile_greeter = 'mkdir -p dist && GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -gcflags="all=-N -l" -ldflags "-X main.Version=dev" -o ./dist/greeter ./app/greeter/cmd/server'
+compile_catalog = 'mkdir -p dist && GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -gcflags="all=-N -l" -ldflags "-X main.Version=dev" -o ./dist/catalog ./app/catalog/cmd/server'
 
 # Compile locally on every Go source change.
 # Result is synced into the running container — no full image rebuild needed.
-local_resource('compile',
-    cmd=compile_cmd,
-    deps=['./app', './api', 'go.mod', 'go.sum'],
+local_resource('compile-greeter',
+    cmd=compile_greeter,
+    deps=['./app/greeter', './api/greeter', 'go.mod', 'go.sum'],
+    labels=['build'],
+)
+
+local_resource('compile-catalog',
+    cmd=compile_catalog,
+    deps=['./app/catalog', './api/catalog', 'go.mod', 'go.sum'],
     labels=['build'],
 )
 
@@ -63,11 +71,22 @@ helm_resource(
 docker_build_with_restart(
     'greeter',
     '.',
-    entrypoint=entrypoint,
+    entrypoint=entrypoint_greeter,
     dockerfile='app/greeter/Dockerfile.dev.debug',
     only=['./dist'],
     live_update=[
         sync('./dist/greeter', '/app/greeter'),
+    ],
+)
+
+docker_build_with_restart(
+    'catalog',
+    '.',
+    entrypoint=entrypoint_catalog,
+    dockerfile='app/catalog/Dockerfile.dev.debug',
+    only=['./dist'],
+    live_update=[
+        sync('./dist/catalog', '/app/catalog'),
     ],
 )
 
@@ -95,6 +114,12 @@ k8s_resource(
 
 k8s_resource('greeter',
     port_forwards=['8000:8000', '9000:9000', '2345:2345'],
-    resource_deps=['postgres', 'redis', 'compile', 'dapr', 'dapr-components'],
+    resource_deps=['postgres', 'redis', 'compile-greeter', 'dapr', 'dapr-components'],
+    labels=['app'],
+)
+
+k8s_resource('catalog',
+    port_forwards=['8001:8000', '9001:9000', '2346:2345'],
+    resource_deps=['postgres', 'compile-catalog', 'dapr', 'dapr-components'],
     labels=['app'],
 )

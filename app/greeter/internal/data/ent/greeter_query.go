@@ -5,8 +5,8 @@ package ent
 import (
 	"context"
 	"fmt"
-	"greeter/app/greeter/internal/data/ent/greeter"
-	"greeter/app/greeter/internal/data/ent/predicate"
+	"gomall/app/greeter/internal/data/ent/greeter"
+	"gomall/app/greeter/internal/data/ent/predicate"
 	"math"
 
 	"entgo.io/ent"

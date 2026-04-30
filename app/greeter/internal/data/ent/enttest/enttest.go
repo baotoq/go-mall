@@ -5,11 +5,11 @@ package enttest
 import (
 	"context"
 
-	"greeter/app/greeter/internal/data/ent"
+	"gomall/app/greeter/internal/data/ent"
 	// required by schema hooks.
-	_ "greeter/app/greeter/internal/data/ent/runtime"
+	_ "gomall/app/greeter/internal/data/ent/runtime"
 
-	"greeter/app/greeter/internal/data/ent/migrate"
+	"gomall/app/greeter/internal/data/ent/migrate"
 
 	"entgo.io/ent/dialect/sql/schema"
 )

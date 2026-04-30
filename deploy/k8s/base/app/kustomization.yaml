@@ -2,10 +2,14 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - greeter.yaml
+  - catalog.yaml
   - rbac.yaml
 configMapGenerator:
   - name: greeter-config
     files:
       - config.yaml=../../../../app/greeter/configs/config.yaml
+  - name: catalog-config
+    files:
+      - config.yaml=../../../../app/catalog/configs/config.yaml
 generatorOptions:
   disableNameSuffixHash: true
