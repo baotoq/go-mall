@@ -1,0 +1,36 @@
+{
+  "realm": "gomall",
+  "enabled": true,
+  "bruteForceProtected": true,
+  "maxFailureWaitSeconds": 900,
+  "maxDeltaTimeSeconds": 43200,
+  "failureFactor": 5,
+  "waitIncrementSeconds": 60,
+  "quickLoginCheckMilliSeconds": 1000,
+  "minimumQuickLoginWaitSeconds": 60,
+  "passwordPolicy": "length(8)",
+  "revokeRefreshToken": false,
+  "clients": [
+    {
+      "clientId": "gomall-frontend",
+      "enabled": true,
+      "publicClient": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": true,
+      "standardFlowEnabled": false,
+      "secret": "${KEYCLOAK_CLIENT_SECRET}",
+      "redirectUris": [],
+      "webOrigins": []
+    }
+  ],
+  "users": [
+    {
+      "username": "service-account-gomall-frontend",
+      "enabled": true,
+      "serviceAccountClientId": "gomall-frontend",
+      "clientRoles": {
+        "realm-management": ["manage-users"]
+      }
+    }
+  ]
+}
