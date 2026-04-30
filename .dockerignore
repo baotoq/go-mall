@@ -11,8 +11,8 @@ Tiltfile
 .claude/
 
 # Dev Dockerfiles (not needed inside build context)
-app/tradingbot/Dockerfile.dev
-app/tradingbot/Dockerfile.dev.debug
+app/greeter/Dockerfile.dev
+app/greeter/Dockerfile.dev.debug
 
 # K8s / deploy configs
 deploy/

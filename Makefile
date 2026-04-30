@@ -3,16 +3,16 @@ GOPATH:=$(shell go env GOPATH)
 VERSION=$(shell git describe --tags --always)
 
 ifeq ($(GOHOSTOS), windows)
-	#the `find.exe` is different from `find` in bash/shell.
-	#to see https://docs.microsoft.com/en-us/windows-server/administration/windows-commands/find.
-	#changed to use git-bash.exe to run find cli or other cli friendly, caused of every developer has a Git.
-	#Git_Bash= $(subst cmd\,bin\bash.exe,$(dir $(shell where git)))
-	Git_Bash=$(subst \,/,$(subst cmd\,bin\bash.exe,$(dir $(shell where git))))
-	INTERNAL_PROTO_FILES=$(shell $(Git_Bash) -c "find app -name *.proto")
-	API_PROTO_FILES=$(shell $(Git_Bash) -c "find api -name *.proto")
+    #the `find.exe` is different from `find` in bash/shell.
+    #to see https://docs.microsoft.com/en-us/windows-server/administration/windows-commands/find.
+    #changed to use git-bash.exe to run find cli or other cli friendly, caused of every developer has a Git.
+    #Git_Bash= $(subst cmd\,bin\bash.exe,$(dir $(shell where git)))
+    Git_Bash=$(subst \,/,$(subst cmd\,bin\bash.exe,$(dir $(shell where git))))
+    INTERNAL_PROTO_FILES=$(shell $(Git_Bash) -c "find app -name *.proto -not -path '*/api/*.proto'")
+    API_PROTO_FILES=$(shell $(Git_Bash) -c "find api -name *.proto")
 else
-	INTERNAL_PROTO_FILES=$(shell find app -name *.proto)
-	API_PROTO_FILES=$(shell find api -name *.proto)
+    INTERNAL_PROTO_FILES=$(shell find app -name *.proto -not -path "*/api/*.proto")
+    API_PROTO_FILES=$(shell find api -name *.proto)
 endif
 
 .PHONY: init
@@ -31,7 +31,7 @@ init:
 config:
 	protoc --proto_path=. \
 	       --proto_path=./third_party \
- 	       --go_out=paths=source_relative:. \
+	       --go_out=paths=source_relative:. \
 	       $(INTERNAL_PROTO_FILES)
 
 .PHONY: api
@@ -39,16 +39,16 @@ config:
 api:
 	protoc --proto_path=./api \
 	       --proto_path=./third_party \
- 	       --go_out=paths=source_relative:./api \
- 	       --go-http_out=paths=source_relative:./api \
- 	       --go-grpc_out=paths=source_relative:./api \
-	       --openapi_out=fq_schema_naming=true,default_response=false:. \
+	       --go_out=paths=source_relative:./api \
+	       --go-http_out=paths=source_relative:./api \
+	       --go-grpc_out=paths=source_relative:./api \
+	       --openapi_out=fq_schema_naming=true,default_response=false:app/greeter \
 	       $(API_PROTO_FILES)
 
 .PHONY: build
 # build
 build:
-	mkdir -p bin/ && go build -ldflags "-X main.Version=$(VERSION)" -o ./bin/tradingbot ./app/tradingbot/cmd/server
+	mkdir -p bin/ && go build -ldflags "-X main.Version=$(VERSION)" -o ./bin/greeter ./app/greeter/cmd/server
 
 .PHONY: generate
 # generate
@@ -59,14 +59,19 @@ generate:
 .PHONY: dev
 # start dev environment with tilt
 dev:
+	tilt up -- --continue
+
+.PHONY: debug
+# start dev environment, wait for debugger to attach
+debug:
 	tilt up
 
 .PHONY: all
 # generate all
 all:
-	make api
-	make config
-	make generate
+	$(MAKE) api
+	$(MAKE) config
+	$(MAKE) generate
 
 # show help
 help:
@@ -78,7 +83,7 @@ help:
 	@awk '/^[a-zA-Z\-\_0-9]+:/ { \
 	helpMessage = match(lastLine, /^# (.*)/); \
 		if (helpMessage) { \
-			helpCommand = substr($$1, 0, index($$1, ":")); \
+			helpCommand = substr($$1, 0, index($$1, ":")-1); \
 			helpMessage = substr(lastLine, RSTART + 2, RLENGTH); \
 			printf "\033[36m%-22s\033[0m %s\n", helpCommand,helpMessage; \
 		} \

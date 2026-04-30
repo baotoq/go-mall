@@ -246,7 +246,7 @@ s.Start()
 
 ```bash
 dapr init            # pulls daprd, Redis, Zipkin containers
-dapr run --app-id myapp --app-port 8000 --dapr-http-port 3500 -- ./bin/tradingbot -conf ./configs
+dapr run --app-id myapp --app-port 8000 --dapr-http-port 3500 -- ./bin/greeter -conf ./configs
 dapr dashboard       # opens http://localhost:8080
 dapr stop --app-id myapp
 ```
@@ -264,7 +264,7 @@ Add sidecar annotations to any Deployment pod template:
 ```yaml
 annotations:
   dapr.io/enabled: "true"
-  dapr.io/app-id: "tradingbot"
+  dapr.io/app-id: "greeter"
   dapr.io/app-port: "8000"          # HTTP
   dapr.io/app-protocol: "grpc"      # set for gRPC apps
   dapr.io/config: "appconfig"       # reference a Configuration resource
@@ -289,7 +289,7 @@ annotations:
 
 **Namespace isolation** — Add `dapr.io/sidecar-namespace: <ns>` annotation. Cross-namespace invocation: `appId.namespace` format.
 
-## Repo fit — trading-bot
+## Repo fit — greeter
 
 Current stack: go-kratos v2 layered monolith, Wire DI, no Dapr yet.
 
@@ -301,6 +301,6 @@ Current stack: go-kratos v2 layered monolith, Wire DI, no Dapr yet.
 | Secrets | `internal/conf/` — fetch secrets from Dapr on startup instead of plain config.yaml values |
 | Workflow | `internal/biz/` — saga-style multi-step logic (e.g., recursive-buy flow) |
 
-K8s: `deploy/k8s/base/tradingbot.yaml` pod template needs the 4 `dapr.io/*` annotations. Add component YAMLs (statestore, pubsub) alongside in `deploy/k8s/base/`. No new overlay needed for basic sidecar injection.
+K8s: `deploy/k8s/base/greeter.yaml` pod template needs the 4 `dapr.io/*` annotations. Add component YAMLs (statestore, pubsub) alongside in `deploy/k8s/base/`. No new overlay needed for basic sidecar injection.
 
 Wire: add `dapr.NewClient()` as a constructor in `internal/data/data.go`, wire it into `data.ProviderSet`, inject into repo constructors that need state/pubsub access.

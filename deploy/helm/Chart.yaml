@@ -1,8 +1,8 @@
 apiVersion: v2
-name: trading-bot-deps
+name: greeter-deps
 version: 0.1.0
 type: application
-description: Local dev dependencies (Postgres + Redis) for trading-bot.
+description: Local dev dependencies (Postgres + Redis) for greeter.
 dependencies:
   - name: postgres
     version: 0.19.3

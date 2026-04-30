@@ -120,7 +120,7 @@ Add to `Makefile generate` target: `go generate ./ent`.
 import (
     "context"
     "log"
-    "tradingbot/ent"
+    "greeter/ent"
     _ "github.com/go-sql-driver/mysql"
 )
 
@@ -157,7 +157,7 @@ u, err := client.User.
 ### Query with predicates
 
 ```go
-import "tradingbot/ent/user"
+import "greeter/ent/user"
 
 users, err := client.User.
     Query().
@@ -168,7 +168,7 @@ users, err := client.User.
 ### Edge predicates
 
 ```go
-import "tradingbot/ent/pet"
+import "greeter/ent/pet"
 
 // pets that have an owner
 client.Pet.Query().Where(pet.HasOwner()).All(ctx)
@@ -273,7 +273,7 @@ Rename hook idiom: detect paired `DropColumn("old")` + `AddColumn("new")` in `Mo
 | `internal/data/data.go` | Replace TODO struct with `*ent.Client`; open in `NewData`, return cleanup that calls `client.Close()` |
 | `internal/data/<entity>.go` | Implement biz repo interfaces using `client.<Entity>...` builders |
 | `internal/biz/<entity>.go` | Define repo interfaces; biz code stays ent-agnostic |
-| `cmd/tradingbot/wire.go` | No change — `*conf.Data` already injected; `NewData` constructor signature stays |
+| `cmd/greeter/wire.go` | No change — `*conf.Data` already injected; `NewData` constructor signature stays |
 
 `internal/data/data.go` shape after wiring:
 
@@ -304,9 +304,7 @@ func (r *greeterRepo) Save(ctx context.Context, g *biz.Greeter) (*biz.Greeter, e
 
 ## 12. Useful next steps
 
-- For DCA bot: model `DCARun` (timestamp, fg_index, mayer, mvrv_z, multiplier, base, computed, btc_price, fill_price, fee, order_id) → see `docs/dca-strategy.md` decision-log schema.
-- Index `DCARun(timestamp DESC)` for backtest replay queries.
-- Add `Hooks()` for write-time validation (e.g. clamp multiplier to [0.25, 4]).
+- Add `Hooks()` for write-time validation (e.g. clamp a numeric field to a valid range).
 
 ## Sources
 

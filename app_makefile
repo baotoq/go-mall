@@ -1,0 +1,51 @@
+GOPATH:=$(shell go env GOPATH)
+VERSION=$(shell git describe --tags --always)
+APP_RELATIVE_PATH=$(shell basename $$PWD)
+APP_NAME=$(shell echo $(APP_RELATIVE_PATH) | sed -En "s/\//-/p")
+DOCKER_IMAGE=$(shell echo $(APP_NAME) |awk -F '@' '{print "go-kratos/beer-" $$0 ":0.1.0"}')
+
+.PHONY: wire
+# generate wire
+wire:
+	cd cmd/server && wire
+
+.PHONY: ent
+# generate ent
+ent:
+	cd internal/data && ent generate ./ent/schema
+
+.PHONY: run
+# run app
+run:
+	cd cmd/server && go run .
+
+.PHONY: test
+# test
+test:
+	go test -v ./...
+
+.PHONY: docker
+# build docker image
+docker:
+	cd ../../.. && docker build -f deploy/build/Dockerfile \
+		--build-arg APP_RELATIVE_PATH=$(APP_RELATIVE_PATH) \
+		-t $(DOCKER_IMAGE) .
+
+# show help
+help:
+	@echo ''
+	@echo 'Usage:'
+	@echo ' make [target]'
+	@echo ''
+	@echo 'Targets:'
+	@awk '/^[a-zA-Z\-\_0-9]+:/ { \
+	helpMessage = match(lastLine, /^# (.*)/); \
+		if (helpMessage) { \
+			helpCommand = substr($$1, 0, index($$1, ":")-1); \
+			helpMessage = substr(lastLine, RSTART + 2, RLENGTH); \
+			printf "\033[36m%-22s\033[0m %s\n", helpCommand,helpMessage; \
+		} \
+	} \
+	{ lastLine = $$0 }' $(MAKEFILE_LIST)
+
+.DEFAULT_GOAL := help

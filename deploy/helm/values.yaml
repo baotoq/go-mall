@@ -1,9 +1,9 @@
 postgres:
   fullnameOverride: postgres
   auth:
-    username: tradingbot
-    password: tradingbot
-    database: tradingbot
+    username: greeter
+    password: greeter
+    database: greeter
   primary:
     persistence:
       enabled: false

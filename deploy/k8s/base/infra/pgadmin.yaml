@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: pgadmin-config
-  namespace: trading-bot
+  namespace: greeter
 data:
   servers.json: |
     {
@@ -10,22 +10,22 @@ data:
         "1": {
           "Name": "Local Postgres",
           "Group": "Servers",
-          "Host": "postgres.trading-bot.svc.cluster.local",
+          "Host": "postgres.greeter.svc.cluster.local",
           "Port": 5432,
-          "MaintenanceDB": "tradingbot",
-          "Username": "tradingbot",
+          "MaintenanceDB": "greeter",
+          "Username": "greeter",
           "PassFile": "/pgpass/pgpassfile",
           "SSLMode": "prefer"
         }
       }
     }
-  pgpassfile: "postgres.trading-bot.svc.cluster.local:5432:*:tradingbot:tradingbot"
+  pgpassfile: "postgres.greeter.svc.cluster.local:5432:*:greeter:greeter"
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: pgadmin
-  namespace: trading-bot
+  namespace: greeter
   labels:
     app: pgadmin
 spec:
@@ -101,7 +101,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: pgadmin
-  namespace: trading-bot
+  namespace: greeter
 spec:
   selector:
     app: pgadmin

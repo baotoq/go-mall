@@ -1,4 +1,4 @@
-module tradingbot
+module greeter
 
 go 1.26.0
 

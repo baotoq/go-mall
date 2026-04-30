@@ -3,11 +3,11 @@ kind: Kustomization
 resources:
   - ../../base
 patches:
-  - path: tradingbot-debug-patch.yaml
+  - path: greeter-debug-patch.yaml
     target:
       kind: Deployment
-      name: tradingbot
-  - path: tradingbot-svc-debug-patch.yaml
+      name: greeter
+  - path: greeter-svc-debug-patch.yaml
     target:
       kind: Service
-      name: tradingbot
+      name: greeter
