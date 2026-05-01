@@ -66,21 +66,3 @@ spec:
         - name: config
           configMap:
             name: order-config
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: order-config
-data:
-  config.yaml: |
-    server:
-      http:
-        addr: 0.0.0.0:8000
-        timeout: 200s
-      grpc:
-        addr: 0.0.0.0:9000
-        timeout: 200s
-    data:
-      database:
-        driver: postgres
-        source: ""

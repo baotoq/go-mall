@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"gomall/app/order/internal/conf"
+	"gomall/pkg/secrets"
 	"gomall/pkg/outbox"
 
 	dapr "github.com/dapr/go-sdk/client"
@@ -103,12 +104,8 @@ func main() {
 		panic(err)
 	}
 
-	// Use order-specific DSN if available; fall back to shared DSN.
-	if v := secret["ORDER_DATABASE_CONNECTION_STRING"]; v != "" {
-		bc.Data.Database.Source = v
-	} else if v := secret["DATABASE_CONNECTION_STRING"]; v != "" {
-		bc.Data.Database.Source = v
-	}
+	sec := secrets.Parse(secret, "ORDER_DATABASE_CONNECTION_STRING")
+	bc.Data.Database.Source = sec.DatabaseConnectionString
 
 	app, cleanup, err := wireApp(bc.Server, bc.Data, logger, daprClient)
 	if err != nil {

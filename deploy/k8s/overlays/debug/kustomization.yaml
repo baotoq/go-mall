@@ -3,11 +3,20 @@ kind: Kustomization
 resources:
   - ../../base
 patches:
-  - path: catalog-debug-patch.yaml
-    target:
+  - target:
       kind: Deployment
-      name: catalog
-  - path: cart-debug-patch.yaml
-    target:
-      kind: Deployment
-      name: cart
+      labelSelector: "app in (catalog, cart, order, payment)"
+    patch: |-
+      - op: add
+        path: /spec/template/spec/containers/0/ports/-
+        value:
+          containerPort: 7000
+          name: dlv
+      - op: remove
+        path: /spec/template/spec/containers/0/readinessProbe
+      - op: remove
+        path: /spec/template/spec/containers/0/livenessProbe
+      - op: add
+        path: /spec/template/spec/containers/0/securityContext/capabilities
+        value:
+          add: ["SYS_PTRACE"]

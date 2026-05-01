@@ -3,11 +3,20 @@ kind: Kustomization
 resources:
   - catalog.yaml
   - cart.yaml
+  - order.yaml
   - payment.yaml
-  - rbac.yaml
 configMapGenerator:
   - name: catalog-config
     files:
       - config.yaml=../../../../app/catalog/configs/config.yaml
+  - name: cart-config
+    files:
+      - config.yaml=../../../../app/cart/configs/config.yaml
+  - name: order-config
+    files:
+      - config.yaml=../../../../app/order/configs/config.yaml
+  - name: payment-config
+    files:
+      - config.yaml=../../../../app/payment/configs/config.yaml
 generatorOptions:
   disableNameSuffixHash: true

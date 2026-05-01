@@ -1,2 +1,0 @@
-# RBAC for secret access removed — Dapr secretstore handles secret injection.
-# Direct pod access to Kubernetes secrets is not needed.

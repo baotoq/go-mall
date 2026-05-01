@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"gomall/app/payment/internal/conf"
+	"gomall/pkg/secrets"
 
 	dapr "github.com/dapr/go-sdk/client"
 	"github.com/go-kratos/kratos/v2"
@@ -100,16 +101,11 @@ func main() {
 		panic(err)
 	}
 
-	// Use payment-specific DSN if available; fall back to shared DSN.
-	if v := secret["PAYMENT_DATABASE_CONNECTION_STRING"]; v != "" {
-		bc.Data.Database.Source = v
-	} else if v := secret["DATABASE_CONNECTION_STRING"]; v != "" {
-		bc.Data.Database.Source = v
-	}
-
+	sec := secrets.Parse(secret, "PAYMENT_DATABASE_CONNECTION_STRING")
+	bc.Data.Database.Source = sec.DatabaseConnectionString
 	auth := &conf.Auth{}
-	if v := secret["KEYCLOAK_JWKS_URL"]; v != "" {
-		auth.JwksURL = v
+	if sec.KeycloakJWKSURL != "" {
+		auth.JwksURL = sec.KeycloakJWKSURL
 	}
 
 	app, cleanup, err := wireApp(bc.Server, bc.Data, auth, logger)

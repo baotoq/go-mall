@@ -55,6 +55,18 @@
       "skillPath": "SKILL.md",
       "computedHash": "3993ceb5c0f515fb1e3187914c374f9ae59babd0dccd5c1eae9d725ef75db719"
     },
+    "kubernetes-specialist": {
+      "source": "jeffallan/claude-skills",
+      "sourceType": "github",
+      "skillPath": "skills/kubernetes-specialist/SKILL.md",
+      "computedHash": "9c5eb68fc9d553ee29e745258bc6198563158c4b2c57436d63647e61010b5f0a"
+    },
+    "kustomize-overlays": {
+      "source": "thebushidocollective/han",
+      "sourceType": "github",
+      "skillPath": "plugins/tools/kustomize/skills/kustomize-overlays/SKILL.md",
+      "computedHash": "b891e297143c500b4d3e50cb9b702bc6038690bad85822d51f6a5cfc59c66e6a"
+    },
     "next-best-practices": {
       "source": "vercel-labs/next-skills",
       "sourceType": "github",
