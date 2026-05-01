@@ -7,6 +7,7 @@
 package main
 
 import (
+	dapr "github.com/dapr/go-sdk/client"
 	"github.com/go-kratos/kratos/v2"
 	"github.com/go-kratos/kratos/v2/log"
 	"gomall/app/order/internal/biz"
@@ -23,26 +24,19 @@ import (
 
 // Injectors from wire.go:
 
-func wireApp(confServer *conf.Server, confData *conf.Data, logger log.Logger) (*kratos.App, func(), error) {
+func wireApp(confServer *conf.Server, confData *conf.Data, logger log.Logger, daprClient dapr.Client) (*kratos.App, func(), error) {
 	db, cleanup, err := data.ProvideSQLDB(confData)
 	if err != nil {
 		return nil, nil, err
 	}
-	client, cleanup2, err := data.NewDaprClient()
-	if err != nil {
-		cleanup()
-		return nil, nil, err
-	}
 	config := data.ProvideOutboxConfig()
-	outboxClient, cleanup3, err := outbox.ProvideClient(db, client, config, logger)
+	outboxClient, cleanup2, err := outbox.ProvideClient(db, daprClient, config, logger)
 	if err != nil {
-		cleanup2()
 		cleanup()
 		return nil, nil, err
 	}
-	dataData, cleanup4, err := data.NewData(db, outboxClient, logger)
+	dataData, cleanup3, err := data.NewData(db, outboxClient, logger)
 	if err != nil {
-		cleanup3()
 		cleanup2()
 		cleanup()
 		return nil, nil, err
@@ -55,7 +49,6 @@ func wireApp(confServer *conf.Server, confData *conf.Data, logger log.Logger) (*
 	httpServer := server.NewHTTPServer(confServer, orderService, logger)
 	app := newApp(logger, grpcServer, httpServer, outboxClient)
 	return app, func() {
-		cleanup4()
 		cleanup3()
 		cleanup2()
 		cleanup()

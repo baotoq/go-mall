@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"sync"
+	"sync/atomic"
 
 	dapr "github.com/dapr/go-sdk/client"
 	"github.com/go-kratos/kratos/v2/log"
@@ -16,8 +17,8 @@ type publisher interface {
 	PublishEvent(ctx context.Context, pubsubName, topicName string, data interface{}, opts ...dapr.PublishEventOption) error
 }
 
-// TxExecer is the minimal SQL interface satisfied by *sql.Tx.
-type TxExecer interface {
+// txExecer is the minimal SQL interface satisfied by *sql.Tx.
+type txExecer interface {
 	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
 }
 
@@ -47,6 +48,7 @@ type Client struct {
 	log       *log.Helper
 	stopCh    chan struct{}
 	doneCh    chan struct{}
+	started   atomic.Bool
 	stopOnce  sync.Once
 	startOnce sync.Once
 }
@@ -57,10 +59,12 @@ func New(db *sql.DB, daprClient dapr.Client, cfg Config, logger log.Logger) (*Cl
 		return nil, err
 	}
 	return &Client{
-		db:  db,
-		pub: daprClient,
-		cfg: cfg,
-		log: log.NewHelper(logger),
+		db:     db,
+		pub:    daprClient,
+		cfg:    cfg,
+		log:    log.NewHelper(logger),
+		stopCh: make(chan struct{}),
+		doneCh: make(chan struct{}),
 	}, nil
 }
 
@@ -75,13 +79,12 @@ func (c *Client) Start(ctx context.Context) error {
 		return nil
 	}
 	c.startOnce.Do(func() {
-		c.stopCh = make(chan struct{})
-		c.doneCh = make(chan struct{})
 		var wg sync.WaitGroup
 		wg.Add(2)
 		go func() { defer wg.Done(); c.runRelay(ctx) }()
 		go func() { defer wg.Done(); c.runSweeper(ctx) }()
 		go func() { wg.Wait(); close(c.doneCh) }()
+		c.started.Store(true)
 	})
 	return nil
 }
@@ -92,11 +95,9 @@ func (c *Client) Stop(ctx context.Context) error {
 		return nil
 	}
 	c.stopOnce.Do(func() {
-		if c.stopCh != nil {
-			close(c.stopCh)
-		}
+		close(c.stopCh)
 	})
-	if c.doneCh != nil {
+	if c.started.Load() {
 		select {
 		case <-c.doneCh:
 		case <-ctx.Done():
@@ -107,7 +108,7 @@ func (c *Client) Stop(ctx context.Context) error {
 
 // Publish enqueues a message in the outbox table within the provided transaction.
 // The message is only delivered if tx commits. Returns the assigned message ID.
-func (c *Client) Publish(ctx context.Context, tx TxExecer, topic string, payload any, opts ...PublishOption) (string, error) {
+func (c *Client) Publish(ctx context.Context, tx txExecer, topic string, payload any, opts ...PublishOption) (string, error) {
 	po := &publishOptions{headers: make(map[string]string)}
 	for _, o := range opts {
 		o(po)

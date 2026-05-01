@@ -3,6 +3,7 @@ package data
 import (
 	"context"
 	"database/sql"
+	"os"
 	"time"
 
 	"gomall/app/order/internal/biz"
@@ -20,7 +21,6 @@ import (
 
 var ProviderSet = wire.NewSet(
 	ProvideSQLDB,
-	NewDaprClient,
 	ProvideOutboxConfig,
 	outbox.ProviderSet,
 	NewOutboxPublisher,
@@ -43,7 +43,7 @@ func ProvideSQLDB(c *conf.Data) (*sql.DB, func(), error) {
 
 func ProvideOutboxConfig() outbox.Config {
 	cfg := outbox.DefaultConfig()
-	cfg.EnableRelay = true
+	cfg.EnableRelay = os.Getenv("OUTBOX_RELAY_ENABLED") != "false"
 	return cfg
 }
 

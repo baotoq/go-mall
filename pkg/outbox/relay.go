@@ -80,7 +80,7 @@ func (c *Client) processBatch(ctx context.Context) error {
 			if _, err := tx.ExecContext(ctx, markDeliveredSQL, r.id); err != nil {
 				return fmt.Errorf("outbox: mark delivered %s: %w", r.id, err)
 			}
-		} else if r.retryCount+1 >= c.cfg.MaxRetries {
+		} else if r.retryCount+1 >= c.cfg.MaxAttempts {
 			if _, err := tx.ExecContext(ctx, markDeadSQL, r.id, r.retryCount+1, truncateErrMsg(pubErr)); err != nil {
 				return fmt.Errorf("outbox: mark dead %s: %w", r.id, err)
 			}

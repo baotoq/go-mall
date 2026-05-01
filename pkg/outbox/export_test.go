@@ -12,10 +12,12 @@ func NewWithPublisher(db *sql.DB, pub publisher, cfg Config, logger log.Logger) 
 		return nil, err
 	}
 	return &Client{
-		db:  db,
-		pub: pub,
-		cfg: cfg,
-		log: log.NewHelper(logger),
+		db:     db,
+		pub:    pub,
+		cfg:    cfg,
+		log:    log.NewHelper(logger),
+		stopCh: make(chan struct{}),
+		doneCh: make(chan struct{}),
 	}, nil
 }
 

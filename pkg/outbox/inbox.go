@@ -61,10 +61,16 @@ func (c *Client) Subscribe(topic string, handler Handler) common.TopicEventHandl
 			payload = json.RawMessage(b)
 		}
 
+		headers := map[string]string{
+			"cloudevent.id":     e.ID,
+			"cloudevent.source": e.Source,
+			"cloudevent.type":   e.Type,
+		}
 		msg := Message{
 			ID:        messageID,
 			Topic:     topic,
 			Payload:   payload,
+			Headers:   headers,
 			CreatedAt: time.Now(),
 		}
 

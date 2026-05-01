@@ -262,7 +262,7 @@ func TestRelay_DeadLetter(t *testing.T) {
 	resetTables(t)
 	ctx := context.Background()
 	cfg := defaultCfg()
-	cfg.MaxRetries = 2
+	cfg.MaxAttempts = 2
 	fp := &fakePub{errFn: func(_ int) error { return errors.New("always fails") }}
 	c, err := outbox.NewWithPublisher(testDB, fp, cfg, noopLogger())
 	require.NoError(t, err)
@@ -271,9 +271,9 @@ func TestRelay_DeadLetter(t *testing.T) {
 	msgID, _ := c.Publish(ctx, tx, "test.dead", map[string]string{})
 	_ = tx.Commit()
 
-	// Act — need MaxRetries processBatch calls to dead-letter
+	// Act — need MaxAttempts processBatch calls to dead-letter
 	// After each failed attempt, reset next_attempt_at to NOW() so it's picked up again
-	for i := 0; i < cfg.MaxRetries; i++ {
+	for i := 0; i < cfg.MaxAttempts; i++ {
 		_, _ = testDB.ExecContext(ctx, `UPDATE outbox_messages SET next_attempt_at = NOW() WHERE id = $1`, msgID)
 		require.NoError(t, c.ProcessBatch(ctx))
 	}

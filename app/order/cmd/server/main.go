@@ -110,7 +110,7 @@ func main() {
 		bc.Data.Database.Source = v
 	}
 
-	app, cleanup, err := wireApp(bc.Server, bc.Data, logger)
+	app, cleanup, err := wireApp(bc.Server, bc.Data, logger, daprClient)
 	if err != nil {
 		panic(err)
 	}

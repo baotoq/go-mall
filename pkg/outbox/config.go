@@ -11,7 +11,7 @@ type Config struct {
 	ConsumerID      string
 	PollInterval    time.Duration
 	BatchSize       int
-	MaxRetries      int
+	MaxAttempts     int
 	RetentionPeriod time.Duration
 	BackoffBase     time.Duration
 	BackoffMax      time.Duration
@@ -30,7 +30,7 @@ func DefaultConfig() Config {
 		ConsumerID:      hostname,
 		PollInterval:    5 * time.Second,
 		BatchSize:       100,
-		MaxRetries:      5,
+		MaxAttempts:     5,
 		RetentionPeriod: 24 * time.Hour,
 		BackoffBase:     time.Second,
 		BackoffMax:      5 * time.Minute,
@@ -50,8 +50,8 @@ func (c *Config) Validate() error {
 	if c.PollInterval <= 0 {
 		return errors.New("outbox: PollInterval must be positive")
 	}
-	if c.MaxRetries < 0 {
-		return errors.New("outbox: MaxRetries must be non-negative")
+	if c.MaxAttempts < 0 {
+		return errors.New("outbox: MaxAttempts must be non-negative")
 	}
 	if c.BackoffBase <= 0 {
 		return errors.New("outbox: BackoffBase must be positive")

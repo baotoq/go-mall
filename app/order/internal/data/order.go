@@ -50,6 +50,7 @@ func (r *orderRepo) CreateWithEvent(ctx context.Context, o *biz.Order, emit func
 
 	drv := entsql.NewDriver(dialect.Postgres, entsql.Conn{ExecQuerier: sqlTx})
 	txClient := ent.NewClient(ent.Driver(drv))
+	defer txClient.Close()
 
 	q := txClient.Order.Create().
 		SetUserID(o.UserID).
