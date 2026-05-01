@@ -1,0 +1,98 @@
+{
+  "$schema": "https://raw.githubusercontent.com/devcontainers/spec/main/schemas/devContainer.schema.json",
+  "name": "go-mall",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "args": {
+      "TZ": "${localEnv:TZ:UTC}",
+      "GIT_DELTA_VERSION": "0.18.2",
+      "ZSH_IN_DOCKER_VERSION": "1.2.1",
+      "PROTOC_VERSION": "29.3"
+    }
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/go:1": {
+      "version": "1.26"
+    },
+    "ghcr.io/devcontainers/features/github-cli:1": {},
+    "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {}
+  },
+  "runArgs": [
+    "--cap-add=NET_ADMIN",
+    "--cap-add=NET_RAW",
+    "--security-opt=no-new-privileges"
+  ],
+  "init": true,
+  "updateRemoteUserUID": true,
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "anthropic.claude-code",
+        "golang.go"
+      ],
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "zsh",
+        "terminal.integrated.profiles.linux": {
+          "bash": {
+            "path": "bash",
+            "icon": "terminal-bash"
+          },
+          "zsh": {
+            "path": "zsh"
+          }
+        },
+        "files.trimTrailingWhitespace": true,
+        "files.insertFinalNewline": true,
+        "files.trimFinalNewlines": true,
+        "[go]": {
+          "editor.defaultFormatter": "golang.go",
+          "editor.formatOnSave": true,
+          "editor.codeActionsOnSave": {
+            "source.organizeImports": "explicit"
+          }
+        },
+        "go.useLanguageServer": true,
+        "go.toolsManagement.autoUpdate": false,
+        "go.gopath": "/home/vscode/go",
+        "go.toolsGopath": "/home/vscode/go",
+        "gopls": {
+          "ui.semanticTokens": true
+        }
+      }
+    }
+  },
+  "remoteUser": "vscode",
+  "mounts": [
+    "source=go-mall-bashhistory-${devcontainerId},target=/commandhistory,type=volume",
+    "source=go-mall-config-${devcontainerId},target=/home/vscode/.claude,type=volume",
+    "source=go-mall-gh-${devcontainerId},target=/home/vscode/.config/gh,type=volume",
+    "source=go-mall-go-${devcontainerId},target=/home/vscode/go,type=volume",
+    "source=${localEnv:HOME}/.gitconfig,target=/home/vscode/.gitconfig,type=bind,readonly",
+    "source=${localWorkspaceFolder}/.devcontainer,target=/workspace/.devcontainer,type=bind,readonly"
+  ],
+  "containerEnv": {
+    "NODE_OPTIONS": "--max-old-space-size=4096",
+    "CLAUDE_CONFIG_DIR": "/home/vscode/.claude",
+    "POWERLEVEL9K_DISABLE_GITSTATUS": "true",
+    "GIT_CONFIG_GLOBAL": "/home/vscode/.gitconfig.local",
+    "UV_LINK_MODE": "copy",
+    "NPM_CONFIG_IGNORE_SCRIPTS": "true",
+    "NPM_CONFIG_AUDIT": "true",
+    "NPM_CONFIG_FUND": "false",
+    "NPM_CONFIG_SAVE_EXACT": "true",
+    "NPM_CONFIG_UPDATE_NOTIFIER": "false",
+    "NPM_CONFIG_MINIMUM_RELEASE_AGE": "1440",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "PIP_DISABLE_PIP_VERSION_CHECK": "1",
+    "GOPATH": "/home/vscode/go",
+    "GOFLAGS": "-mod=mod"
+  },
+  "remoteEnv": {
+    "CLAUDE_CODE_OAUTH_TOKEN": "${localEnv:CLAUDE_CODE_OAUTH_TOKEN:}",
+    "ANTHROPIC_API_KEY": "${localEnv:ANTHROPIC_API_KEY:}"
+  },
+  "initializeCommand": "test -f \"$HOME/.gitconfig\" || touch \"$HOME/.gitconfig\"",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=delegated",
+  "workspaceFolder": "/workspace",
+  "postCreateCommand": "uv run --no-project /opt/post_install.py && go mod download && make init"
+}
