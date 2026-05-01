@@ -79,3 +79,54 @@ For categories that map to a skill, invoke the skill **at most once per category
 | Kratos conventions | `kratos-skills` |
 
 If a category triggers no findings, you may skip the skill invocation for that run.
+
+## Output format — suggest mode
+
+Produce one markdown report per run. Use this exact shape:
+
+````
+# Go-mall review — <scope summary>
+
+**Scope:** <single-file | package | diff | diff vs <ref>>
+**Mode:** suggest-only
+**Files reviewed:** N
+**Static analysis:** go vet (X findings) · golangci-lint (Y findings | not installed — skipped)
+
+## Summary
+- 🔴 Critical: K issues
+- 🟡 Important: K issues
+- 🟢 Nits: K issues
+
+## 🔴 Critical
+### 1. `path/to/file.go:42` — <category>
+<one-paragraph why-it-matters>
+
+**Current:**
+```go
+<code>
+```
+
+**Improved:**
+```go
+<code>
+```
+
+**See also:** <skill name and section, if applicable>
+
+---
+
+(repeat for each issue, then 🟡 Important, then 🟢 Nits)
+````
+
+**Severity rules:**
+- 🔴 Critical — security issues, layer-boundary violations, panics, data races, build errors.
+- 🟡 Important — idiomatic error mistakes (e.g., shadowed `err`, unwrapped errors, ignored returns), error-handling drift from project conventions, performance traps, kratos convention drift.
+- 🟢 Nit — naming, formatting, redundant comments.
+
+**Dedup rules:**
+- If a static-analysis finding and an LLM observation point at the same `file:line` with the same root cause, merge them. Keep the LLM's explanation and append `(also flagged by go vet / golangci-lint)`.
+- Identical `file:line` issues from go vet AND golangci-lint collapse to one entry.
+
+**Clean files:** A file with zero findings gets a single line under a `## Clean files` section: `✓ path/to/file.go — no issues`. Do not generate a section per clean file.
+
+**Large scopes:** If the scope contains more than 20 files OR more than 5000 LOC of in-scope code, review the first 20 files (alphabetical), then close with a `## Not reviewed (scope too large)` appendix listing the rest, and a one-line recommendation to scope down.
