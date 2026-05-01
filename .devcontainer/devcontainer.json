@@ -37,10 +37,6 @@
 	// Create an empty .gitconfig on the host if it doesn't exist (required for the bind mount above).
 	"initializeCommand": "test -f \"$HOME/.gitconfig\" || touch \"$HOME/.gitconfig\"",
 
-	"containerEnv": {
-		"GOPATH": "/home/vscode/go",
-		"GOFLAGS": "-mod=mod"
-	},
 	// Pass API keys from the host environment into the container.
 	"remoteEnv": {
 		"ANTHROPIC_API_KEY": "${localEnv:ANTHROPIC_API_KEY:}"
