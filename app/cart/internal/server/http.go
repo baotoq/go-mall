@@ -1,11 +1,10 @@
 package server
 
 import (
-	nethttp "net/http"
-
 	v1 "gomall/api/cart/v1"
 	"gomall/app/cart/internal/conf"
 	"gomall/app/cart/internal/service"
+	pkgserver "gomall/pkg/server"
 
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/go-kratos/kratos/v2/middleware/recovery"
@@ -29,8 +28,6 @@ func NewHTTPServer(c *conf.Server, cart *service.CartService, logger log.Logger)
 	}
 	srv := http.NewServer(opts...)
 	v1.RegisterCartServiceHTTPServer(srv, cart)
-	srv.HandleFunc("/healthz", func(w nethttp.ResponseWriter, _ *nethttp.Request) {
-		w.WriteHeader(nethttp.StatusOK)
-	})
+	srv.HandleFunc("/healthz", pkgserver.Healthz)
 	return srv
 }

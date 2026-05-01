@@ -2,11 +2,11 @@ package server
 
 import (
 	"context"
-	nethttp "net/http"
 
 	v1 "gomall/api/catalog/v1"
 	"gomall/app/catalog/internal/conf"
 	"gomall/app/catalog/internal/service"
+	pkgserver "gomall/pkg/server"
 
 	"github.com/MicahParks/keyfunc/v3"
 	"github.com/go-kratos/kratos/v2/log"
@@ -51,9 +51,7 @@ func NewHTTPServer(c *conf.Server, catalog *service.CatalogService, logger log.L
 	}
 	srv := http.NewServer(opts...)
 	v1.RegisterCatalogServiceHTTPServer(srv, catalog)
-	srv.HandleFunc("/healthz", func(w nethttp.ResponseWriter, _ *nethttp.Request) {
-		w.WriteHeader(nethttp.StatusOK)
-	})
+	srv.HandleFunc("/healthz", pkgserver.Healthz)
 	srv.HandleFunc("/v1/admin/seed", catalog.HandleSeed)
 	srv.HandleFunc("/v1/admin/clean", catalog.HandleClean)
 	return srv
