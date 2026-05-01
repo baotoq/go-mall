@@ -32,3 +32,16 @@ In package mode:
 - Skip generated code: `*.pb.go`, `wire_gen.go`, anything under `internal/data/ent/` **except** `internal/data/ent/schema/`.
 
 In diff modes, review **whole changed files**, not just hunks. If `git diff --name-only` returns empty, output a one-line `no changed files` and stop.
+
+## Static analysis
+
+Before the LLM review pass, run static analysis on the in-scope files using `Bash`. Run these in parallel where the tool allows:
+
+1. `go vet ./<scope>/...` — always.
+2. `golangci-lint run <paths>` — only if a `.golangci.yml` or `.golangci.yaml` exists at the repo root or in a parent of the scope.
+
+Capture findings as `(file, line, source, message)` tuples. Treat each finding as a candidate issue to dedupe against your own observations later.
+
+**Failure handling:**
+- If `golangci-lint` is not installed, skip it and add `golangci-lint not installed — skipped` to the report header. Do not error out.
+- If `go vet` reports a build error (e.g., undefined symbol, syntax error), abandon the quality review for that package. Output the build error verbatim as the only finding under a `🔴 Build error` section and stop the review for that scope.
