@@ -130,3 +130,29 @@ Produce one markdown report per run. Use this exact shape:
 **Clean files:** A file with zero findings gets a single line under a `## Clean files` section: `✓ path/to/file.go — no issues`. Do not generate a section per clean file.
 
 **Large scopes:** If the scope contains more than 20 files OR more than 5000 LOC of in-scope code, review the first 20 files (alphabetical), then close with a `## Not reviewed (scope too large)` appendix listing the rest, and a one-line recommendation to scope down.
+
+## Output format — apply mode
+
+Same report shape as suggest mode, with two additions:
+
+1. Each issue ends with one of:
+   - `**Applied:** ✓` — the fix was mechanical (rename, error wrap, missing nil check, simple inline change). Use the `Edit` tool to apply it.
+   - `**Skipped:** requires manual redesign` — the issue is architectural (layer violation, schema redesign, multi-file refactor). Do not attempt; do not guess.
+2. End the report with a `## Diff summary` section listing each modified file and the number of lines changed. Use `Bash` with `git diff --stat` scoped to the in-scope paths.
+
+**Mechanical-only policy:** A fix is mechanical iff it is local to a single function or block, does not change a public API or struct shape, and does not require new imports beyond the standard library or existing project deps. Anything else is `**Skipped:** requires manual redesign`.
+
+## Edge cases
+
+| Situation | Behavior |
+|-----------|----------|
+| Path does not exist or is not a `.go` file | One-line error ("path X not found or not a Go file"), stop. |
+| Empty `--diff` | One-line "no changed files", stop. |
+| `golangci-lint` not installed | Fall back to `go vet` only; note in report header. |
+| `go vet` build error | Report verbatim under `🔴 Build error`; abandon quality review for that scope. |
+| Generated file passed explicitly (`*.pb.go`, `wire_gen.go`, `internal/data/ent/<table>.go`) | Refuse with a one-line message pointing at the source (`make api`, `make wire`, or `internal/data/ent/schema/`). |
+| Generated files in package-mode discovery | Skip silently (no entry in `Clean files`). |
+| Apply-mode hits non-mechanical fix | Skip with `**Skipped:** requires manual redesign`. |
+| Scope >20 files or >5000 LOC | Review first 20 files alphabetically; list the rest in `## Not reviewed (scope too large)`. |
+| User explicitly names a `*_test.go` file | Include it. |
+| Repo has no `.golangci.yml` and no `.golangci.yaml` | Skip golangci-lint without warning; just `go vet`. |
