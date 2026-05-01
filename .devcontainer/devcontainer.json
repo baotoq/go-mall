@@ -1,0 +1,112 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/go
+{
+	"name": "go-mall",
+	"image": "mcr.microsoft.com/devcontainers/base:bookworm",
+
+	// Features to add to the dev container. More info: https://containers.dev/features.
+	"features": {
+		// Exact Go version matching go.mod (auto-installs gopls, dlv, etc.)
+		"ghcr.io/devcontainers/features/go:1": {
+			"version": "1.26"
+		},
+		// Mount host Docker socket — lighter than DinD; required for testcontainers-go and Tilt.
+		"ghcr.io/devcontainers/features/docker-outside-of-docker:1": {},
+		// gh CLI for PR/issue workflows.
+		"ghcr.io/devcontainers/features/github-cli:1": {},
+		// kubectl + helm required for `tilt up` (deploys to local cluster).
+		"ghcr.io/devcontainers/features/kubectl-helm-minikube:1": {
+			"version": "latest",
+			"helm": "latest",
+			"minikube": "none"
+		}
+	},
+
+	"remoteUser": "vscode",
+	"workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=delegated",
+	"workspaceFolder": "/workspace",
+
+	// Persist the Go module cache and built tools across rebuilds.
+	"mounts": [
+		"source=go-mall-go-${devcontainerId},target=/home/vscode/go,type=volume",
+		"source=${localEnv:HOME}/.gitconfig,target=/home/vscode/.gitconfig,type=bind,readonly"
+	],
+
+	// Create an empty .gitconfig on the host if it doesn't exist (required for the bind mount above).
+	"initializeCommand": "test -f \"$HOME/.gitconfig\" || touch \"$HOME/.gitconfig\"",
+
+	"containerEnv": {
+		"GOPATH": "/home/vscode/go",
+		"GOFLAGS": "-mod=mod"
+	},
+	// Pass API keys from the host environment into the container.
+	"remoteEnv": {
+		"ANTHROPIC_API_KEY": "${localEnv:ANTHROPIC_API_KEY:}"
+	},
+
+	// Configure tool-specific properties.
+	"customizations": {
+		"vscode": {
+			"settings": {
+				"terminal.integrated.defaultProfile.linux": "bash",
+				"go.useLanguageServer": true,
+				"go.toolsManagement.autoUpdate": false,
+				"go.gopath": "/home/vscode/go",
+				"go.toolsGopath": "/home/vscode/go",
+				"gopls": {
+					"ui.semanticTokens": true
+				},
+				"[go]": {
+					"editor.defaultFormatter": "golang.go",
+					"editor.formatOnSave": true,
+					"editor.codeActionsOnSave": {
+						"source.organizeImports": "explicit"
+					}
+				},
+				"files.trimTrailingWhitespace": true,
+				"files.insertFinalNewline": true,
+				"files.trimFinalNewlines": true
+			},
+			"extensions": [
+				// Go language support
+				"golang.go",
+				// Claude Code AI assistant
+				"anthropic.claude-code",
+				// Protobuf syntax (.proto files)
+				"zxh404.vscode-proto3",
+				// Kubernetes manifest editing
+				"ms-kubernetes-tools.vscode-kubernetes-tools",
+				// Tiltfile syntax (from vscode-remote-try-go reference)
+				"tilt-dev.tiltfile-lsp-support",
+				// Spell checking (from vscode-remote-try-go reference)
+				"streetsidesoftware.code-spell-checker"
+			]
+		}
+	},
+
+	// Forward all service, debug, and infrastructure ports used by Tilt.
+	"forwardPorts": [
+		8001, 8002, 8003,
+		9001, 9002, 9003,
+		2346, 2347, 2348,
+		5432, 6379, 5050, 8080
+	],
+	"portsAttributes": {
+		"8001": { "label": "catalog HTTP",  "onAutoForward": "silent" },
+		"8002": { "label": "cart HTTP",     "onAutoForward": "silent" },
+		"8003": { "label": "payment HTTP",  "onAutoForward": "silent" },
+		"9001": { "label": "catalog gRPC",  "onAutoForward": "silent" },
+		"9002": { "label": "cart gRPC",     "onAutoForward": "silent" },
+		"9003": { "label": "payment gRPC",  "onAutoForward": "silent" },
+		"2346": { "label": "catalog Delve", "onAutoForward": "silent" },
+		"2347": { "label": "cart Delve",    "onAutoForward": "silent" },
+		"2348": { "label": "payment Delve", "onAutoForward": "silent" },
+		"5432": { "label": "Postgres",      "onAutoForward": "notify" },
+		"6379": { "label": "Redis",         "onAutoForward": "silent" },
+		"5050": { "label": "pgAdmin",       "onAutoForward": "notify" },
+		"8080": { "label": "Keycloak",      "onAutoForward": "notify" }
+	},
+
+	// Install protoc, Dapr CLI, Tilt, and Go tooling after container creation.
+	"postCreateCommand": "bash .devcontainer/post-create.sh"
+}
