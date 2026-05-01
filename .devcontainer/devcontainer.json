@@ -80,7 +80,7 @@
 				// AI assistant
 				"anthropic.claude-code",
 				// Protobuf / gRPC
-				"zxh404.vscode-proto3",
+				"drblury.protobuf-vsc",
 				// Kubernetes, Helm, Dapr YAML manifests
 				"ms-kubernetes-tools.vscode-kubernetes-tools",
 				"redhat.vscode-yaml",
