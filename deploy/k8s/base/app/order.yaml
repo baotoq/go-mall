@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: payment
+  name: order
 spec:
   ports:
     - name: http
@@ -9,28 +9,28 @@ spec:
     - name: grpc
       port: 9000
   selector:
-    app: payment
+    app: order
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: payment
+  name: order
 spec:
   selector:
     matchLabels:
-      app: payment
+      app: order
   template:
     metadata:
       labels:
-        app: payment
+        app: order
       annotations:
         dapr.io/enabled: "true"
-        dapr.io/app-id: "payment"
+        dapr.io/app-id: "order"
         dapr.io/log-as-json: "true"
     spec:
       containers:
-        - name: payment
-          image: payment
+        - name: order
+          image: order
           securityContext:
             runAsNonRoot: true
             runAsUser: 65532
@@ -64,12 +64,12 @@ spec:
       volumes:
         - name: config
           configMap:
-            name: payment-config
+            name: order-config
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: payment-config
+  name: order-config
 data:
   config.yaml: |
     server:

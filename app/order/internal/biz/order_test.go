@@ -64,12 +64,13 @@ func (r *stubOrderRepo) UpdateStatus(_ context.Context, id uuid.UUID, status str
 	return &cp, nil
 }
 
-func (r *stubOrderRepo) SetPaymentID(_ context.Context, id uuid.UUID, paymentID string) (*biz.Order, error) {
+func (r *stubOrderRepo) MarkPaid(_ context.Context, id uuid.UUID, paymentID string) (*biz.Order, error) {
 	o, ok := r.orders[id]
 	if !ok {
 		return nil, biz.ErrOrderNotFound
 	}
 	o.PaymentID = paymentID
+	o.Status = "PAID"
 	o.UpdatedAt = time.Now()
 	cp := *o
 	return &cp, nil

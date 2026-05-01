@@ -45,7 +45,7 @@ type OrderRepo interface {
 	GetByID(ctx context.Context, id uuid.UUID) (*Order, error)
 	ListByUser(ctx context.Context, userID, status string, page, pageSize int) ([]*Order, int, error)
 	UpdateStatus(ctx context.Context, id uuid.UUID, status string) (*Order, error)
-	SetPaymentID(ctx context.Context, id uuid.UUID, paymentID string) (*Order, error)
+	MarkPaid(ctx context.Context, id uuid.UUID, paymentID string) (*Order, error)
 }
 
 type OrderUsecase struct{ repo OrderRepo }
@@ -121,8 +121,5 @@ func (uc *OrderUsecase) MarkPaid(ctx context.Context, id uuid.UUID, paymentID st
 	if cur.Status == "CANCELLED" {
 		return nil, ErrOrderCannotCancel
 	}
-	if _, err := uc.repo.SetPaymentID(ctx, id, paymentID); err != nil {
-		return nil, err
-	}
-	return uc.repo.UpdateStatus(ctx, id, "PAID")
+	return uc.repo.MarkPaid(ctx, id, paymentID)
 }

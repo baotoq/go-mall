@@ -103,9 +103,14 @@ build-payment:
 build-order:
 	mkdir -p bin/ && go build -ldflags "-X main.Version=$(VERSION)" -o ./bin/order ./app/order/cmd/server
 
+.PHONY: build-cart
+# build cart
+build-cart:
+	mkdir -p bin/ && go build -ldflags "-X main.Version=$(VERSION)" -o ./bin/cart ./app/cart/cmd/server
+
 .PHONY: build
 # build all services
-build: build-catalog build-payment build-order
+build: build-catalog build-payment build-order build-cart
 
 .PHONY: generate
 # generate

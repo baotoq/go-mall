@@ -100,18 +100,15 @@ func (r *orderRepo) UpdateStatus(ctx context.Context, id uuid.UUID, status strin
 	return entToOrder(updated), nil
 }
 
-func (r *orderRepo) SetPaymentID(ctx context.Context, id uuid.UUID, paymentID string) (*biz.Order, error) {
-	o, err := r.data.db.Order.Query().
-		Where(entorder.ID(id)).
-		Only(ctx)
+func (r *orderRepo) MarkPaid(ctx context.Context, id uuid.UUID, paymentID string) (*biz.Order, error) {
+	updated, err := r.data.db.Order.UpdateOneID(id).
+		SetPaymentID(paymentID).
+		SetStatus("PAID").
+		Save(ctx)
 	if err != nil {
 		if ent.IsNotFound(err) {
 			return nil, biz.ErrOrderNotFound
 		}
-		return nil, err
-	}
-	updated, err := o.Update().SetPaymentID(paymentID).Save(ctx)
-	if err != nil {
 		return nil, err
 	}
 	return entToOrder(updated), nil

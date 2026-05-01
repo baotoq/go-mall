@@ -1,21 +1,33 @@
 package server
 
 import (
+	"os"
+
 	v1 "gomall/api/payment/v1"
 	"gomall/app/payment/internal/conf"
 	"gomall/app/payment/internal/service"
 	pkgserver "gomall/pkg/server"
 
+	"github.com/MicahParks/keyfunc/v3"
 	"github.com/go-kratos/kratos/v2/log"
+	"github.com/go-kratos/kratos/v2/middleware"
+	kratosJWT "github.com/go-kratos/kratos/v2/middleware/auth/jwt"
 	"github.com/go-kratos/kratos/v2/middleware/recovery"
 	"github.com/go-kratos/kratos/v2/transport/http"
+	jwtv5 "github.com/golang-jwt/jwt/v5"
 )
 
 func NewHTTPServer(c *conf.Server, payment *service.PaymentService, logger log.Logger) *http.Server {
+	mw := []middleware.Middleware{recovery.Recovery()}
+	if jwksURL := os.Getenv("KEYCLOAK_JWKS_URL"); jwksURL != "" {
+		jwks, err := keyfunc.NewDefault([]string{jwksURL})
+		if err != nil {
+			panic(err)
+		}
+		mw = append(mw, kratosJWT.Server(jwks.Keyfunc, kratosJWT.WithSigningMethod(jwtv5.SigningMethodRS256)))
+	}
 	var opts = []http.ServerOption{
-		http.Middleware(
-			recovery.Recovery(),
-		),
+		http.Middleware(mw...),
 	}
 	if c.Http.Network != "" {
 		opts = append(opts, http.Network(c.Http.Network))

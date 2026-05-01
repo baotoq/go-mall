@@ -107,6 +107,11 @@ func main() {
 		bc.Data.Database.Source = v
 	}
 
+	// Inject JWKS URL for JWT validation middleware.
+	if v := secret["KEYCLOAK_JWKS_URL"]; v != "" {
+		os.Setenv("KEYCLOAK_JWKS_URL", v)
+	}
+
 	app, cleanup, err := wireApp(bc.Server, bc.Data, logger)
 	if err != nil {
 		panic(err)
