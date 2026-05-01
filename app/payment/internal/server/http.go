@@ -1,8 +1,6 @@
 package server
 
 import (
-	"os"
-
 	v1 "gomall/api/payment/v1"
 	"gomall/app/payment/internal/conf"
 	"gomall/app/payment/internal/service"
@@ -17,10 +15,10 @@ import (
 	jwtv5 "github.com/golang-jwt/jwt/v5"
 )
 
-func NewHTTPServer(c *conf.Server, payment *service.PaymentService, logger log.Logger) *http.Server {
+func NewHTTPServer(c *conf.Server, auth *conf.Auth, payment *service.PaymentService, logger log.Logger) *http.Server {
 	mw := []middleware.Middleware{recovery.Recovery()}
-	if jwksURL := os.Getenv("KEYCLOAK_JWKS_URL"); jwksURL != "" {
-		jwks, err := keyfunc.NewDefault([]string{jwksURL})
+	if auth.JwksURL != "" {
+		jwks, err := keyfunc.NewDefault([]string{auth.JwksURL})
 		if err != nil {
 			panic(err)
 		}

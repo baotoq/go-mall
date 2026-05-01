@@ -24,12 +24,13 @@ keycloak:
   auth:
     adminUser: admin
     adminPassword: admin
+  javaOptsAppend: "-Xms64m -Xmx256m"
   resources:
     requests:
       cpu: 100m
-      memory: 256Mi
+      memory: 128Mi
     limits:
-      memory: 768Mi
+      memory: 384Mi
 
 redis:
   fullnameOverride: redis

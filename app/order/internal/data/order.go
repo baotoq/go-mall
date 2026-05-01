@@ -84,17 +84,11 @@ func (r *orderRepo) ListByUser(ctx context.Context, userID, status string, page,
 }
 
 func (r *orderRepo) UpdateStatus(ctx context.Context, id uuid.UUID, status string) (*biz.Order, error) {
-	o, err := r.data.db.Order.Query().
-		Where(entorder.ID(id)).
-		Only(ctx)
+	updated, err := r.data.db.Order.UpdateOneID(id).SetStatus(status).Save(ctx)
 	if err != nil {
 		if ent.IsNotFound(err) {
 			return nil, biz.ErrOrderNotFound
 		}
-		return nil, err
-	}
-	updated, err := o.Update().SetStatus(status).Save(ctx)
-	if err != nil {
 		return nil, err
 	}
 	return entToOrder(updated), nil

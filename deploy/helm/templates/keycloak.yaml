@@ -82,6 +82,8 @@ spec:
               value: {{ .Values.keycloak.auth.adminUser | quote }}
             - name: KEYCLOAK_ADMIN_PASSWORD
               value: {{ .Values.keycloak.auth.adminPassword | quote }}
+            - name: JAVA_OPTS_APPEND
+              value: {{ .Values.keycloak.javaOptsAppend | default "-Xms64m -Xmx256m" | quote }}
           ports:
             - containerPort: 8080
           resources:
