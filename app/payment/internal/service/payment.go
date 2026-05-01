@@ -7,7 +7,9 @@ import (
 	"gomall/app/payment/internal/biz"
 
 	"github.com/go-kratos/kratos/v2/errors"
+	kratosJWT "github.com/go-kratos/kratos/v2/middleware/auth/jwt"
 	"github.com/google/uuid"
+	jwtv5 "github.com/golang-jwt/jwt/v5"
 )
 
 type PaymentService struct {
@@ -17,6 +19,20 @@ type PaymentService struct {
 
 func NewPaymentService(uc *biz.PaymentUsecase) *PaymentService {
 	return &PaymentService{uc: uc}
+}
+
+// callerID extracts the JWT subject from the request context (empty string if unavailable).
+func callerID(ctx context.Context) string {
+	claims, ok := kratosJWT.FromContext(ctx)
+	if !ok {
+		return ""
+	}
+	mc, ok := claims.(jwtv5.MapClaims)
+	if !ok {
+		return ""
+	}
+	sub, _ := mc.GetSubject()
+	return sub
 }
 
 func (s *PaymentService) CreatePayment(ctx context.Context, req *v1.CreatePaymentRequest) (*v1.Payment, error) {
@@ -32,9 +48,14 @@ func (s *PaymentService) CreatePayment(ctx context.Context, req *v1.CreatePaymen
 	if req.Provider == "" {
 		return nil, errors.BadRequest(v1.ErrorReason_INVALID_ARGUMENT.String(), "provider is required")
 	}
+	// JWT subject overrides request body to prevent forging ledger entries for other users.
+	userID := req.UserId
+	if caller := callerID(ctx); caller != "" {
+		userID = caller
+	}
 	p := &biz.Payment{
 		OrderID:     req.OrderId,
-		UserID:      req.UserId,
+		UserID:      userID,
 		AmountCents: req.AmountCents,
 		Currency:    req.Currency,
 		Provider:    req.Provider,
@@ -58,10 +79,17 @@ func (s *PaymentService) GetPayment(ctx context.Context, req *v1.GetPaymentReque
 	if err != nil {
 		return nil, err
 	}
+	if caller := callerID(ctx); caller != "" && caller != result.UserID {
+		return nil, errors.Forbidden("FORBIDDEN", "forbidden")
+	}
 	return bizToPayment(result), nil
 }
 
 func (s *PaymentService) ListPayments(ctx context.Context, req *v1.ListPaymentsRequest) (*v1.ListPaymentsResponse, error) {
+	// Callers may only list their own payments.
+	if caller := callerID(ctx); caller != "" && req.UserId != "" && caller != req.UserId {
+		return nil, errors.Forbidden("FORBIDDEN", "forbidden")
+	}
 	page := int(req.Page)
 	pageSize := int(req.PageSize)
 	payments, total, err := s.uc.ListPayments(ctx, req.UserId, req.OrderId, page, pageSize)
@@ -84,6 +112,13 @@ func (s *PaymentService) RefundPayment(ctx context.Context, req *v1.RefundPaymen
 	id, err := uuid.Parse(req.Id)
 	if err != nil {
 		return nil, errors.BadRequest(v1.ErrorReason_INVALID_ARGUMENT.String(), "invalid id")
+	}
+	p, err := s.uc.GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if caller := callerID(ctx); caller != "" && caller != p.UserID {
+		return nil, errors.Forbidden("FORBIDDEN", "forbidden")
 	}
 	result, err := s.uc.Refund(ctx, id)
 	if err != nil {

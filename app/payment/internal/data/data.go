@@ -2,6 +2,7 @@ package data
 
 import (
 	"context"
+	"time"
 
 	"gomall/app/payment/internal/conf"
 	"gomall/app/payment/internal/data/ent"
@@ -22,7 +23,9 @@ func NewData(c *conf.Data, logger log.Logger) (*Data, func(), error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	if err := client.Schema.Create(context.Background()); err != nil {
+	migrateCtx, migrateCancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer migrateCancel()
+	if err := client.Schema.Create(migrateCtx); err != nil {
 		_ = client.Close()
 		return nil, nil, err
 	}
