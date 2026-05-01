@@ -168,9 +168,9 @@ Same report shape as suggest mode, with two additions:
 
 | User says | Mode | Scope |
 |-----------|------|-------|
-| `review app/greeter/internal/biz/greeter.go` | suggest | single file |
+| `review app/catalog/internal/biz/catalog.go` | suggest | single file |
 | `review the biz package` (resolves to a directory) | suggest | package |
 | `review --diff` | suggest | unstaged + staged changes |
 | `review --diff origin/master` | suggest | commits since master |
-| `review app/greeter/internal/biz and apply the fixes` | apply | package |
-| `fix the lint issues in app/greeter/internal/data/greeter.go` | apply | single file |
+| `review app/catalog/internal/biz and apply the fixes` | apply | package |
+| `fix the lint issues in app/catalog/internal/data/catalog.go` | apply | single file |

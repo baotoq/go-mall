@@ -1,6 +1,12 @@
 {
   "version": 1,
   "skills": {
+    "devcontainer-setup": {
+      "source": "trailofbits/skills",
+      "sourceType": "github",
+      "skillPath": "plugins/devcontainer-setup/skills/devcontainer-setup/SKILL.md",
+      "computedHash": "2f4faf84d574b884a5727c15b0dbe817a0eb0a003760910069f585fe743fe495"
+    },
     "go-concurrency": {
       "source": "cxuu/golang-skills",
       "sourceType": "github",

@@ -3,10 +3,6 @@ kind: Kustomization
 resources:
   - ../../base
 patches:
-  - path: greeter-debug-patch.yaml
-    target:
-      kind: Deployment
-      name: greeter
   - path: catalog-debug-patch.yaml
     target:
       kind: Deployment

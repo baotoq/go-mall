@@ -81,7 +81,7 @@ func (uc *OrderUsecase) ListOrders(ctx context.Context, userID, status string, p
 	return uc.repo.ListByUser(ctx, userID, status, page, pageSize)
 }
 
-func validStatus(s string) bool {
+func isValidStatus(s string) bool {
 	switch s {
 	case "PENDING", "PAID", "SHIPPED", "DELIVERED", "CANCELLED":
 		return true
@@ -90,7 +90,7 @@ func validStatus(s string) bool {
 }
 
 func (uc *OrderUsecase) UpdateStatus(ctx context.Context, id uuid.UUID, status string) (*Order, error) {
-	if !validStatus(status) {
+	if !isValidStatus(status) {
 		return nil, errors.BadRequest(orderv1.ErrorReason_INVALID_ARGUMENT.String(), "invalid status")
 	}
 	return uc.repo.UpdateStatus(ctx, id, status)

@@ -1,9 +1,9 @@
 postgres:
   fullnameOverride: postgres
   auth:
-    username: greeter
-    password: greeter
-    database: greeter
+    username: mall
+    password: mall
+    database: mall
   primary:
     persistence:
       enabled: false

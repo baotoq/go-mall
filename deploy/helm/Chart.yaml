@@ -1,8 +1,8 @@
 apiVersion: v2
-name: greeter-deps
+name: go-mall-deps
 version: 0.1.0
 type: application
-description: Local dev dependencies (Postgres + Redis) for greeter.
+description: Local dev dependencies (Postgres + Redis) for go-mall.
 dependencies:
   - name: postgres
     version: 0.19.3

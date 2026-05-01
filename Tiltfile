@@ -15,7 +15,6 @@ if dlv_continue:
 
 # (name, http_host_port, grpc_host_port, dlv_host_port, extra_k8s_deps)
 SERVICES = [
-    ('greeter', 8000, 9000, 2345, ['postgres', 'redis']),
     ('catalog', 8001, 9001, 2346, ['postgres']),
     ('cart',    8002, 9002, 2347, ['postgres']),
     ('payment', 8003, 9003, 2348, ['postgres']),
@@ -96,7 +95,7 @@ helm_resource(
 k8s_yaml(helm(
     'deploy/helm',
     name='deps',
-    namespace='greeter',
+    namespace='go-mall',
     values=['deploy/helm/values.yaml'],
 ))
 k8s_yaml(kustomize('deploy/k8s/overlays/debug', flags=['--load-restrictor=LoadRestrictionsNone']))

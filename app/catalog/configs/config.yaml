@@ -6,7 +6,7 @@ server:
     addr: 0.0.0.0:9000
     timeout: 200s
   auth:
-    jwks_url: "http://keycloak.greeter.svc.cluster.local/realms/gomall/protocol/openid-connect/certs"
+    jwks_url: "http://keycloak.go-mall.svc.cluster.local/realms/gomall/protocol/openid-connect/certs"
 data:
   database:
     driver: postgres

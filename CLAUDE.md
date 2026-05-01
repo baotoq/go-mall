@@ -11,13 +11,13 @@ make init        # install protoc plugins, wire, ent CLI
 make api         # generate Go/gRPC/HTTP code + OpenAPI from api/**/*.proto
 make config      # generate Go structs from internal conf.proto files
 make generate    # run go generate ./... + go mod tidy (wire + ent)
-make build       # build binary → ./bin/greeter
+make build       # build all service binaries → ./bin/
 make all         # api + config + generate
 make dev         # tilt up --continue (dev env, Delve starts immediately)
 make debug       # tilt up (Delve waits for debugger to attach on :2345)
 ```
 
-### Per-app (run from app/greeter/)
+### Per-app (run from app/<service>/, e.g. app/catalog/)
 
 ```bash
 make wire        # regenerate wire_gen.go
@@ -28,20 +28,20 @@ make test        # go test -v ./...
 
 ### Run a single test
 ```bash
-cd app/greeter && go test -v -run TestFunctionName ./internal/...
+cd app/catalog && go test -v -run TestFunctionName ./internal/...
 ```
 
 ## Architecture
 
-This is a **go-kratos** microservice monorepo. One app (`greeter`) is the template; copy the pattern for new services.
+This is a **go-kratos** microservice monorepo. Services follow a common pattern; use an existing service (e.g. `catalog`) as reference when adding new ones.
 
 ### Layer stack (top → bottom)
 
 ```
-api/greeter/helloworld/v1/     ← protobuf contracts (source of truth)
+api/catalog/v1/                ← protobuf contracts (source of truth)
   └─ generated: *.pb.go, *_grpc.pb.go, *_http.pb.go
 
-app/greeter/
+app/catalog/
   cmd/server/                  ← entrypoint + Wire DI wiring
   internal/
     conf/                      ← config proto → generated conf.pb.go
@@ -53,11 +53,11 @@ app/greeter/
       ent/                     ← generated ORM code (do not edit by hand)
 ```
 
-**Dependency rule:** `service → biz → data`. `biz` defines interfaces (`GreeterRepo`, `EventRepo`); `data` implements them. `biz` never imports `data`.
+**Dependency rule:** `service → biz → data`. `biz` defines interfaces (`CatalogRepo`, `EventRepo`); `data` implements them. `biz` never imports `data`.
 
 ### Dependency injection
 
-Google Wire is used. `wire.go` (build-tag-guarded) declares provider sets; `wire_gen.go` is the generated output. After any change to providers, run `make wire` from `app/greeter/`.
+Google Wire is used. `wire.go` (build-tag-guarded) declares provider sets; `wire_gen.go` is the generated output. After any change to providers, run `make wire` from `app/<service>/`.
 
 ### Config & secrets
 
@@ -76,10 +76,10 @@ ent ORM with PostgreSQL (`lib/pq` driver). Schema lives in `internal/data/ent/sc
 ### Local dev environment (Tilt)
 
 `tilt up` / `make dev` targets Docker Desktop or OrbStack (`allow_k8s_contexts`). The workflow:
-1. `compile` local resource builds a Linux binary into `./dist/greeter` on every Go source change
+1. `compile` local resource builds a Linux binary into `./dist/<service>` on every Go source change
 2. Binary is synced into the running container — no image rebuild
 3. Delve debugger runs inside the container; VS Code launch config at `.vscode/launch.json` connects to `:2345`
-4. Helm chart at `deploy/helm/` provisions Postgres, Redis, pgAdmin in the `greeter` namespace
+4. Helm chart at `deploy/helm/` provisions Postgres, Redis, pgAdmin in the `go-mall` namespace
 5. Dapr is installed via Helm into `dapr-system` namespace
 
 Port forwards: HTTP `8000`, gRPC `9000`, Delve `2345`, Postgres `5432`, Redis `6379`, pgAdmin `5050`.
