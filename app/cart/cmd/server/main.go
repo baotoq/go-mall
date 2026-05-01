@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"gomall/app/cart/internal/conf"
+	"gomall/pkg/secrets"
 
 	dapr "github.com/dapr/go-sdk/client"
 	"github.com/go-kratos/kratos/v2"
@@ -100,12 +101,8 @@ func main() {
 		panic(err)
 	}
 
-	// Use cart-specific DSN if available; fall back to shared DSN.
-	if v := secret["CART_DATABASE_CONNECTION_STRING"]; v != "" {
-		bc.Data.Database.Source = v
-	} else if v := secret["DATABASE_CONNECTION_STRING"]; v != "" {
-		bc.Data.Database.Source = v
-	}
+	sec := secrets.Parse(secret, "CART_DATABASE_CONNECTION_STRING")
+	bc.Data.Database.Source = sec.DatabaseConnectionString
 
 	app, cleanup, err := wireApp(bc.Server, bc.Data, logger)
 	if err != nil {

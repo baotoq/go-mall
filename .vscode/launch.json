@@ -8,13 +8,31 @@
       "mode": "remote",
       "debugAdapter": "dlv-dap",
       "host": "127.0.0.1",
-      "port": 2346
+      "port": 7001
+    },
+    {
+      "name": "Attach to cart in k8s",
+      "type": "go",
+      "request": "attach",
+      "mode": "remote",
+      "debugAdapter": "dlv-dap",
+      "host": "127.0.0.1",
+      "port": 7002
+    },
+    {
+      "name": "Attach to payment in k8s",
+      "type": "go",
+      "request": "attach",
+      "mode": "remote",
+      "debugAdapter": "dlv-dap",
+      "host": "127.0.0.1",
+      "port": 7003
     },
   ],
   "compounds": [
     {
       "name": "Attach to all",
-      "configurations": ["Attach to catalog in k8s"]
+      "configurations": ["Attach to catalog in k8s", "Attach to cart in k8s", "Attach to payment in k8s"]
     }
   ]
 }

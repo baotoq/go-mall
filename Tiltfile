@@ -9,15 +9,16 @@ docker_prune_settings(num_builds=1, keep_recent=1)
 config.define_bool('continue', args=False, usage='Start Delve with --continue')
 dlv_continue = config.parse().get('continue', False)
 
-dlv_flags = '--headless --listen=:2345 --accept-multiclient --only-same-user=false --log'
+dlv_flags = '--headless --listen=:7000 --accept-multiclient --only-same-user=false --log'
 if dlv_continue:
     dlv_flags += ' --continue'
 
 # (name, http_host_port, grpc_host_port, dlv_host_port, extra_k8s_deps)
 SERVICES = [
-    ('catalog', 8001, 9001, 2346, ['postgres']),
-    ('cart',    8002, 9002, 2347, ['postgres']),
-    ('payment', 8003, 9003, 2348, ['postgres']),
+    ('catalog', 8001, 9001, 7001, ['postgres']),
+    ('cart',    8002, 9002, 7002, ['postgres']),
+    ('payment', 8003, 9003, 7003, ['postgres']),
+    ('order',   8004, 9004, 7004, ['postgres']),
 ]
 
 def compile_cmd(name):
@@ -56,7 +57,7 @@ for svc in SERVICES:
         port_forwards=[
             str(http_port) + ':8000',
             str(grpc_port) + ':9000',
-            str(dlv_port) + ':2345',
+            str(dlv_port) + ':7000',
         ],
         resource_deps=extra_k8s_deps + ['compile-' + name, 'dapr', 'dapr-components'],
         labels=['app'],

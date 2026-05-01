@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"gomall/app/catalog/internal/conf"
+	"gomall/pkg/secrets"
 
 	dapr "github.com/dapr/go-sdk/client"
 	"github.com/go-kratos/kratos/v2"
@@ -100,19 +101,13 @@ func main() {
 		panic(err)
 	}
 
-	// Use catalog-specific DSN if available; fall back to shared DSN.
-	if v := secret["CATALOG_DATABASE_CONNECTION_STRING"]; v != "" {
-		bc.Data.Database.Source = v
-	} else if v := secret["DATABASE_CONNECTION_STRING"]; v != "" {
-		bc.Data.Database.Source = v
-	}
-
-	// Inject Keycloak JWKS URL from Dapr secret store.
-	if v := secret["KEYCLOAK_JWKS_URL"]; v != "" {
+	sec := secrets.Parse(secret, "CATALOG_DATABASE_CONNECTION_STRING")
+	bc.Data.Database.Source = sec.DatabaseConnectionString
+	if sec.KeycloakJWKSURL != "" {
 		if bc.Server.Auth == nil {
 			bc.Server.Auth = &conf.Server_Auth{}
 		}
-		bc.Server.Auth.JwksUrl = v
+		bc.Server.Auth.JwksUrl = sec.KeycloakJWKSURL
 	}
 
 	app, cleanup, err := wireApp(bc.Server, bc.Data, logger)
