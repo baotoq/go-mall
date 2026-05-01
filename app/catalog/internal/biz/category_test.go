@@ -61,6 +61,12 @@ func (r *stubCategoryRepo) List(_ context.Context, f biz.ListCategoriesFilter) (
 	return &biz.ListCategoriesResult{Categories: cs, Total: int64(len(cs)), Page: f.Page, PageSize: f.PageSize}, nil
 }
 
+func (r *stubCategoryRepo) DeleteAll(_ context.Context) (int, error) {
+	n := len(r.cats)
+	r.cats = make(map[uuid.UUID]*biz.Category)
+	return n, nil
+}
+
 func TestCategoryUsecase_Create(t *testing.T) {
 	// Arrange
 	repo := newStubCategoryRepo()

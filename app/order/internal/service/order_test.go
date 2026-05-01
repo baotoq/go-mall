@@ -31,6 +31,23 @@ func (r *stubOrderRepo) Create(_ context.Context, o *biz.Order) (*biz.Order, err
 	return &cp, nil
 }
 
+func (r *stubOrderRepo) CreateWithEvent(ctx context.Context, o *biz.Order, emit func(context.Context, biz.TxExecer, *biz.Order) error) (*biz.Order, error) {
+	created, err := r.Create(ctx, o)
+	if err != nil {
+		return nil, err
+	}
+	if err := emit(ctx, nil, created); err != nil {
+		return nil, err
+	}
+	return created, nil
+}
+
+type stubOutbox struct{}
+
+func (s *stubOutbox) Publish(_ context.Context, _ biz.TxExecer, _ string, _ any) (string, error) {
+	return "stub-id", nil
+}
+
 func (r *stubOrderRepo) GetByID(_ context.Context, id uuid.UUID) (*biz.Order, error) {
 	o, ok := r.orders[id]
 	if !ok {
@@ -79,7 +96,7 @@ func (r *stubOrderRepo) MarkPaid(_ context.Context, id uuid.UUID, paymentID stri
 }
 
 func newSvc(repo *stubOrderRepo) *service.OrderService {
-	return service.NewOrderService(biz.NewOrderUsecase(repo))
+	return service.NewOrderService(biz.NewOrderUsecase(repo, &stubOutbox{}))
 }
 
 func TestOrderService_CreateOrder_validatesEmptyItems(t *testing.T) {

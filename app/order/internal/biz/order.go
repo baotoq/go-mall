@@ -2,6 +2,7 @@ package biz
 
 import (
 	"context"
+	"database/sql"
 	"time"
 
 	orderv1 "gomall/api/order/v1"
@@ -9,6 +10,16 @@ import (
 	"github.com/go-kratos/kratos/v2/errors"
 	"github.com/google/uuid"
 )
+
+// TxExecer is the minimal SQL interface satisfied by *sql.Tx.
+type TxExecer interface {
+	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
+}
+
+// OutboxPublisher writes an event into the transactional outbox.
+type OutboxPublisher interface {
+	Publish(ctx context.Context, tx TxExecer, topic string, payload any) (string, error)
+}
 
 var (
 	ErrOrderNotFound     = errors.NotFound(orderv1.ErrorReason_ORDER_NOT_FOUND.String(), "order not found")
@@ -42,15 +53,21 @@ type Order struct {
 
 type OrderRepo interface {
 	Create(ctx context.Context, o *Order) (*Order, error)
+	CreateWithEvent(ctx context.Context, o *Order, emit func(context.Context, TxExecer, *Order) error) (*Order, error)
 	GetByID(ctx context.Context, id uuid.UUID) (*Order, error)
 	ListByUser(ctx context.Context, userID, status string, page, pageSize int) ([]*Order, int, error)
 	UpdateStatus(ctx context.Context, id uuid.UUID, status string) (*Order, error)
 	MarkPaid(ctx context.Context, id uuid.UUID, paymentID string) (*Order, error)
 }
 
-type OrderUsecase struct{ repo OrderRepo }
+type OrderUsecase struct {
+	repo OrderRepo
+	ob   OutboxPublisher
+}
 
-func NewOrderUsecase(repo OrderRepo) *OrderUsecase { return &OrderUsecase{repo: repo} }
+func NewOrderUsecase(repo OrderRepo, ob OutboxPublisher) *OrderUsecase {
+	return &OrderUsecase{repo: repo, ob: ob}
+}
 
 func (uc *OrderUsecase) Create(ctx context.Context, o *Order) (*Order, error) {
 	if len(o.Items) == 0 {
@@ -70,7 +87,15 @@ func (uc *OrderUsecase) Create(ctx context.Context, o *Order) (*Order, error) {
 	}
 	o.TotalCents = total
 	o.Status = "PENDING"
-	return uc.repo.Create(ctx, o)
+	return uc.repo.CreateWithEvent(ctx, o, func(ctx context.Context, tx TxExecer, created *Order) error {
+		_, err := uc.ob.Publish(ctx, tx, TopicOrderCreated, OrderCreatedEvent{
+			OrderID:    created.ID.String(),
+			UserID:     created.UserID,
+			TotalCents: created.TotalCents,
+			Currency:   created.Currency,
+		})
+		return err
+	})
 }
 
 func (uc *OrderUsecase) GetByID(ctx context.Context, id uuid.UUID) (*Order, error) {

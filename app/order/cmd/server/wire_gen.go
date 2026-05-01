@@ -7,6 +7,7 @@
 package main
 
 import (
+	dapr "github.com/dapr/go-sdk/client"
 	"github.com/go-kratos/kratos/v2"
 	"github.com/go-kratos/kratos/v2/log"
 	"gomall/app/order/internal/biz"
@@ -14,6 +15,7 @@ import (
 	"gomall/app/order/internal/data"
 	"gomall/app/order/internal/server"
 	"gomall/app/order/internal/service"
+	"gomall/pkg/outbox"
 )
 
 import (
@@ -22,18 +24,33 @@ import (
 
 // Injectors from wire.go:
 
-func wireApp(confServer *conf.Server, confData *conf.Data, logger log.Logger) (*kratos.App, func(), error) {
-	dataData, cleanup, err := data.NewData(confData, logger)
+func wireApp(confServer *conf.Server, confData *conf.Data, logger log.Logger, daprClient dapr.Client) (*kratos.App, func(), error) {
+	db, cleanup, err := data.ProvideSQLDB(confData)
 	if err != nil {
 		return nil, nil, err
 	}
+	config := data.ProvideOutboxConfig()
+	outboxClient, cleanup2, err := outbox.ProvideClient(db, daprClient, config, logger)
+	if err != nil {
+		cleanup()
+		return nil, nil, err
+	}
+	dataData, cleanup3, err := data.NewData(db, outboxClient, logger)
+	if err != nil {
+		cleanup2()
+		cleanup()
+		return nil, nil, err
+	}
 	orderRepo := data.NewOrderRepo(dataData, logger)
-	orderUsecase := biz.NewOrderUsecase(orderRepo)
+	outboxPublisher := data.NewOutboxPublisher(outboxClient)
+	orderUsecase := biz.NewOrderUsecase(orderRepo, outboxPublisher)
 	orderService := service.NewOrderService(orderUsecase)
 	grpcServer := server.NewGRPCServer(confServer, orderService, logger)
 	httpServer := server.NewHTTPServer(confServer, orderService, logger)
-	app := newApp(logger, grpcServer, httpServer)
+	app := newApp(logger, grpcServer, httpServer, outboxClient)
 	return app, func() {
+		cleanup3()
+		cleanup2()
 		cleanup()
 	}, nil
 }

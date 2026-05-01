@@ -8,6 +8,8 @@ import (
 	entorder "gomall/app/order/internal/data/ent/order"
 	"gomall/app/order/internal/data/ent/schema"
 
+	"entgo.io/ent/dialect"
+	entsql "entgo.io/ent/dialect/sql"
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/google/uuid"
 )
@@ -37,6 +39,43 @@ func (r *orderRepo) Create(ctx context.Context, o *biz.Order) (*biz.Order, error
 		return nil, err
 	}
 	return entToOrder(result), nil
+}
+
+func (r *orderRepo) CreateWithEvent(ctx context.Context, o *biz.Order, emit func(context.Context, biz.TxExecer, *biz.Order) error) (*biz.Order, error) {
+	sqlTx, err := r.data.sqlDB.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = sqlTx.Rollback() }()
+
+	drv := entsql.NewDriver(dialect.Postgres, entsql.Conn{ExecQuerier: sqlTx})
+	txClient := ent.NewClient(ent.Driver(drv))
+	defer txClient.Close()
+
+	q := txClient.Order.Create().
+		SetUserID(o.UserID).
+		SetSessionID(o.SessionID).
+		SetItems(bizItemsToSchema(o.Items)).
+		SetTotalCents(o.TotalCents).
+		SetCurrency(o.Currency).
+		SetStatus(o.Status)
+	if o.PaymentID != "" {
+		q = q.SetPaymentID(o.PaymentID)
+	}
+	result, err := q.Save(ctx)
+	if err != nil {
+		return nil, err
+	}
+	created := entToOrder(result)
+
+	if err := emit(ctx, sqlTx, created); err != nil {
+		return nil, err
+	}
+
+	if err := sqlTx.Commit(); err != nil {
+		return nil, err
+	}
+	return created, nil
 }
 
 func (r *orderRepo) GetByID(ctx context.Context, id uuid.UUID) (*biz.Order, error) {
