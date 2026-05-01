@@ -98,17 +98,11 @@ func (r *paymentRepo) ListByOrder(ctx context.Context, orderID string) ([]*biz.P
 }
 
 func (r *paymentRepo) UpdateStatus(ctx context.Context, id uuid.UUID, status string) (*biz.Payment, error) {
-	p, err := r.data.db.Payment.Query().
-		Where(entpayment.ID(id)).
-		Only(ctx)
+	updated, err := r.data.db.Payment.UpdateOneID(id).SetStatus(status).Save(ctx)
 	if err != nil {
 		if ent.IsNotFound(err) {
 			return nil, biz.ErrPaymentNotFound
 		}
-		return nil, err
-	}
-	updated, err := p.Update().SetStatus(status).Save(ctx)
-	if err != nil {
 		return nil, err
 	}
 	return entToPayment(updated), nil

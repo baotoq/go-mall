@@ -53,81 +53,83 @@ func (r *cartRepo) FindOrCreateBySession(ctx context.Context, sessionID string) 
 }
 
 func (r *cartRepo) AddItem(ctx context.Context, sessionID string, item *biz.CartItem) (*biz.Cart, error) {
-	c, err := r.data.db.Cart.Query().
-		Where(entcart.SessionID(sessionID)).
-		WithItems().
-		Only(ctx)
+	tx, err := r.data.db.Tx(ctx)
 	if err != nil {
-		if !ent.IsNotFound(err) {
-			return nil, err
-		}
-		c, err = r.data.db.Cart.Create().
-			SetSessionID(sessionID).
-			Save(ctx)
+		return nil, err
+	}
+
+	var result *biz.Cart
+	txErr := func() error {
+		c, err := tx.Cart.Query().
+			Where(entcart.SessionID(sessionID)).
+			Only(ctx)
 		if err != nil {
-			if !ent.IsConstraintError(err) {
-				return nil, err
+			if !ent.IsNotFound(err) {
+				return err
 			}
-			// Concurrent request created the cart; re-query.
-			c, err = r.data.db.Cart.Query().
-				Where(entcart.SessionID(sessionID)).
-				Only(ctx)
+			c, err = tx.Cart.Create().SetSessionID(sessionID).Save(ctx)
 			if err != nil {
-				return nil, err
+				if !ent.IsConstraintError(err) {
+					return err
+				}
+				// Concurrent request created the cart; re-query within tx.
+				c, err = tx.Cart.Query().Where(entcart.SessionID(sessionID)).Only(ctx)
+				if err != nil {
+					return err
+				}
 			}
 		}
-		c.Edges.Items = []*ent.CartItem{}
-	}
 
-	existing, err := r.data.db.CartItem.Query().
-		Where(
-			entcartitem.CartID(c.ID),
-			entcartitem.ProductID(item.ProductID),
-		).
-		Only(ctx)
-	if err != nil && !ent.IsNotFound(err) {
+		existing, err := tx.CartItem.Query().
+			Where(
+				entcartitem.CartID(c.ID),
+				entcartitem.ProductID(item.ProductID),
+			).
+			Only(ctx)
+		if err != nil && !ent.IsNotFound(err) {
+			return err
+		}
+
+		if existing != nil {
+			_, err = tx.CartItem.UpdateOne(existing).AddQuantity(item.Quantity).Save(ctx)
+		} else {
+			q := tx.CartItem.Create().
+				SetCartID(c.ID).
+				SetProductID(item.ProductID).
+				SetName(item.Name).
+				SetPriceCents(item.PriceCents).
+				SetQuantity(item.Quantity)
+			if item.Currency != "" {
+				q = q.SetCurrency(item.Currency)
+			}
+			if item.ImageURL != "" {
+				q = q.SetImageURL(item.ImageURL)
+			}
+			_, err = q.Save(ctx)
+		}
+		if err != nil {
+			return err
+		}
+
+		reloaded, err := tx.Cart.Query().
+			Where(entcart.ID(c.ID)).
+			WithItems().
+			Only(ctx)
+		if err != nil {
+			return err
+		}
+		result = entToCart(reloaded)
+		return nil
+	}()
+
+	if txErr != nil {
+		_ = tx.Rollback()
+		return nil, txErr
+	}
+	if err := tx.Commit(); err != nil {
 		return nil, err
 	}
-
-	if existing != nil {
-		_, err = r.data.db.CartItem.UpdateOne(existing).
-			AddQuantity(item.Quantity).
-			Save(ctx)
-	} else {
-		q := r.data.db.CartItem.Create().
-			SetCartID(c.ID).
-			SetProductID(item.ProductID).
-			SetName(item.Name).
-			SetPriceCents(item.PriceCents).
-			SetQuantity(item.Quantity)
-		if item.Currency != "" {
-			q = q.SetCurrency(item.Currency)
-		}
-		if item.ImageURL != "" {
-			q = q.SetImageURL(item.ImageURL)
-		}
-		_, err = q.Save(ctx)
-		if err != nil && ent.IsConstraintError(err) {
-			// Concurrent request inserted the same item; increment instead.
-			existing, err = r.data.db.CartItem.Query().
-				Where(
-					entcartitem.CartID(c.ID),
-					entcartitem.ProductID(item.ProductID),
-				).
-				Only(ctx)
-			if err != nil {
-				return nil, err
-			}
-			_, err = r.data.db.CartItem.UpdateOne(existing).
-				AddQuantity(item.Quantity).
-				Save(ctx)
-		}
-	}
-	if err != nil {
-		return nil, err
-	}
-
-	return r.FindOrCreateBySession(ctx, sessionID)
+	return result, nil
 }
 
 func (r *cartRepo) UpdateItem(ctx context.Context, sessionID string, productID uuid.UUID, quantity int) (*biz.Cart, error) {

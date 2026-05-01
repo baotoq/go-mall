@@ -35,6 +35,17 @@ func (r *stubCartRepo) AddItem(_ context.Context, sessionID string, item *biz.Ca
 		c = &biz.Cart{ID: uuid.New(), SessionID: sessionID}
 		r.carts[sessionID] = c
 	}
+	for _, existing := range c.Items {
+		if existing.ProductID == item.ProductID {
+			existing.Quantity += item.Quantity
+			existing.SubtotalCents = existing.PriceCents * int64(existing.Quantity)
+			c.TotalCents = 0
+			for _, it := range c.Items {
+				c.TotalCents += it.SubtotalCents
+			}
+			return c, nil
+		}
+	}
 	item.ID = uuid.New()
 	item.CartID = c.ID
 	item.SubtotalCents = item.PriceCents * int64(item.Quantity)
@@ -90,14 +101,79 @@ func TestCartUsecase_GetOrCreate(t *testing.T) {
 }
 
 func TestCartUsecase_AddItem_addsAndComputesTotal(t *testing.T) {
+	// Arrange
 	uc := biz.NewCartUsecase(newStubCartRepo())
 	item := &biz.CartItem{ProductID: uuid.New(), Name: "X", PriceCents: 1000, Quantity: 2}
 
+	// Act
 	got, err := uc.AddItem(context.Background(), "sess-1", item)
 
+	// Assert
 	require.NoError(t, err)
 	require.Len(t, got.Items, 1)
 	assert.Equal(t, int64(2000), got.TotalCents)
+}
+
+func TestCartUsecase_AddItem_createsCartForNewSession(t *testing.T) {
+	// Arrange
+	uc := biz.NewCartUsecase(newStubCartRepo())
+	item := &biz.CartItem{ProductID: uuid.New(), Name: "Widget", PriceCents: 500, Quantity: 1}
+
+	// Act
+	got, err := uc.AddItem(context.Background(), "brand-new-session", item)
+
+	// Assert
+	require.NoError(t, err)
+	assert.Equal(t, "brand-new-session", got.SessionID)
+	require.Len(t, got.Items, 1)
+	assert.Equal(t, int64(500), got.TotalCents)
+}
+
+func TestCartUsecase_AddItem_differentProductsAccumulate(t *testing.T) {
+	// Arrange
+	uc := biz.NewCartUsecase(newStubCartRepo())
+	prodA, prodB := uuid.New(), uuid.New()
+
+	// Act
+	_, _ = uc.AddItem(context.Background(), "sess-1", &biz.CartItem{ProductID: prodA, Name: "A", PriceCents: 1000, Quantity: 1})
+	got, err := uc.AddItem(context.Background(), "sess-1", &biz.CartItem{ProductID: prodB, Name: "B", PriceCents: 2000, Quantity: 2})
+
+	// Assert
+	require.NoError(t, err)
+	require.Len(t, got.Items, 2)
+	assert.Equal(t, int64(5000), got.TotalCents) // 1×1000 + 2×2000
+}
+
+func TestCartUsecase_AddItem_sameProductIncrementsQuantity(t *testing.T) {
+	// Arrange
+	uc := biz.NewCartUsecase(newStubCartRepo())
+	prod := uuid.New()
+
+	// Act
+	_, _ = uc.AddItem(context.Background(), "sess-1", &biz.CartItem{ProductID: prod, Name: "X", PriceCents: 800, Quantity: 2})
+	got, err := uc.AddItem(context.Background(), "sess-1", &biz.CartItem{ProductID: prod, Name: "X", PriceCents: 800, Quantity: 3})
+
+	// Assert
+	require.NoError(t, err)
+	require.Len(t, got.Items, 1)
+	assert.Equal(t, 5, got.Items[0].Quantity)
+	assert.Equal(t, int64(4000), got.TotalCents) // 800×5
+}
+
+func TestCartUsecase_AddItem_subtotalIsPriceTimesQuantity(t *testing.T) {
+	// Arrange
+	uc := biz.NewCartUsecase(newStubCartRepo())
+
+	// Act
+	got, err := uc.AddItem(context.Background(), "sess-1", &biz.CartItem{
+		ProductID: uuid.New(), Name: "Y", PriceCents: 1500, Quantity: 3,
+	})
+
+	// Assert
+	require.NoError(t, err)
+	require.Len(t, got.Items, 1)
+	assert.Equal(t, int64(4500), got.Items[0].SubtotalCents)
+	assert.Equal(t, int64(4500), got.TotalCents)
 }
 
 func TestCartUsecase_UpdateItem_notFound(t *testing.T) {
