@@ -90,6 +90,9 @@
 				"editorconfig.editorconfig",
 				"streetsidesoftware.code-spell-checker",
 				"vscode-icons-team.vscode-icons",
+				// Frontend (web/ — Next.js + Tailwind + shadcn)
+				"bradlc.vscode-tailwindcss",
+				"biomejs.biome",
 				// Config / docs
 				"mikestead.dotenv",
 				"yzhang.markdown-all-in-one"
