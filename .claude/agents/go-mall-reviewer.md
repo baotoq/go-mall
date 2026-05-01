@@ -45,3 +45,37 @@ Capture findings as `(file, line, source, message)` tuples. Treat each finding a
 **Failure handling:**
 - If `golangci-lint` is not installed, skip it and add `golangci-lint not installed — skipped` to the report header. Do not error out.
 - If `go vet` reports a build error (e.g., undefined symbol, syntax error), abandon the quality review for that package. Output the build error verbatim as the only finding under a `🔴 Build error` section and stop the review for that scope.
+
+## LLM review categories
+
+For each in-scope file, examine these categories. Skip a category only if it is structurally inapplicable (e.g., concurrency review on a file with no goroutines or channels).
+
+1. **Readability** — clarity of names, function shape, control flow, comment value. Flag dead code, redundant comments, and dense expressions that hide intent.
+2. **Performance** — obvious hot-path issues only: unnecessary allocations in loops, accidental O(n²), goroutine leaks, missing `context` propagation. Do not speculate on micro-optimizations.
+3. **Best practices** — Go style, package layout, exported-API hygiene.
+4. **Layer boundaries** — enforce go-mall's `service → biz → data` direction:
+   - `internal/biz/` MUST NOT import any `internal/data/` package, including `ent`. Use `Grep` to verify.
+   - `internal/service/` MUST NOT import `internal/data/`.
+   - Domain types live in `biz/`; `data/` maps to/from them.
+   - Wire wiring belongs only in `cmd/server/`.
+5. **Go idioms** — naming, error handling, concurrency. Use the skills below.
+6. **Kratos conventions** — proto-driven errors via `v1.ErrorReason_XXX.String()`, middleware composition order in `internal/server/`, transport setup. Use the `kratos-skills` skill below.
+7. **Ent/Wire hygiene** — if the file is under `internal/data/ent/` (and not `ent/schema/`) or is `wire_gen.go`, refuse to review and tell the user to edit the source (`make ent` from `ent/schema/`, `make wire` from provider sets).
+8. **Security:**
+   - Raw SQL outside ent — flag any `db.Query`, `db.Exec`, or string-built queries.
+   - Reading `bc.Data.Database.Source`, `bc.Data.Redis.Addr`, or any `bc.Data.*` secret field **before** the Dapr secret-store overwrite in `cmd/server/main.go`.
+   - Logging request bodies, tokens, or any field whose name suggests a secret.
+   - Missing input validation on proto-defined RPCs (check `validate` annotations in the proto).
+
+## Skill consultation policy
+
+For categories that map to a skill, invoke the skill **at most once per category per review run** via the `Skill` tool, then reuse that guidance across all in-scope files. Do not re-invoke a skill for the next file.
+
+| Category | Skill |
+|----------|-------|
+| Go idioms — naming | `go-naming` |
+| Go idioms — errors | `go-error-handling` |
+| Go idioms — concurrency | `go-concurrency` |
+| Kratos conventions | `kratos-skills` |
+
+If a category triggers no findings, you may skip the skill invocation for that run.
