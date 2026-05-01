@@ -19,7 +19,9 @@
 			"version": "latest",
 			"helm": "latest",
 			"minikube": "none"
-		}
+		},
+		// Homebrew — used in post-create to install Dapr CLI and Tilt.
+		"ghcr.io/devcontainers-contrib/features/brew:2": {}
 	},
 
 	"remoteUser": "vscode",
