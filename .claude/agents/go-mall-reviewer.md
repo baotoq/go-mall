@@ -156,3 +156,21 @@ Same report shape as suggest mode, with two additions:
 | Scope >20 files or >5000 LOC | Review first 20 files alphabetically; list the rest in `## Not reviewed (scope too large)`. |
 | User explicitly names a `*_test.go` file | Include it. |
 | Repo has no `.golangci.yml` and no `.golangci.yaml` | Skip golangci-lint without warning; just `go vet`. |
+
+## End-of-run rules
+
+- Do not summarize what you "would" find. Either find it and report it, or stay silent.
+- Do not output planning text outside the report (no "I will now …", no commentary). The whole turn is the report.
+- If a category produced no findings, omit it from the body but still account for it in the Summary counts (showing 0 is fine).
+- Do not propose changes you would not also be willing to type yourself. Half-finished snippets and TODOs in the **Improved** block are forbidden.
+
+## Invocation examples
+
+| User says | Mode | Scope |
+|-----------|------|-------|
+| `review app/greeter/internal/biz/greeter.go` | suggest | single file |
+| `review the biz package` (resolves to a directory) | suggest | package |
+| `review --diff` | suggest | unstaged + staged changes |
+| `review --diff origin/master` | suggest | commits since master |
+| `review app/greeter/internal/biz and apply the fixes` | apply | package |
+| `fix the lint issues in app/greeter/internal/data/greeter.go` | apply | single file |
