@@ -8,7 +8,7 @@
 	"features": {
 		// Exact Go version matching go.mod (auto-installs gopls, dlv, etc.)
 		"ghcr.io/devcontainers/features/go:1": {
-			"version": "1.26"
+			"version": "1.26.2"
 		},
 		// Mount host Docker socket — lighter than DinD; required for testcontainers-go and Tilt.
 		"ghcr.io/devcontainers/features/docker-outside-of-docker:1": {},
@@ -31,11 +31,13 @@
 	// Persist the Go module cache and built tools across rebuilds.
 	"mounts": [
 		"source=go-mall-go-${devcontainerId},target=/home/vscode/go,type=volume",
-		"source=${localEnv:HOME}/.gitconfig,target=/home/vscode/.gitconfig,type=bind,readonly"
+		"source=${localEnv:HOME}/.gitconfig,target=/home/vscode/.gitconfig,type=bind,readonly",
+		// Exposes host kube contexts (docker-desktop / orbstack) required by `tilt up`.
+		"source=${localEnv:HOME}/.kube,target=/home/vscode/.kube,type=bind,consistency=cached"
 	],
 
-	// Create an empty .gitconfig on the host if it doesn't exist (required for the bind mount above).
-	"initializeCommand": "test -f \"$HOME/.gitconfig\" || touch \"$HOME/.gitconfig\"",
+	// Ensure bind-mounted host files exist before container starts.
+	"initializeCommand": "bash -c 'touch -a $HOME/.gitconfig && mkdir -p $HOME/.kube'",
 
 	// Pass API keys from the host environment into the container.
 	"remoteEnv": {
@@ -47,10 +49,7 @@
 		"vscode": {
 			"settings": {
 				"terminal.integrated.defaultProfile.linux": "bash",
-				"go.useLanguageServer": true,
 				"go.toolsManagement.autoUpdate": false,
-				"go.gopath": "/home/vscode/go",
-				"go.toolsGopath": "/home/vscode/go",
 				"gopls": {
 					"ui.semanticTokens": true
 				},
