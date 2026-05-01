@@ -6,6 +6,8 @@ import { useCartStore } from "@/store/cart";
 import { useSession, signOut } from "next-auth/react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { SeedButton } from "@/components/seed-button";
+import { CleanButton } from "@/components/clean-button";
 
 export function Header() {
   const totalItems = useCartStore((state) => state.totalItems());
@@ -35,6 +37,8 @@ export function Header() {
         </nav>
 
         <div className="flex items-center gap-3">
+          <SeedButton />
+          <CleanButton />
           {status === "loading" ? (
             <div
               className="h-8 w-20 animate-pulse rounded bg-muted"

@@ -53,14 +53,12 @@ describe("totals", () => {
   it("totalItems sums quantities", () => {
     useCartStore.getState().addItem(sampleItem);
     useCartStore.getState().addItem(sampleItem);
-    useCartStore
-      .getState()
-      .addItem({
-        id: "def-456",
-        name: "Watch",
-        priceCents: 5000,
-        imageUrl: "",
-      });
+    useCartStore.getState().addItem({
+      id: "def-456",
+      name: "Watch",
+      priceCents: 5000,
+      imageUrl: "",
+    });
     expect(useCartStore.getState().totalItems()).toBe(3);
   });
 

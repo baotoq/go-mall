@@ -38,6 +38,7 @@ type CategoryRepo interface {
 	FindByID(context.Context, uuid.UUID) (*Category, error)
 	Update(context.Context, *Category) (*Category, error)
 	Delete(context.Context, uuid.UUID) error
+	DeleteAll(context.Context) (int, error)
 	List(context.Context, ListCategoriesFilter) (*ListCategoriesResult, error)
 }
 
@@ -63,6 +64,10 @@ func (uc *CategoryUsecase) Update(ctx context.Context, c *Category) (*Category, 
 
 func (uc *CategoryUsecase) Delete(ctx context.Context, id uuid.UUID) error {
 	return uc.repo.Delete(ctx, id)
+}
+
+func (uc *CategoryUsecase) DeleteAll(ctx context.Context) (int, error) {
+	return uc.repo.DeleteAll(ctx)
 }
 
 func (uc *CategoryUsecase) List(ctx context.Context, f ListCategoriesFilter) (*ListCategoriesResult, error) {

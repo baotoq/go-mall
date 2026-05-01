@@ -116,6 +116,10 @@ func (r *productRepo) Delete(ctx context.Context, id uuid.UUID) error {
 	return err
 }
 
+func (r *productRepo) DeleteAll(ctx context.Context) (int, error) {
+	return r.data.db.Product.Delete().Exec(ctx)
+}
+
 func (r *productRepo) List(ctx context.Context, f biz.ListProductsFilter) (*biz.ListProductsResult, error) {
 	page, pageSize := normalizePage(f.Page, f.PageSize)
 	offset := int((page - 1) * pageSize)

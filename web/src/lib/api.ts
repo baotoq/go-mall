@@ -188,3 +188,37 @@ export async function clearCart(sessionId: string): Promise<void> {
     await fetch(`${CART_API_URL}/v1/carts/${sessionId}`, { method: "DELETE" });
   } catch {}
 }
+
+export async function seedData(): Promise<{
+  categoriesSeeded: number;
+  productsSeeded: number;
+} | null> {
+  try {
+    const res = await fetch(`${API_URL}/v1/admin/seed`, { method: "POST" });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return {
+      categoriesSeeded: Number(data.categories_seeded ?? 0),
+      productsSeeded: Number(data.products_seeded ?? 0),
+    };
+  } catch {
+    return null;
+  }
+}
+
+export async function cleanData(): Promise<{
+  categoriesDeleted: number;
+  productsDeleted: number;
+} | null> {
+  try {
+    const res = await fetch(`${API_URL}/v1/admin/clean`, { method: "DELETE" });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return {
+      categoriesDeleted: Number(data.categories_deleted ?? 0),
+      productsDeleted: Number(data.products_deleted ?? 0),
+    };
+  } catch {
+    return null;
+  }
+}

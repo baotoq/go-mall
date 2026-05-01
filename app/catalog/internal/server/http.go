@@ -54,5 +54,7 @@ func NewHTTPServer(c *conf.Server, catalog *service.CatalogService, logger log.L
 	srv.HandleFunc("/healthz", func(w nethttp.ResponseWriter, _ *nethttp.Request) {
 		w.WriteHeader(nethttp.StatusOK)
 	})
+	srv.HandleFunc("/v1/admin/seed", catalog.HandleSeed)
+	srv.HandleFunc("/v1/admin/clean", catalog.HandleClean)
 	return srv
 }

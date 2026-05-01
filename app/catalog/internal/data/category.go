@@ -78,6 +78,10 @@ func (r *categoryRepo) Delete(ctx context.Context, id uuid.UUID) error {
 	return err
 }
 
+func (r *categoryRepo) DeleteAll(ctx context.Context) (int, error) {
+	return r.data.db.Category.Delete().Exec(ctx)
+}
+
 func (r *categoryRepo) List(ctx context.Context, f biz.ListCategoriesFilter) (*biz.ListCategoriesResult, error) {
 	page, pageSize := normalizePage(f.Page, f.PageSize)
 	offset := int((page - 1) * pageSize)
