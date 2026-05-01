@@ -1,136 +1,133 @@
 // For format details, see https://aka.ms/devcontainer.json. For config options, see the
 // README at: https://github.com/devcontainers/templates/tree/main/src/go
 {
-	"name": "go-mall",
-	"image": "mcr.microsoft.com/devcontainers/base:bookworm",
+  "name": "go-mall",
+  "image": "mcr.microsoft.com/devcontainers/base:bookworm",
 
-	// Features to add to the dev container. More info: https://containers.dev/features.
-	"features": {
-		// Exact Go version matching go.mod (auto-installs gopls, dlv, etc.)
-		"ghcr.io/devcontainers/features/go:1": {
-			"version": "1.26.2"
-		},
-		// Mount host Docker socket — lighter than DinD; required for testcontainers-go and Tilt.
-		"ghcr.io/devcontainers/features/docker-outside-of-docker:1": {},
-		// gh CLI for PR/issue workflows.
-		"ghcr.io/devcontainers/features/github-cli:1": {},
-		// kubectl + helm required for `tilt up` (deploys to local cluster).
-		"ghcr.io/devcontainers/features/kubectl-helm-minikube:1": {
-			"version": "latest",
-			"helm": "latest",
-			"minikube": "none"
-		},
-		// Dapr CLI (official feature).
-		"ghcr.io/dapr/cli/dapr-cli:0": {},
-		// protoc compiler (required for `make api` and `make config`).
-		"ghcr.io/devcontainers-extra/features/protoc:1": {},
-		// Tilt for `make dev` / `make debug`.
-		"ghcr.io/audacioustux/devcontainers/tilt:1": {},
-		// Node.js LTS for web/ (Next.js 16 requires Node 20+).
-		"ghcr.io/devcontainers/features/node:1": {
-			"version": "lts"
-		}
-	},
+  // Features to add to the dev container. More info: https://containers.dev/features.
+  "features": {
+    // Exact Go version matching go.mod (auto-installs gopls, dlv, etc.)
+    "ghcr.io/devcontainers/features/go:1": {
+      "version": "1.26.2"
+    },
+    // Mount host Docker socket — lighter than DinD; required for testcontainers-go and Tilt.
+    "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {},
+    // gh CLI for PR/issue workflows.
+    "ghcr.io/devcontainers/features/github-cli:1": {},
+    // kubectl + helm required for `tilt up` (deploys to local cluster).
+    "ghcr.io/devcontainers/features/kubectl-helm-minikube:1": {
+      "version": "latest",
+      "helm": "latest",
+      "minikube": "none"
+    },
+    // Dapr CLI (official feature).
+    "ghcr.io/dapr/cli/dapr-cli:0": {},
+    // protoc compiler (required for `make api` and `make config`).
+    "ghcr.io/devcontainers-extra/features/protoc:1": {},
+    // Tilt for `make dev` / `make debug`.
+    "ghcr.io/audacioustux/devcontainers/tilt:1": {},
+    // Node.js LTS for web/ (Next.js 16 requires Node 20+).
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "lts"
+    }
+  },
 
-	"remoteUser": "vscode",
-	"workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=delegated",
-	"workspaceFolder": "/workspace",
+  "remoteUser": "vscode",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=delegated",
+  "workspaceFolder": "/workspace",
 
-	// Persist the Go module cache and built tools across rebuilds.
-	"mounts": [
-		"source=go-mall-go-${devcontainerId},target=/home/vscode/go,type=volume",
-		"source=${localEnv:HOME}/.gitconfig,target=/home/vscode/.gitconfig,type=bind,readonly",
-		// Exposes host kube contexts (docker-desktop / orbstack) required by `tilt up`.
-		"source=${localEnv:HOME}/.kube,target=/home/vscode/.kube,type=bind,consistency=cached",
-		// Persist web/node_modules across rebuilds; prevents macOS/Linux binary conflicts.
-		"source=go-mall-node-${devcontainerId},target=/workspace/web/node_modules,type=volume"
-	],
+  // Persist the Go module cache and built tools across rebuilds.
+  "mounts": [
+    "source=go-mall-go-${devcontainerId},target=/home/vscode/go,type=volume",
+    "source=${localEnv:HOME}/.gitconfig,target=/home/vscode/.gitconfig,type=bind,readonly",
+    // Exposes host kube contexts (docker-desktop / orbstack) required by `tilt up`.
+    "source=${localEnv:HOME}/.kube,target=/home/vscode/.kube,type=bind,consistency=cached",
+    // Persist web/node_modules across rebuilds; prevents macOS/Linux binary conflicts.
+    "source=go-mall-node-${devcontainerId},target=/workspace/web/node_modules,type=volume"
+  ],
 
-	// Ensure bind-mounted host files exist before container starts.
-	"initializeCommand": "bash -c 'touch -a $HOME/.gitconfig && mkdir -p $HOME/.kube'",
+  // Ensure bind-mounted host files exist before container starts.
+  "initializeCommand": "bash -c 'touch -a $HOME/.gitconfig && mkdir -p $HOME/.kube'",
 
-	// Pass API keys from the host environment into the container.
-	"remoteEnv": {
-		"ANTHROPIC_API_KEY": "${localEnv:ANTHROPIC_API_KEY:}"
-	},
+  // Pass API keys from the host environment into the container.
+  "remoteEnv": {
+    "ANTHROPIC_API_KEY": "${localEnv:ANTHROPIC_API_KEY:}"
+  },
 
-	// Configure tool-specific properties.
-	"customizations": {
-		"vscode": {
-			"settings": {
-				"terminal.integrated.defaultProfile.linux": "bash",
-				"go.toolsManagement.autoUpdate": false,
-				"gopls": {
-					"ui.semanticTokens": true
-				},
-				"[go]": {
-					"editor.defaultFormatter": "golang.go",
-					"editor.formatOnSave": true,
-					"editor.codeActionsOnSave": {
-						"source.organizeImports": "explicit"
-					}
-				},
-				"files.trimTrailingWhitespace": true,
-				"files.insertFinalNewline": true,
-				"files.trimFinalNewlines": true
-			},
-			"extensions": [
-				// Go
-				"golang.go",
-				// AI assistant
-				"anthropic.claude-code",
-				// Protobuf / gRPC
-				"drblury.protobuf-vsc",
-				// Kubernetes, Helm, Dapr YAML manifests
-				"ms-kubernetes-tools.vscode-kubernetes-tools",
-				"redhat.vscode-yaml",
-				// Docker / container management
-				"ms-azuretools.vscode-docker",
-				// Tiltfile syntax
-				"tilt-dev.tiltfile-lsp-support",
-				// Git
-				"eamodio.gitlens",
-				"github.vscode-pull-request-github",
-				"github.vscode-github-actions",
-				// Editor quality
-				"editorconfig.editorconfig",
-				"streetsidesoftware.code-spell-checker",
-				"vscode-icons-team.vscode-icons",
-				// Frontend (web/ — Next.js + Tailwind + shadcn)
-				"bradlc.vscode-tailwindcss",
-				"biomejs.biome",
-				// Config / docs
-				"mikestead.dotenv",
-				"yzhang.markdown-all-in-one"
-			]
-		}
-	},
+  // Configure tool-specific properties.
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash",
+        "go.toolsManagement.autoUpdate": false,
+        "gopls": {
+          "ui.semanticTokens": true
+        },
+        "[go]": {
+          "editor.defaultFormatter": "golang.go",
+          "editor.formatOnSave": true,
+          "editor.codeActionsOnSave": {
+            "source.organizeImports": "explicit"
+          }
+        },
+        "files.trimTrailingWhitespace": true,
+        "files.insertFinalNewline": true,
+        "files.trimFinalNewlines": true
+      },
+      "extensions": [
+        // Go
+        "golang.go",
+        // AI assistant
+        "anthropic.claude-code",
+        // Protobuf / gRPC
+        "drblury.protobuf-vsc",
+        // Kubernetes, Helm, Dapr YAML manifests
+        "ms-kubernetes-tools.vscode-kubernetes-tools",
+        "redhat.vscode-yaml",
+        // Docker / container management
+        "ms-azuretools.vscode-docker",
+        // Tiltfile syntax
+        "tilt-dev.tiltfile-lsp-support",
+        // Git
+        "eamodio.gitlens",
+        "github.vscode-pull-request-github",
+        "github.vscode-github-actions",
+        // Editor quality
+        "editorconfig.editorconfig",
+        "streetsidesoftware.code-spell-checker",
+        "vscode-icons-team.vscode-icons",
+        // Frontend (web/ — Next.js + Tailwind + shadcn)
+        "bradlc.vscode-tailwindcss",
+        "biomejs.biome",
+        // Config / docs
+        "mikestead.dotenv",
+        "yzhang.markdown-all-in-one"
+      ]
+    }
+  },
 
-	// Forward all service, debug, and infrastructure ports used by Tilt.
-	"forwardPorts": [
-		3000,
-		8001, 8002, 8003,
-		9001, 9002, 9003,
-		2346, 2347, 2348,
-		5432, 6379, 5050, 8080
-	],
-	"portsAttributes": {
-		"3000": { "label": "Next.js",        "onAutoForward": "openPreview" },
-		"8001": { "label": "catalog HTTP",  "onAutoForward": "silent" },
-		"8002": { "label": "cart HTTP",     "onAutoForward": "silent" },
-		"8003": { "label": "payment HTTP",  "onAutoForward": "silent" },
-		"9001": { "label": "catalog gRPC",  "onAutoForward": "silent" },
-		"9002": { "label": "cart gRPC",     "onAutoForward": "silent" },
-		"9003": { "label": "payment gRPC",  "onAutoForward": "silent" },
-		"2346": { "label": "catalog Delve", "onAutoForward": "silent" },
-		"2347": { "label": "cart Delve",    "onAutoForward": "silent" },
-		"2348": { "label": "payment Delve", "onAutoForward": "silent" },
-		"5432": { "label": "Postgres",      "onAutoForward": "notify" },
-		"6379": { "label": "Redis",         "onAutoForward": "silent" },
-		"5050": { "label": "pgAdmin",       "onAutoForward": "notify" },
-		"8080": { "label": "Keycloak",      "onAutoForward": "notify" }
-	},
+  // Forward all service, debug, and infrastructure ports used by Tilt.
+  "forwardPorts": [
+    3000, 8001, 8002, 8003, 9001, 9002, 9003, 7001, 7002, 7003, 5432, 6379,
+    5050, 8080
+  ],
+  "portsAttributes": {
+    "3000": { "label": "Next.js", "onAutoForward": "openPreview" },
+    "8001": { "label": "catalog HTTP", "onAutoForward": "silent" },
+    "8002": { "label": "cart HTTP", "onAutoForward": "silent" },
+    "8003": { "label": "payment HTTP", "onAutoForward": "silent" },
+    "9001": { "label": "catalog gRPC", "onAutoForward": "silent" },
+    "9002": { "label": "cart gRPC", "onAutoForward": "silent" },
+    "9003": { "label": "payment gRPC", "onAutoForward": "silent" },
+    "7001": { "label": "catalog Delve", "onAutoForward": "silent" },
+    "7002": { "label": "cart Delve", "onAutoForward": "silent" },
+    "7003": { "label": "payment Delve", "onAutoForward": "silent" },
+    "5432": { "label": "Postgres", "onAutoForward": "notify" },
+    "6379": { "label": "Redis", "onAutoForward": "silent" },
+    "5050": { "label": "pgAdmin", "onAutoForward": "notify" },
+    "8080": { "label": "Keycloak", "onAutoForward": "notify" }
+  },
 
-	// Install protoc, Dapr CLI, Tilt, and Go tooling after container creation.
-	"postCreateCommand": "bash .devcontainer/post-create.sh"
+  // Install protoc, Dapr CLI, Tilt, and Go tooling after container creation.
+  "postCreateCommand": "bash .devcontainer/post-create.sh"
 }
