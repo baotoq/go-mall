@@ -24,8 +24,8 @@
 		"ghcr.io/dapr/cli/dapr-cli:0": {},
 		// protoc compiler (required for `make api` and `make config`).
 		"ghcr.io/devcontainers-extra/features/protoc:1": {},
-		// Homebrew — used in post-create to install Tilt.
-		"ghcr.io/devcontainers-contrib/features/brew:2": {}
+		// Tilt for `make dev` / `make debug`.
+		"ghcr.io/audacioustux/devcontainers/tilt:1": {}
 	},
 
 	"remoteUser": "vscode",
