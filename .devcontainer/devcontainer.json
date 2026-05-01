@@ -1,8 +1,9 @@
 // For format details, see https://aka.ms/devcontainer.json. For config options, see the
 // README at: https://github.com/devcontainers/templates/tree/main/src/go
 {
+  "$schema": "https://raw.githubusercontent.com/devcontainers/spec/refs/heads/main/schemas/devContainer.schema.json",
   "name": "go-mall",
-  "image": "mcr.microsoft.com/devcontainers/go:1.26-bookworm",
+  "image": "mcr.microsoft.com/devcontainers/go:2-1.26-bookworm",
 
   // Features to add to the dev container. More info: https://containers.dev/features.
   "features": {
@@ -29,17 +30,15 @@
   },
 
   "remoteUser": "vscode",
-  "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=delegated",
-  "workspaceFolder": "/workspace",
 
-  // Persist the Go module cache and built tools across rebuilds.
   "mounts": [
-    "source=go-mall-go-${devcontainerId},target=/home/vscode/go,type=volume",
     "source=${localEnv:HOME}/.gitconfig,target=/home/vscode/.gitconfig,type=bind,readonly",
     // Exposes host kube contexts (docker-desktop / orbstack) required by `tilt up`.
     "source=${localEnv:HOME}/.kube,target=/home/vscode/.kube,type=bind,consistency=cached",
+    // Persist the Go module cache and built tools across rebuilds.
+    "source=${localWorkspaceFolderBasename}-go-${devcontainerId},target=/home/vscode/go,type=volume",
     // Persist web/node_modules across rebuilds; prevents macOS/Linux binary conflicts.
-    "source=go-mall-node-${devcontainerId},target=/workspace/web/node_modules,type=volume"
+    "source=${localWorkspaceFolderBasename}-node_modules-${devcontainerId},target=${containerWorkspaceFolder}/web/node_modules,type=volume"
   ],
 
   // Ensure bind-mounted host files exist before container starts.
