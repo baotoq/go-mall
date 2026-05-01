@@ -1,23 +1,20 @@
-"use client"
+"use client";
 
-import Link from "next/link"
-import { ShoppingCart, Store } from "lucide-react"
-import { useCartStore } from "@/store/cart"
-import { useSession, signOut } from "next-auth/react"
-import { Button, buttonVariants } from "@/components/ui/button"
-import { cn } from "@/lib/utils"
+import Link from "next/link";
+import { ShoppingCart, Store } from "lucide-react";
+import { useCartStore } from "@/store/cart";
+import { useSession, signOut } from "next-auth/react";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 export function Header() {
-  const totalItems = useCartStore((state) => state.totalItems())
-  const { data: session, status } = useSession()
+  const totalItems = useCartStore((state) => state.totalItems());
+  const { data: session, status } = useSession();
 
   return (
     <header className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur-sm">
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
-        <Link
-          href="/"
-          className="flex items-center gap-2 font-bold text-lg"
-        >
+        <Link href="/" className="flex items-center gap-2 font-bold text-lg">
           <Store className="size-5" />
           GoMall
         </Link>
@@ -39,7 +36,10 @@ export function Header() {
 
         <div className="flex items-center gap-3">
           {status === "loading" ? (
-            <div className="h-8 w-20 animate-pulse rounded bg-muted" aria-hidden="true" />
+            <div
+              className="h-8 w-20 animate-pulse rounded bg-muted"
+              aria-hidden="true"
+            />
           ) : session ? (
             <>
               <span className="text-sm text-muted-foreground hidden sm:block">
@@ -55,7 +55,9 @@ export function Header() {
             </>
           ) : (
             <Link href="/signin">
-              <Button variant="outline" size="sm">Sign in</Button>
+              <Button variant="outline" size="sm">
+                Sign in
+              </Button>
             </Link>
           )}
 
@@ -77,5 +79,5 @@ export function Header() {
         </div>
       </div>
     </header>
-  )
+  );
 }

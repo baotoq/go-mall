@@ -1,70 +1,70 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { signIn } from "next-auth/react"
-import { useRouter } from "next/navigation"
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import { useState } from "react";
+import { signIn } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export default function SignUpPage() {
-  const router = useRouter()
-  const [error, setError] = useState<string | null>(null)
-  const [message, setMessage] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
+  const router = useRouter();
+  const [error, setError] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault()
-    setError(null)
-    setMessage(null)
-    setLoading(true)
+    e.preventDefault();
+    setError(null);
+    setMessage(null);
+    setLoading(true);
 
-    const data = new FormData(e.currentTarget)
-    const email = data.get("email") as string
-    const password = data.get("password") as string
+    const data = new FormData(e.currentTarget);
+    const email = data.get("email") as string;
+    const password = data.get("password") as string;
 
     if (password.length < 8) {
-      setError("Password must be at least 8 characters")
-      setLoading(false)
-      return
+      setError("Password must be at least 8 characters");
+      setLoading(false);
+      return;
     }
 
     const res = await fetch("/api/auth/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
-    })
+    });
 
-    const body = await res.json()
+    const body = await res.json();
 
     if (!res.ok) {
-      setError(body.error ?? "Service unavailable. Try again.")
-      setLoading(false)
-      return
+      setError(body.error ?? "Service unavailable. Try again.");
+      setLoading(false);
+      return;
     }
 
     if (body.message) {
-      setMessage(body.message)
-      setLoading(false)
-      return
+      setMessage(body.message);
+      setLoading(false);
+      return;
     }
 
     const result = await signIn("credentials", {
       email,
       password,
       redirect: false,
-    })
+    });
 
-    setLoading(false)
+    setLoading(false);
 
     if (result?.error) {
-      router.push("/signin")
-      return
+      router.push("/signin");
+      return;
     }
 
-    router.push("/")
-    router.refresh()
+    router.push("/");
+    router.refresh();
   }
 
   return (
@@ -72,7 +72,9 @@ export default function SignUpPage() {
       <div className="w-full max-w-sm space-y-6">
         <div className="space-y-1">
           <h1 className="text-2xl font-bold">Create account</h1>
-          <p className="text-sm text-muted-foreground">Sign up with email and password</p>
+          <p className="text-sm text-muted-foreground">
+            Sign up with email and password
+          </p>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1">
@@ -99,12 +101,20 @@ export default function SignUpPage() {
             />
           </div>
           {error && (
-            <p className="text-sm text-destructive" role="alert" aria-live="polite">
+            <p
+              className="text-sm text-destructive"
+              role="alert"
+              aria-live="polite"
+            >
               {error}
             </p>
           )}
           {message && (
-            <p className="text-sm text-green-600" role="status" aria-live="polite">
+            <p
+              className="text-sm text-green-600"
+              role="status"
+              aria-live="polite"
+            >
               {message}
             </p>
           )}
@@ -114,11 +124,14 @@ export default function SignUpPage() {
         </form>
         <p className="text-center text-sm text-muted-foreground">
           Already have an account?{" "}
-          <Link href="/signin" className="text-foreground underline-offset-4 hover:underline">
+          <Link
+            href="/signin"
+            className="text-foreground underline-offset-4 hover:underline"
+          >
             Sign in
           </Link>
         </p>
       </div>
     </div>
-  )
+  );
 }

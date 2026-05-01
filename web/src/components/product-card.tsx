@@ -1,13 +1,13 @@
-"use client"
+"use client";
 
-import Link from "next/link"
-import { ShoppingCart } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { useCartStore } from "@/store/cart"
-import type { Product } from "@/lib/types"
+import Link from "next/link";
+import { ShoppingCart } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useCartStore } from "@/store/cart";
+import type { Product } from "@/lib/types";
 
 export function ProductCard({ product }: { product: Product }) {
-  const addItem = useCartStore((state) => state.addItem)
+  const addItem = useCartStore((state) => state.addItem);
 
   return (
     <div className="group rounded-xl border bg-card overflow-hidden hover:shadow-md transition-shadow">
@@ -32,7 +32,9 @@ export function ProductCard({ product }: { product: Product }) {
             {product.name}
           </h3>
         </Link>
-        <p className="text-xs text-muted-foreground line-clamp-2">{product.description}</p>
+        <p className="text-xs text-muted-foreground line-clamp-2">
+          {product.description}
+        </p>
         <div className="flex items-center justify-between pt-1">
           <span className="font-bold text-lg">
             ${(product.priceCents / 100).toFixed(2)}
@@ -54,5 +56,5 @@ export function ProductCard({ product }: { product: Product }) {
         </div>
       </div>
     </div>
-  )
+  );
 }

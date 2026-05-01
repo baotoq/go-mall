@@ -1,22 +1,22 @@
-import { notFound } from "next/navigation"
-import Link from "next/link"
-import { ArrowLeft } from "lucide-react"
-import { getProduct, listCategories } from "@/lib/api"
-import { AddToCartButton } from "@/components/add-to-cart-button"
+import { notFound } from "next/navigation";
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
+import { getProduct, listCategories } from "@/lib/api";
+import { AddToCartButton } from "@/components/add-to-cart-button";
 
 export default async function ProductPage({
   params,
 }: {
-  params: Promise<{ id: string }>
+  params: Promise<{ id: string }>;
 }) {
-  const { id } = await params
+  const { id } = await params;
   const [product, categories] = await Promise.all([
     getProduct(id),
     listCategories(),
-  ])
-  if (!product) notFound()
+  ]);
+  if (!product) notFound();
 
-  const category = categories.find((c) => c.id === product.categoryId)
+  const category = categories.find((c) => c.id === product.categoryId);
 
   return (
     <div className="flex-1 py-8 px-4">
@@ -63,7 +63,9 @@ export default async function ProductPage({
                 In stock ({product.stock} available)
               </p>
             ) : (
-              <p className="text-sm text-destructive font-medium">Out of stock</p>
+              <p className="text-sm text-destructive font-medium">
+                Out of stock
+              </p>
             )}
 
             <p className="text-muted-foreground leading-relaxed">
@@ -77,5 +79,5 @@ export default async function ProductPage({
         </div>
       </div>
     </div>
-  )
+  );
 }

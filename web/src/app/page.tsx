@@ -1,15 +1,15 @@
-import Link from "next/link"
-import { ArrowRight } from "lucide-react"
-import { buttonVariants } from "@/components/ui/button"
-import { ProductCard } from "@/components/product-card"
-import { listProducts, listCategories } from "@/lib/api"
-import { cn } from "@/lib/utils"
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
+import { buttonVariants } from "@/components/ui/button";
+import { ProductCard } from "@/components/product-card";
+import { listProducts, listCategories } from "@/lib/api";
+import { cn } from "@/lib/utils";
 
 export default async function Home() {
   const [{ products: featured }, categories] = await Promise.all([
     listProducts({ pageSize: 4 }),
     listCategories(),
-  ])
+  ]);
 
   return (
     <div className="flex-1">
@@ -88,5 +88,5 @@ export default async function Home() {
         © 2026 GoMall. All rights reserved.
       </footer>
     </div>
-  )
+  );
 }

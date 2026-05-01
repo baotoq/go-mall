@@ -1,17 +1,25 @@
-"use client"
+"use client";
 
-import Link from "next/link"
-import { useEffect } from "react"
-import { Trash2, ArrowLeft, ShoppingBag } from "lucide-react"
-import { useCartStore } from "@/store/cart"
-import { Button, buttonVariants } from "@/components/ui/button"
-import { cn } from "@/lib/utils"
+import Link from "next/link";
+import { useEffect } from "react";
+import { Trash2, ArrowLeft, ShoppingBag } from "lucide-react";
+import { useCartStore } from "@/store/cart";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 export function CartClient() {
-  const { items, removeItem, updateQuantity, totalItems, totalPrice, loadCart } =
-    useCartStore()
+  const {
+    items,
+    removeItem,
+    updateQuantity,
+    totalItems,
+    totalPrice,
+    loadCart,
+  } = useCartStore();
 
-  useEffect(() => { loadCart() }, [loadCart])
+  useEffect(() => {
+    loadCart();
+  }, [loadCart]);
 
   if (items.length === 0) {
     return (
@@ -28,7 +36,7 @@ export function CartClient() {
           Browse Products
         </Link>
       </div>
-    )
+    );
   }
 
   return (
@@ -134,5 +142,5 @@ export function CartClient() {
         </div>
       </div>
     </div>
-  )
+  );
 }

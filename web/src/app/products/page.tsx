@@ -1,18 +1,18 @@
-import Link from "next/link"
-import { ProductCard } from "@/components/product-card"
-import { listProducts, listCategories } from "@/lib/api"
-import { cn } from "@/lib/utils"
+import Link from "next/link";
+import { ProductCard } from "@/components/product-card";
+import { listProducts, listCategories } from "@/lib/api";
+import { cn } from "@/lib/utils";
 
 export default async function ProductsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ category?: string }>
+  searchParams: Promise<{ category?: string }>;
 }) {
-  const { category } = await searchParams
+  const { category } = await searchParams;
   const [{ products }, categories] = await Promise.all([
     listProducts({ categoryId: category }),
     listCategories(),
-  ])
+  ]);
 
   return (
     <div className="flex-1 py-8 px-4">
@@ -67,5 +67,5 @@ export default async function ProductsPage({
         </div>
       </div>
     </div>
-  )
+  );
 }
