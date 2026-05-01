@@ -2,14 +2,10 @@
 // README at: https://github.com/devcontainers/templates/tree/main/src/go
 {
   "name": "go-mall",
-  "image": "mcr.microsoft.com/devcontainers/base:bookworm",
+  "image": "mcr.microsoft.com/devcontainers/go:1.26-bookworm",
 
   // Features to add to the dev container. More info: https://containers.dev/features.
   "features": {
-    // Exact Go version matching go.mod (auto-installs gopls, dlv, etc.)
-    "ghcr.io/devcontainers/features/go:1": {
-      "version": "1.26.2"
-    },
     // Mount host Docker socket — lighter than DinD; required for testcontainers-go and Tilt.
     "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {},
     // gh CLI for PR/issue workflows.
