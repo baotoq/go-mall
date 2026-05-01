@@ -125,6 +125,13 @@ Port forwards: HTTP `8000`, gRPC `9000`, Delve `2345`, Postgres `5432`, Redis `6
 
 Use TDD: write tests first, confirm they fail for the right reason, then implement the minimal fix and re-run. Do not write maintenance-heavy tests (no exhaustive mocks, no tests that re-assert framework behavior, no tests that break on every refactor). Test behavior, not implementation.
 
+Use `github.com/stretchr/testify/assert` for assertions. Structure every test with AAA comments:
+```go
+// Arrange
+// Act
+// Assert
+```
+
 ### Proto conventions
 
 - API protos: `api/<app>/<domain>/v<N>/<name>.proto` → `make api`

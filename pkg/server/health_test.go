@@ -4,16 +4,19 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestHealthz(t *testing.T) {
+	// Arrange
 	w := httptest.NewRecorder()
-	Healthz(w, &http.Request{})
+	req := &http.Request{}
 
-	if w.Code != http.StatusOK {
-		t.Errorf("expected status 200, got %d", w.Code)
-	}
-	if body := w.Body.String(); body != "I'm alive" {
-		t.Errorf("expected body %q, got %q", "I'm alive", body)
-	}
+	// Act
+	Healthz(w, req)
+
+	// Assert
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Equal(t, "I'm alive", w.Body.String())
 }
