@@ -69,18 +69,30 @@
 				"files.trimFinalNewlines": true
 			},
 			"extensions": [
-				// Go language support
+				// Go
 				"golang.go",
-				// Claude Code AI assistant
+				// AI assistant
 				"anthropic.claude-code",
-				// Protobuf syntax (.proto files)
+				// Protobuf / gRPC
 				"zxh404.vscode-proto3",
-				// Kubernetes manifest editing
+				// Kubernetes, Helm, Dapr YAML manifests
 				"ms-kubernetes-tools.vscode-kubernetes-tools",
-				// Tiltfile syntax (from vscode-remote-try-go reference)
+				"redhat.vscode-yaml",
+				// Docker / container management
+				"ms-azuretools.vscode-docker",
+				// Tiltfile syntax
 				"tilt-dev.tiltfile-lsp-support",
-				// Spell checking (from vscode-remote-try-go reference)
-				"streetsidesoftware.code-spell-checker"
+				// Git
+				"eamodio.gitlens",
+				"github.vscode-pull-request-github",
+				"github.vscode-github-actions",
+				// Editor quality
+				"editorconfig.editorconfig",
+				"streetsidesoftware.code-spell-checker",
+				"vscode-icons-team.vscode-icons",
+				// Config / docs
+				"mikestead.dotenv",
+				"yzhang.markdown-all-in-one"
 			]
 		}
 	},
