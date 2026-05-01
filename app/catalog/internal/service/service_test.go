@@ -30,7 +30,8 @@ func (r *nopProductRepo) FindByID(_ context.Context, _ uuid.UUID) (*biz.Product,
 func (r *nopProductRepo) Update(_ context.Context, p *biz.Product) (*biz.Product, error) {
 	return p, r.err
 }
-func (r *nopProductRepo) Delete(_ context.Context, _ uuid.UUID) error { return r.err }
+func (r *nopProductRepo) Delete(_ context.Context, _ uuid.UUID) error    { return r.err }
+func (r *nopProductRepo) DeleteAll(_ context.Context) (int, error)        { return 0, r.err }
 func (r *nopProductRepo) List(_ context.Context, f biz.ListProductsFilter) (*biz.ListProductsResult, error) {
 	return &biz.ListProductsResult{Page: f.Page, PageSize: f.PageSize}, r.err
 }
@@ -47,7 +48,8 @@ func (r *nopCategoryRepo) FindByID(_ context.Context, _ uuid.UUID) (*biz.Categor
 func (r *nopCategoryRepo) Update(_ context.Context, c *biz.Category) (*biz.Category, error) {
 	return c, nil
 }
-func (r *nopCategoryRepo) Delete(_ context.Context, _ uuid.UUID) error { return nil }
+func (r *nopCategoryRepo) Delete(_ context.Context, _ uuid.UUID) error    { return nil }
+func (r *nopCategoryRepo) DeleteAll(_ context.Context) (int, error)        { return 0, nil }
 func (r *nopCategoryRepo) List(_ context.Context, f biz.ListCategoriesFilter) (*biz.ListCategoriesResult, error) {
 	return &biz.ListCategoriesResult{Page: f.Page, PageSize: f.PageSize}, nil
 }

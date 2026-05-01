@@ -29,6 +29,23 @@ func (r *stubOrderRepo) Create(_ context.Context, o *biz.Order) (*biz.Order, err
 	return &cp, nil
 }
 
+func (r *stubOrderRepo) CreateWithEvent(ctx context.Context, o *biz.Order, emit func(context.Context, biz.TxExecer, *biz.Order) error) (*biz.Order, error) {
+	created, err := r.Create(ctx, o)
+	if err != nil {
+		return nil, err
+	}
+	if err := emit(ctx, nil, created); err != nil {
+		return nil, err
+	}
+	return created, nil
+}
+
+type stubOutbox struct{}
+
+func (s *stubOutbox) Publish(_ context.Context, _ biz.TxExecer, _ string, _ any) (string, error) {
+	return "stub-id", nil
+}
+
 func (r *stubOrderRepo) GetByID(_ context.Context, id uuid.UUID) (*biz.Order, error) {
 	o, ok := r.orders[id]
 	if !ok {
@@ -77,7 +94,7 @@ func (r *stubOrderRepo) MarkPaid(_ context.Context, id uuid.UUID, paymentID stri
 }
 
 func TestOrderUsecase_Create_setsPendingAndComputesTotals(t *testing.T) {
-	uc := biz.NewOrderUsecase(newStubOrderRepo())
+	uc := biz.NewOrderUsecase(newStubOrderRepo(), &stubOutbox{})
 
 	got, err := uc.Create(context.Background(), &biz.Order{
 		UserID:    "u1",
@@ -97,7 +114,7 @@ func TestOrderUsecase_Create_setsPendingAndComputesTotals(t *testing.T) {
 }
 
 func TestOrderUsecase_Create_emptyItemsRejected(t *testing.T) {
-	uc := biz.NewOrderUsecase(newStubOrderRepo())
+	uc := biz.NewOrderUsecase(newStubOrderRepo(), &stubOutbox{})
 
 	_, err := uc.Create(context.Background(), &biz.Order{UserID: "u1", SessionID: "s1"})
 
@@ -106,7 +123,7 @@ func TestOrderUsecase_Create_emptyItemsRejected(t *testing.T) {
 
 func TestOrderUsecase_Cancel_pendingTransitions(t *testing.T) {
 	repo := newStubOrderRepo()
-	uc := biz.NewOrderUsecase(repo)
+	uc := biz.NewOrderUsecase(repo, &stubOutbox{})
 	created, _ := uc.Create(context.Background(), &biz.Order{
 		UserID:    "u1",
 		SessionID: "s1",
@@ -121,7 +138,7 @@ func TestOrderUsecase_Cancel_pendingTransitions(t *testing.T) {
 
 func TestOrderUsecase_Cancel_paidRejected(t *testing.T) {
 	repo := newStubOrderRepo()
-	uc := biz.NewOrderUsecase(repo)
+	uc := biz.NewOrderUsecase(repo, &stubOutbox{})
 	created, _ := uc.Create(context.Background(), &biz.Order{
 		UserID:    "u1",
 		SessionID: "s1",
@@ -136,7 +153,7 @@ func TestOrderUsecase_Cancel_paidRejected(t *testing.T) {
 
 func TestOrderUsecase_MarkPaid_setsPaidAndPaymentID(t *testing.T) {
 	repo := newStubOrderRepo()
-	uc := biz.NewOrderUsecase(repo)
+	uc := biz.NewOrderUsecase(repo, &stubOutbox{})
 	created, _ := uc.Create(context.Background(), &biz.Order{
 		UserID:    "u1",
 		SessionID: "s1",
@@ -152,7 +169,7 @@ func TestOrderUsecase_MarkPaid_setsPaidAndPaymentID(t *testing.T) {
 
 func TestOrderUsecase_MarkPaid_alreadyPaidRejected(t *testing.T) {
 	repo := newStubOrderRepo()
-	uc := biz.NewOrderUsecase(repo)
+	uc := biz.NewOrderUsecase(repo, &stubOutbox{})
 	created, _ := uc.Create(context.Background(), &biz.Order{
 		UserID:    "u1",
 		SessionID: "s1",
@@ -167,7 +184,7 @@ func TestOrderUsecase_MarkPaid_alreadyPaidRejected(t *testing.T) {
 
 func TestOrderUsecase_UpdateStatus_invalidStatusRejected(t *testing.T) {
 	repo := newStubOrderRepo()
-	uc := biz.NewOrderUsecase(repo)
+	uc := biz.NewOrderUsecase(repo, &stubOutbox{})
 	created, _ := uc.Create(context.Background(), &biz.Order{
 		UserID:    "u1",
 		SessionID: "s1",
@@ -182,7 +199,7 @@ func TestOrderUsecase_UpdateStatus_invalidStatusRejected(t *testing.T) {
 
 func TestOrderUsecase_ListOrders_filterByStatus(t *testing.T) {
 	repo := newStubOrderRepo()
-	uc := biz.NewOrderUsecase(repo)
+	uc := biz.NewOrderUsecase(repo, &stubOutbox{})
 
 	_, _ = uc.Create(context.Background(), &biz.Order{
 		UserID:    "u1",
