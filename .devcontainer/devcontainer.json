@@ -25,7 +25,11 @@
 		// protoc compiler (required for `make api` and `make config`).
 		"ghcr.io/devcontainers-extra/features/protoc:1": {},
 		// Tilt for `make dev` / `make debug`.
-		"ghcr.io/audacioustux/devcontainers/tilt:1": {}
+		"ghcr.io/audacioustux/devcontainers/tilt:1": {},
+		// Node.js LTS for web/ (Next.js 16 requires Node 20+).
+		"ghcr.io/devcontainers/features/node:1": {
+			"version": "lts"
+		}
 	},
 
 	"remoteUser": "vscode",
@@ -37,7 +41,9 @@
 		"source=go-mall-go-${devcontainerId},target=/home/vscode/go,type=volume",
 		"source=${localEnv:HOME}/.gitconfig,target=/home/vscode/.gitconfig,type=bind,readonly",
 		// Exposes host kube contexts (docker-desktop / orbstack) required by `tilt up`.
-		"source=${localEnv:HOME}/.kube,target=/home/vscode/.kube,type=bind,consistency=cached"
+		"source=${localEnv:HOME}/.kube,target=/home/vscode/.kube,type=bind,consistency=cached",
+		// Persist web/node_modules across rebuilds; prevents macOS/Linux binary conflicts.
+		"source=go-mall-node-${devcontainerId},target=/workspace/web/node_modules,type=volume"
 	],
 
 	// Ensure bind-mounted host files exist before container starts.
@@ -102,12 +108,14 @@
 
 	// Forward all service, debug, and infrastructure ports used by Tilt.
 	"forwardPorts": [
+		3000,
 		8001, 8002, 8003,
 		9001, 9002, 9003,
 		2346, 2347, 2348,
 		5432, 6379, 5050, 8080
 	],
 	"portsAttributes": {
+		"3000": { "label": "Next.js",        "onAutoForward": "openPreview" },
 		"8001": { "label": "catalog HTTP",  "onAutoForward": "silent" },
 		"8002": { "label": "cart HTTP",     "onAutoForward": "silent" },
 		"8003": { "label": "payment HTTP",  "onAutoForward": "silent" },
