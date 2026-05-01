@@ -62,6 +62,12 @@ func (r *stubProductRepo) List(_ context.Context, f biz.ListProductsFilter) (*bi
 	return &biz.ListProductsResult{Products: ps, Total: int64(len(ps)), Page: f.Page, PageSize: f.PageSize}, nil
 }
 
+func (r *stubProductRepo) DeleteAll(_ context.Context) (int, error) {
+	n := len(r.products)
+	r.products = make(map[uuid.UUID]*biz.Product)
+	return n, nil
+}
+
 func TestProductUsecase_Create(t *testing.T) {
 	// Arrange
 	repo := newStubProductRepo()

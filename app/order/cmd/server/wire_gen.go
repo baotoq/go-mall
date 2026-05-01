@@ -14,6 +14,7 @@ import (
 	"gomall/app/order/internal/data"
 	"gomall/app/order/internal/server"
 	"gomall/app/order/internal/service"
+	"gomall/pkg/outbox"
 )
 
 import (
@@ -23,17 +24,40 @@ import (
 // Injectors from wire.go:
 
 func wireApp(confServer *conf.Server, confData *conf.Data, logger log.Logger) (*kratos.App, func(), error) {
-	dataData, cleanup, err := data.NewData(confData, logger)
+	db, cleanup, err := data.ProvideSQLDB(confData)
 	if err != nil {
 		return nil, nil, err
 	}
+	client, cleanup2, err := data.NewDaprClient()
+	if err != nil {
+		cleanup()
+		return nil, nil, err
+	}
+	config := data.ProvideOutboxConfig()
+	outboxClient, cleanup3, err := outbox.ProvideClient(db, client, config, logger)
+	if err != nil {
+		cleanup2()
+		cleanup()
+		return nil, nil, err
+	}
+	dataData, cleanup4, err := data.NewData(db, outboxClient, logger)
+	if err != nil {
+		cleanup3()
+		cleanup2()
+		cleanup()
+		return nil, nil, err
+	}
 	orderRepo := data.NewOrderRepo(dataData, logger)
-	orderUsecase := biz.NewOrderUsecase(orderRepo)
+	outboxPublisher := data.NewOutboxPublisher(outboxClient)
+	orderUsecase := biz.NewOrderUsecase(orderRepo, outboxPublisher)
 	orderService := service.NewOrderService(orderUsecase)
 	grpcServer := server.NewGRPCServer(confServer, orderService, logger)
 	httpServer := server.NewHTTPServer(confServer, orderService, logger)
-	app := newApp(logger, grpcServer, httpServer)
+	app := newApp(logger, grpcServer, httpServer, outboxClient)
 	return app, func() {
+		cleanup4()
+		cleanup3()
+		cleanup2()
 		cleanup()
 	}, nil
 }
