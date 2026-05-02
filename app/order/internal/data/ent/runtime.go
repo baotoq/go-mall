@@ -71,12 +71,16 @@ func init() {
 	orderDescPaymentID := orderFields[7].Descriptor()
 	// order.PaymentIDValidator is a validator for the "payment_id" field. It is called by the builders before save.
 	order.PaymentIDValidator = orderDescPaymentID.Validators[0].(func(string) error)
+	// orderDescWorkflowInstanceID is the schema descriptor for workflow_instance_id field.
+	orderDescWorkflowInstanceID := orderFields[8].Descriptor()
+	// order.WorkflowInstanceIDValidator is a validator for the "workflow_instance_id" field. It is called by the builders before save.
+	order.WorkflowInstanceIDValidator = orderDescWorkflowInstanceID.Validators[0].(func(string) error)
 	// orderDescCreatedAt is the schema descriptor for created_at field.
-	orderDescCreatedAt := orderFields[8].Descriptor()
+	orderDescCreatedAt := orderFields[9].Descriptor()
 	// order.DefaultCreatedAt holds the default value on creation for the created_at field.
 	order.DefaultCreatedAt = orderDescCreatedAt.Default.(func() time.Time)
 	// orderDescUpdatedAt is the schema descriptor for updated_at field.
-	orderDescUpdatedAt := orderFields[9].Descriptor()
+	orderDescUpdatedAt := orderFields[10].Descriptor()
 	// order.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	order.DefaultUpdatedAt = orderDescUpdatedAt.Default.(func() time.Time)
 	// order.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.

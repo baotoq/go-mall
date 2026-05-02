@@ -128,10 +128,21 @@ func NewMarkPaidActivity(uc *OrderUsecase, completedRepo CompletedWorkflowRepo) 
 // The order insert and the order.created outbox event commit atomically in one
 // ent.Tx via repo.CreateWithEvent. WorkflowInstanceID is propagated on the
 // event for downstream correlation.
+// Idempotency: if an order for this workflow instance already exists (Dapr
+// replayed the activity after a worker crash), the existing order is returned
+// without inserting a duplicate row.
 func (uc *OrderUsecase) CreateForCheckout(ctx context.Context, in CheckoutInput) (string, error) {
 	if len(in.Items) == 0 {
 		return "", ErrOrderEmptyItems
 	}
+
+	// Idempotency guard: return the existing order on Dapr replay.
+	if in.IdempotencyKey != "" {
+		if existing, found, err := uc.repo.GetByWorkflowInstanceID(ctx, in.IdempotencyKey); err == nil && found {
+			return existing.ID.String(), nil
+		}
+	}
+
 	if in.Currency == "" {
 		in.Currency = "USD"
 	}
@@ -149,12 +160,13 @@ func (uc *OrderUsecase) CreateForCheckout(ctx context.Context, in CheckoutInput)
 		total += sub
 	}
 	o := &Order{
-		UserID:     in.UserID,
-		SessionID:  in.SessionID,
-		Items:      items,
-		Currency:   in.Currency,
-		TotalCents: total,
-		Status:     "PENDING",
+		UserID:             in.UserID,
+		SessionID:          in.SessionID,
+		Items:              items,
+		Currency:           in.Currency,
+		TotalCents:         total,
+		Status:             "PENDING",
+		WorkflowInstanceID: in.IdempotencyKey,
 	}
 	created, err := uc.repo.CreateWithEvent(ctx, o, func(ctx context.Context, tx TxExecer, ord *Order) error {
 		_, err := uc.ob.Publish(ctx, tx, TopicOrderCreated, OrderCreatedEvent{

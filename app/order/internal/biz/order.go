@@ -52,22 +52,26 @@ type OrderItem struct {
 }
 
 type Order struct {
-	ID         uuid.UUID
-	UserID     string
-	SessionID  string
-	Items      []OrderItem
-	TotalCents int64
-	Currency   string
-	Status     string
-	PaymentID  string
-	CreatedAt  time.Time
-	UpdatedAt  time.Time
+	ID                 uuid.UUID
+	UserID             string
+	SessionID          string
+	Items              []OrderItem
+	TotalCents         int64
+	Currency           string
+	Status             string
+	PaymentID          string
+	WorkflowInstanceID string
+	CreatedAt          time.Time
+	UpdatedAt          time.Time
 }
 
 type OrderRepo interface {
 	Create(ctx context.Context, o *Order) (*Order, error)
 	CreateWithEvent(ctx context.Context, o *Order, emit func(context.Context, TxExecer, *Order) error) (*Order, error)
 	GetByID(ctx context.Context, id uuid.UUID) (*Order, error)
+	// GetByWorkflowInstanceID returns the order tied to a Dapr workflow instance.
+	// found=false (with nil error) means no such order exists yet.
+	GetByWorkflowInstanceID(ctx context.Context, workflowInstanceID string) (*Order, bool, error)
 	ListByUser(ctx context.Context, userID, status string, page, pageSize int) ([]*Order, int, error)
 	UpdateStatus(ctx context.Context, id uuid.UUID, status string) (*Order, error)
 	MarkPaid(ctx context.Context, id uuid.UUID, paymentID string) (*Order, error)

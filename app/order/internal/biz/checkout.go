@@ -162,7 +162,16 @@ func (uc *CheckoutUsecase) fetchExisting(ctx context.Context, idemKey string) (c
 		checkoutID = stored.CheckoutID
 	}
 	if uc.wfc != nil {
-		if res, statusErr := uc.Status(ctx, checkoutID); statusErr == nil && res.OrderID != "" {
+		res, statusErr := uc.Status(ctx, checkoutID)
+		if statusErr != nil {
+			// Workflow not found (purged) → key is stale; client must use a new key.
+			if st, ok := status.FromError(unwrapAll(statusErr)); ok && st.Code() == codes.NotFound {
+				return "", "", ErrCheckoutDuplicateKey
+			}
+			// Transient error — best-effort: return empty order_id without failing.
+			return checkoutID, "", nil
+		}
+		if res.OrderID != "" {
 			orderID = res.OrderID
 			if uc.idemRepo != nil && hit {
 				stored.OrderID = orderID

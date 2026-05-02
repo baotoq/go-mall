@@ -28,6 +28,8 @@ const (
 	FieldStatus = "status"
 	// FieldPaymentID holds the string denoting the payment_id field in the database.
 	FieldPaymentID = "payment_id"
+	// FieldWorkflowInstanceID holds the string denoting the workflow_instance_id field in the database.
+	FieldWorkflowInstanceID = "workflow_instance_id"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
 	FieldCreatedAt = "created_at"
 	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
@@ -46,6 +48,7 @@ var Columns = []string{
 	FieldCurrency,
 	FieldStatus,
 	FieldPaymentID,
+	FieldWorkflowInstanceID,
 	FieldCreatedAt,
 	FieldUpdatedAt,
 }
@@ -77,6 +80,8 @@ var (
 	StatusValidator func(string) error
 	// PaymentIDValidator is a validator for the "payment_id" field. It is called by the builders before save.
 	PaymentIDValidator func(string) error
+	// WorkflowInstanceIDValidator is a validator for the "workflow_instance_id" field. It is called by the builders before save.
+	WorkflowInstanceIDValidator func(string) error
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
 	DefaultCreatedAt func() time.Time
 	// DefaultUpdatedAt holds the default value on creation for the "updated_at" field.
@@ -123,6 +128,11 @@ func ByStatus(opts ...sql.OrderTermOption) OrderOption {
 // ByPaymentID orders the results by the payment_id field.
 func ByPaymentID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldPaymentID, opts...).ToFunc()
+}
+
+// ByWorkflowInstanceID orders the results by the workflow_instance_id field.
+func ByWorkflowInstanceID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldWorkflowInstanceID, opts...).ToFunc()
 }
 
 // ByCreatedAt orders the results by the created_at field.

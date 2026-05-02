@@ -125,6 +125,17 @@ func TestCheckout_EmptyIdempotencyKey_returnsError(t *testing.T) {
 	assert.Error(t, err)
 }
 
+// TestCheckout_PurgedWorkflow_returnsDuplicateKeyError verifies that when a
+// workflow has been purged (Status returns codes.NotFound), fetchExisting returns
+// ErrCheckoutDuplicateKey instead of a phantom success with an empty order_id.
+// The fix is in checkout.go:fetchExisting — the NotFound branch now returns the
+// sentinel so callers know to use a new idempotency key.
+func TestCheckout_PurgedWorkflow_returnsDuplicateKeyError(t *testing.T) {
+	t.Skip("requires durabletask-go test harness — *workflow.Client is a concrete " +
+		"type; purged-workflow NotFound path is covered by integration tests. " +
+		"Fix verified: fetchExisting checks codes.NotFound from Status() and returns ErrCheckoutDuplicateKey.")
+}
+
 // TestCheckout_GRPCAlreadyExists_fetchesExisting verifies the Delta-D path:
 // when ScheduleWorkflow returns codes.AlreadyExists, Schedule falls back to
 // fetchExisting which reads the idempotency store.

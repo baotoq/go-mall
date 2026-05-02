@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"gomall/app/payment/internal/biz"
@@ -68,7 +69,7 @@ func (s *PaymentSubscriber) handlePaymentRequested(ctx context.Context, evt paym
 			evt.WorkflowInstanceID, evt.Attempt)
 		return nil
 	}
-	if err != biz.ErrPaymentNotFound {
+	if !errors.Is(err, biz.ErrPaymentNotFound) {
 		return fmt.Errorf("payment subscriber: idempotency check: %w", err)
 	}
 

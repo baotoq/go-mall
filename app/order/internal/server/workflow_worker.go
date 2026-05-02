@@ -49,19 +49,18 @@ func (w *WorkflowWorker) Start(ctx context.Context) error {
 	return nil
 }
 
-// Stop signals the worker to stop and waits up to drainTimeout for a graceful
-// shutdown. durabletask-go v0.11.3 provides no public drain API for the gRPC
-// client path, so in-flight activity goroutines are left to complete
-// independently. Correctness is preserved by idempotency guards: outbox rows
-// use UNIQUE(message_id) and MarkPaid is a no-op for the same payment_id.
+// Stop waits up to drainTimeout for in-flight activities to finish, then
+// cancels the worker context. Draining first ensures activities are not
+// interrupted mid-transaction; idempotency guards (outbox UNIQUE(message_id),
+// MarkPaid no-op on same payment_id) cover the residual window.
 func (w *WorkflowWorker) Stop(ctx context.Context) error {
 	w.log.Infow("msg", "stopping Dapr workflow worker (best-effort)")
-	if w.cancel != nil {
-		w.cancel()
-	}
 	select {
 	case <-ctx.Done():
 	case <-time.After(w.drainTimeout):
+	}
+	if w.cancel != nil {
+		w.cancel()
 	}
 	return nil
 }

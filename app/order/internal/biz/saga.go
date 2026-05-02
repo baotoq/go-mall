@@ -162,12 +162,28 @@ func NewOrderSagaWorkflow(cfg SagaConfig) workflow.Workflow {
 
 		// Step 3: Compensate on exhausted payment attempts.
 		if !out.success {
-			_ = ctx.CallActivity(activityCancelOrder,
+			cancelRetry := &workflow.RetryPolicy{
+				MaxAttempts:          3,
+				InitialRetryInterval: 1 * time.Second,
+				BackoffCoefficient:   2.0,
+				MaxRetryInterval:     30 * time.Second,
+			}
+			if cancelErr := ctx.CallActivity(activityCancelOrder,
 				workflow.WithActivityInput(cancelInput{
 					WorkflowID: workflowID,
 					OrderID:    orderID,
 					Reason:     out.reasonCode,
-				})).Await(nil)
+				}),
+				workflow.WithActivityRetryPolicy(cancelRetry)).Await(nil); cancelErr != nil {
+				SagaMetrics.RecordFailedCompensation()
+				SagaMetrics.RecordFailed()
+				return CheckoutResult{
+					State:     "FAILED_COMPENSATION",
+					OrderID:   orderID,
+					Reason:    "compensation_failed",
+					LastError: cancelErr.Error(),
+				}, nil
+			}
 			SagaMetrics.RecordCompensation()
 			SagaMetrics.RecordFailed()
 			return CheckoutResult{

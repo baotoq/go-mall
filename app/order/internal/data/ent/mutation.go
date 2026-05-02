@@ -1036,24 +1036,25 @@ func (m *IdempotencyKeyMutation) ResetEdge(name string) error {
 // OrderMutation represents an operation that mutates the Order nodes in the graph.
 type OrderMutation struct {
 	config
-	op             Op
-	typ            string
-	id             *uuid.UUID
-	user_id        *string
-	session_id     *string
-	items          *[]schema.OrderItem
-	appenditems    []schema.OrderItem
-	total_cents    *int64
-	addtotal_cents *int64
-	currency       *string
-	status         *string
-	payment_id     *string
-	created_at     *time.Time
-	updated_at     *time.Time
-	clearedFields  map[string]struct{}
-	done           bool
-	oldValue       func(context.Context) (*Order, error)
-	predicates     []predicate.Order
+	op                   Op
+	typ                  string
+	id                   *uuid.UUID
+	user_id              *string
+	session_id           *string
+	items                *[]schema.OrderItem
+	appenditems          []schema.OrderItem
+	total_cents          *int64
+	addtotal_cents       *int64
+	currency             *string
+	status               *string
+	payment_id           *string
+	workflow_instance_id *string
+	created_at           *time.Time
+	updated_at           *time.Time
+	clearedFields        map[string]struct{}
+	done                 bool
+	oldValue             func(context.Context) (*Order, error)
+	predicates           []predicate.Order
 }
 
 var _ ent.Mutation = (*OrderMutation)(nil)
@@ -1474,6 +1475,55 @@ func (m *OrderMutation) ResetPaymentID() {
 	delete(m.clearedFields, order.FieldPaymentID)
 }
 
+// SetWorkflowInstanceID sets the "workflow_instance_id" field.
+func (m *OrderMutation) SetWorkflowInstanceID(s string) {
+	m.workflow_instance_id = &s
+}
+
+// WorkflowInstanceID returns the value of the "workflow_instance_id" field in the mutation.
+func (m *OrderMutation) WorkflowInstanceID() (r string, exists bool) {
+	v := m.workflow_instance_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldWorkflowInstanceID returns the old "workflow_instance_id" field's value of the Order entity.
+// If the Order object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *OrderMutation) OldWorkflowInstanceID(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldWorkflowInstanceID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldWorkflowInstanceID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldWorkflowInstanceID: %w", err)
+	}
+	return oldValue.WorkflowInstanceID, nil
+}
+
+// ClearWorkflowInstanceID clears the value of the "workflow_instance_id" field.
+func (m *OrderMutation) ClearWorkflowInstanceID() {
+	m.workflow_instance_id = nil
+	m.clearedFields[order.FieldWorkflowInstanceID] = struct{}{}
+}
+
+// WorkflowInstanceIDCleared returns if the "workflow_instance_id" field was cleared in this mutation.
+func (m *OrderMutation) WorkflowInstanceIDCleared() bool {
+	_, ok := m.clearedFields[order.FieldWorkflowInstanceID]
+	return ok
+}
+
+// ResetWorkflowInstanceID resets all changes to the "workflow_instance_id" field.
+func (m *OrderMutation) ResetWorkflowInstanceID() {
+	m.workflow_instance_id = nil
+	delete(m.clearedFields, order.FieldWorkflowInstanceID)
+}
+
 // SetCreatedAt sets the "created_at" field.
 func (m *OrderMutation) SetCreatedAt(t time.Time) {
 	m.created_at = &t
@@ -1580,7 +1630,7 @@ func (m *OrderMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *OrderMutation) Fields() []string {
-	fields := make([]string, 0, 9)
+	fields := make([]string, 0, 10)
 	if m.user_id != nil {
 		fields = append(fields, order.FieldUserID)
 	}
@@ -1601,6 +1651,9 @@ func (m *OrderMutation) Fields() []string {
 	}
 	if m.payment_id != nil {
 		fields = append(fields, order.FieldPaymentID)
+	}
+	if m.workflow_instance_id != nil {
+		fields = append(fields, order.FieldWorkflowInstanceID)
 	}
 	if m.created_at != nil {
 		fields = append(fields, order.FieldCreatedAt)
@@ -1630,6 +1683,8 @@ func (m *OrderMutation) Field(name string) (ent.Value, bool) {
 		return m.Status()
 	case order.FieldPaymentID:
 		return m.PaymentID()
+	case order.FieldWorkflowInstanceID:
+		return m.WorkflowInstanceID()
 	case order.FieldCreatedAt:
 		return m.CreatedAt()
 	case order.FieldUpdatedAt:
@@ -1657,6 +1712,8 @@ func (m *OrderMutation) OldField(ctx context.Context, name string) (ent.Value, e
 		return m.OldStatus(ctx)
 	case order.FieldPaymentID:
 		return m.OldPaymentID(ctx)
+	case order.FieldWorkflowInstanceID:
+		return m.OldWorkflowInstanceID(ctx)
 	case order.FieldCreatedAt:
 		return m.OldCreatedAt(ctx)
 	case order.FieldUpdatedAt:
@@ -1718,6 +1775,13 @@ func (m *OrderMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetPaymentID(v)
+		return nil
+	case order.FieldWorkflowInstanceID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetWorkflowInstanceID(v)
 		return nil
 	case order.FieldCreatedAt:
 		v, ok := value.(time.Time)
@@ -1784,6 +1848,9 @@ func (m *OrderMutation) ClearedFields() []string {
 	if m.FieldCleared(order.FieldPaymentID) {
 		fields = append(fields, order.FieldPaymentID)
 	}
+	if m.FieldCleared(order.FieldWorkflowInstanceID) {
+		fields = append(fields, order.FieldWorkflowInstanceID)
+	}
 	return fields
 }
 
@@ -1803,6 +1870,9 @@ func (m *OrderMutation) ClearField(name string) error {
 		return nil
 	case order.FieldPaymentID:
 		m.ClearPaymentID()
+		return nil
+	case order.FieldWorkflowInstanceID:
+		m.ClearWorkflowInstanceID()
 		return nil
 	}
 	return fmt.Errorf("unknown Order nullable field %s", name)
@@ -1832,6 +1902,9 @@ func (m *OrderMutation) ResetField(name string) error {
 		return nil
 	case order.FieldPaymentID:
 		m.ResetPaymentID()
+		return nil
+	case order.FieldWorkflowInstanceID:
+		m.ResetWorkflowInstanceID()
 		return nil
 	case order.FieldCreatedAt:
 		m.ResetCreatedAt()

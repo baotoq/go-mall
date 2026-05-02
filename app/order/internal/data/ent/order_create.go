@@ -96,6 +96,20 @@ func (_c *OrderCreate) SetNillablePaymentID(v *string) *OrderCreate {
 	return _c
 }
 
+// SetWorkflowInstanceID sets the "workflow_instance_id" field.
+func (_c *OrderCreate) SetWorkflowInstanceID(v string) *OrderCreate {
+	_c.mutation.SetWorkflowInstanceID(v)
+	return _c
+}
+
+// SetNillableWorkflowInstanceID sets the "workflow_instance_id" field if the given value is not nil.
+func (_c *OrderCreate) SetNillableWorkflowInstanceID(v *string) *OrderCreate {
+	if v != nil {
+		_c.SetWorkflowInstanceID(*v)
+	}
+	return _c
+}
+
 // SetCreatedAt sets the "created_at" field.
 func (_c *OrderCreate) SetCreatedAt(v time.Time) *OrderCreate {
 	_c.mutation.SetCreatedAt(v)
@@ -241,6 +255,11 @@ func (_c *OrderCreate) check() error {
 			return &ValidationError{Name: "payment_id", err: fmt.Errorf(`ent: validator failed for field "Order.payment_id": %w`, err)}
 		}
 	}
+	if v, ok := _c.mutation.WorkflowInstanceID(); ok {
+		if err := order.WorkflowInstanceIDValidator(v); err != nil {
+			return &ValidationError{Name: "workflow_instance_id", err: fmt.Errorf(`ent: validator failed for field "Order.workflow_instance_id": %w`, err)}
+		}
+	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "Order.created_at"`)}
 	}
@@ -309,6 +328,10 @@ func (_c *OrderCreate) createSpec() (*Order, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.PaymentID(); ok {
 		_spec.SetField(order.FieldPaymentID, field.TypeString, value)
 		_node.PaymentID = value
+	}
+	if value, ok := _c.mutation.WorkflowInstanceID(); ok {
+		_spec.SetField(order.FieldWorkflowInstanceID, field.TypeString, value)
+		_node.WorkflowInstanceID = &value
 	}
 	if value, ok := _c.mutation.CreatedAt(); ok {
 		_spec.SetField(order.FieldCreatedAt, field.TypeTime, value)

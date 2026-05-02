@@ -24,8 +24,10 @@ type sagaMetrics struct {
 	attemptsFailed atomic.Int64
 	// saga_attempts_total{outcome="failed_after_pivot"}
 	attemptsFailedAfterPivot atomic.Int64
-	// saga_compensations_total — incremented when CancelOrder is called.
+	// saga_compensations_total — incremented when CancelOrder succeeds.
 	compensations atomic.Int64
+	// saga_compensation_failures_total — incremented when CancelOrder exhausts retries.
+	compensationFailures atomic.Int64
 	// saga_orphan_payment_total — incremented by subscriber on terminated workflow.
 	orphanPayments atomic.Int64
 	// saga_reconciliation_drift_total — incremented by ReconciliationService on each drift row.
@@ -49,6 +51,10 @@ func (m *sagaMetrics) RecordFailedAfterPivot() { m.attemptsFailedAfterPivot.Add(
 // RecordCompensation increments the compensation counter (order cancelled by saga).
 func (m *sagaMetrics) RecordCompensation() { m.compensations.Add(1) }
 
+// RecordFailedCompensation increments the failed-compensation counter.
+// Called when CancelOrderActivity exhausts its retry budget.
+func (m *sagaMetrics) RecordFailedCompensation() { m.compensationFailures.Add(1) }
+
 // RecordOrphanPayment increments the orphan-payment counter.
 // Called by the event subscriber when a payment event arrives for a terminated workflow.
 func (m *sagaMetrics) RecordOrphanPayment() { m.orphanPayments.Add(1) }
@@ -63,6 +69,7 @@ func (m *sagaMetrics) Snapshot() SagaMetricsSnapshot {
 		AttemptsFailed:           m.attemptsFailed.Load(),
 		AttemptsFailedAfterPivot: m.attemptsFailedAfterPivot.Load(),
 		Compensations:            m.compensations.Load(),
+		CompensationFailures:     m.compensationFailures.Load(),
 		OrphanPayments:           m.orphanPayments.Load(),
 		ReconcileDrift:           m.reconcileDrift.Load(),
 	}
@@ -74,6 +81,7 @@ type SagaMetricsSnapshot struct {
 	AttemptsFailed           int64
 	AttemptsFailedAfterPivot int64
 	Compensations            int64
+	CompensationFailures     int64
 	OrphanPayments           int64
 	ReconcileDrift           int64
 }

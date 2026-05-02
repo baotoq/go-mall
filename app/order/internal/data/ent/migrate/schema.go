@@ -60,6 +60,7 @@ var (
 		{Name: "currency", Type: field.TypeString, Size: 3, Default: "USD"},
 		{Name: "status", Type: field.TypeString, Size: 20, Default: "PENDING"},
 		{Name: "payment_id", Type: field.TypeString, Nullable: true, Size: 64},
+		{Name: "workflow_instance_id", Type: field.TypeString, Nullable: true, Size: 255},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
 	}
@@ -78,6 +79,11 @@ var (
 				Name:    "order_status",
 				Unique:  false,
 				Columns: []*schema.Column{OrdersColumns[6]},
+			},
+			{
+				Name:    "order_workflow_instance_id",
+				Unique:  true,
+				Columns: []*schema.Column{OrdersColumns[8]},
 			},
 		},
 	}

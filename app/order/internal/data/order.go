@@ -14,6 +14,19 @@ import (
 	"github.com/google/uuid"
 )
 
+func (r *orderRepo) GetByWorkflowInstanceID(ctx context.Context, workflowInstanceID string) (*biz.Order, bool, error) {
+	o, err := r.data.db.Order.Query().
+		Where(entorder.WorkflowInstanceID(workflowInstanceID)).
+		Only(ctx)
+	if err != nil {
+		if ent.IsNotFound(err) {
+			return nil, false, nil
+		}
+		return nil, false, err
+	}
+	return entToOrder(o), true, nil
+}
+
 type orderRepo struct {
 	data *Data
 	log  *log.Helper
@@ -60,6 +73,9 @@ func (r *orderRepo) CreateWithEvent(ctx context.Context, o *biz.Order, emit func
 		SetStatus(o.Status)
 	if o.PaymentID != "" {
 		q = q.SetPaymentID(o.PaymentID)
+	}
+	if o.WorkflowInstanceID != "" {
+		q = q.SetWorkflowInstanceID(o.WorkflowInstanceID)
 	}
 	result, err := q.Save(ctx)
 	if err != nil {
@@ -191,16 +207,21 @@ func schemaItemsToBiz(items []schema.OrderItem) []biz.OrderItem {
 }
 
 func entToOrder(o *ent.Order) *biz.Order {
+	wid := ""
+	if o.WorkflowInstanceID != nil {
+		wid = *o.WorkflowInstanceID
+	}
 	return &biz.Order{
-		ID:        o.ID,
-		UserID:    o.UserID,
-		SessionID: o.SessionID,
-		Items:     schemaItemsToBiz(o.Items),
-		TotalCents: o.TotalCents,
-		Currency:  o.Currency,
-		Status:    o.Status,
-		PaymentID: o.PaymentID,
-		CreatedAt: o.CreatedAt,
-		UpdatedAt: o.UpdatedAt,
+		ID:                 o.ID,
+		UserID:             o.UserID,
+		SessionID:          o.SessionID,
+		Items:              schemaItemsToBiz(o.Items),
+		TotalCents:         o.TotalCents,
+		Currency:           o.Currency,
+		Status:             o.Status,
+		PaymentID:          o.PaymentID,
+		WorkflowInstanceID: wid,
+		CreatedAt:          o.CreatedAt,
+		UpdatedAt:          o.UpdatedAt,
 	}
 }
