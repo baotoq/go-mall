@@ -24,11 +24,12 @@ const (
 type ErrorReason int32
 
 const (
-	ErrorReason_ER_UNSPECIFIED            ErrorReason = 0
-	ErrorReason_PAYMENT_NOT_FOUND         ErrorReason = 1
-	ErrorReason_INVALID_ARGUMENT          ErrorReason = 2
-	ErrorReason_PAYMENT_ALREADY_COMPLETED ErrorReason = 3
-	ErrorReason_PAYMENT_CANNOT_REFUND     ErrorReason = 4
+	ErrorReason_ER_UNSPECIFIED             ErrorReason = 0
+	ErrorReason_PAYMENT_NOT_FOUND          ErrorReason = 1
+	ErrorReason_INVALID_ARGUMENT           ErrorReason = 2
+	ErrorReason_PAYMENT_ALREADY_COMPLETED  ErrorReason = 3
+	ErrorReason_PAYMENT_CANNOT_REFUND      ErrorReason = 4
+	ErrorReason_PAYMENT_INVALID_TRANSITION ErrorReason = 5
 )
 
 // Enum value maps for ErrorReason.
@@ -39,13 +40,15 @@ var (
 		2: "INVALID_ARGUMENT",
 		3: "PAYMENT_ALREADY_COMPLETED",
 		4: "PAYMENT_CANNOT_REFUND",
+		5: "PAYMENT_INVALID_TRANSITION",
 	}
 	ErrorReason_value = map[string]int32{
-		"ER_UNSPECIFIED":            0,
-		"PAYMENT_NOT_FOUND":         1,
-		"INVALID_ARGUMENT":          2,
-		"PAYMENT_ALREADY_COMPLETED": 3,
-		"PAYMENT_CANNOT_REFUND":     4,
+		"ER_UNSPECIFIED":             0,
+		"PAYMENT_NOT_FOUND":          1,
+		"INVALID_ARGUMENT":           2,
+		"PAYMENT_ALREADY_COMPLETED":  3,
+		"PAYMENT_CANNOT_REFUND":      4,
+		"PAYMENT_INVALID_TRANSITION": 5,
 	}
 )
 
@@ -81,13 +84,14 @@ var File_payment_v1_error_reason_proto protoreflect.FileDescriptor
 const file_payment_v1_error_reason_proto_rawDesc = "" +
 	"\n" +
 	"\x1dpayment/v1/error_reason.proto\x12\n" +
-	"payment.v1*\x88\x01\n" +
+	"payment.v1*\xa8\x01\n" +
 	"\vErrorReason\x12\x12\n" +
 	"\x0eER_UNSPECIFIED\x10\x00\x12\x15\n" +
 	"\x11PAYMENT_NOT_FOUND\x10\x01\x12\x14\n" +
 	"\x10INVALID_ARGUMENT\x10\x02\x12\x1d\n" +
 	"\x19PAYMENT_ALREADY_COMPLETED\x10\x03\x12\x19\n" +
-	"\x15PAYMENT_CANNOT_REFUND\x10\x04B\x1aZ\x18gomall/api/payment/v1;v1b\x06proto3"
+	"\x15PAYMENT_CANNOT_REFUND\x10\x04\x12\x1e\n" +
+	"\x1aPAYMENT_INVALID_TRANSITION\x10\x05B\x1aZ\x18gomall/api/payment/v1;v1b\x06proto3"
 
 var (
 	file_payment_v1_error_reason_proto_rawDescOnce sync.Once

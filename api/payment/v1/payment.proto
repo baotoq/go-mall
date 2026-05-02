@@ -25,6 +25,18 @@ service PaymentService {
       body: "*"
     };
   }
+  rpc CompletePayment(CompletePaymentRequest) returns (Payment) {
+    option (google.api.http) = {
+      post: "/v1/payments/{id}/complete"
+      body: "*"
+    };
+  }
+  rpc FailPayment(FailPaymentRequest) returns (Payment) {
+    option (google.api.http) = {
+      post: "/v1/payments/{id}/fail"
+      body: "*"
+    };
+  }
 }
 
 enum PaymentStatus {
@@ -73,4 +85,13 @@ message ListPaymentsResponse {
 
 message RefundPaymentRequest {
   string id = 1;
+}
+
+message CompletePaymentRequest {
+  string id = 1;
+}
+
+message FailPaymentRequest {
+  string id = 1;
+  string reason_code = 2;
 }

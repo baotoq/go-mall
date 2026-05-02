@@ -20,14 +20,18 @@ var _ = binding.EncodeURL
 const _ = http.SupportPackageIsVersion1
 
 const OperationOrderServiceCancelOrder = "/order.v1.OrderService/CancelOrder"
+const OperationOrderServiceCheckout = "/order.v1.OrderService/Checkout"
 const OperationOrderServiceCreateOrder = "/order.v1.OrderService/CreateOrder"
+const OperationOrderServiceGetCheckoutStatus = "/order.v1.OrderService/GetCheckoutStatus"
 const OperationOrderServiceGetOrder = "/order.v1.OrderService/GetOrder"
 const OperationOrderServiceListOrders = "/order.v1.OrderService/ListOrders"
 const OperationOrderServiceUpdateOrderStatus = "/order.v1.OrderService/UpdateOrderStatus"
 
 type OrderServiceHTTPServer interface {
 	CancelOrder(context.Context, *CancelOrderRequest) (*Order, error)
+	Checkout(context.Context, *CheckoutRequest) (*CheckoutResponse, error)
 	CreateOrder(context.Context, *CreateOrderRequest) (*Order, error)
+	GetCheckoutStatus(context.Context, *GetCheckoutStatusRequest) (*GetCheckoutStatusResponse, error)
 	GetOrder(context.Context, *GetOrderRequest) (*Order, error)
 	ListOrders(context.Context, *ListOrdersRequest) (*ListOrdersResponse, error)
 	UpdateOrderStatus(context.Context, *UpdateOrderStatusRequest) (*Order, error)
@@ -40,6 +44,8 @@ func RegisterOrderServiceHTTPServer(s *http.Server, srv OrderServiceHTTPServer) 
 	r.GET("/v1/orders", _OrderService_ListOrders0_HTTP_Handler(srv))
 	r.POST("/v1/orders/{id}/status", _OrderService_UpdateOrderStatus0_HTTP_Handler(srv))
 	r.POST("/v1/orders/{id}/cancel", _OrderService_CancelOrder0_HTTP_Handler(srv))
+	r.POST("/v1/orders/checkout", _OrderService_Checkout0_HTTP_Handler(srv))
+	r.GET("/v1/orders/checkout/{checkout_id}", _OrderService_GetCheckoutStatus0_HTTP_Handler(srv))
 }
 
 func _OrderService_CreateOrder0_HTTP_Handler(srv OrderServiceHTTPServer) func(ctx http.Context) error {
@@ -155,9 +161,55 @@ func _OrderService_CancelOrder0_HTTP_Handler(srv OrderServiceHTTPServer) func(ct
 	}
 }
 
+func _OrderService_Checkout0_HTTP_Handler(srv OrderServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in CheckoutRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationOrderServiceCheckout)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.Checkout(ctx, req.(*CheckoutRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*CheckoutResponse)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _OrderService_GetCheckoutStatus0_HTTP_Handler(srv OrderServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in GetCheckoutStatusRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationOrderServiceGetCheckoutStatus)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.GetCheckoutStatus(ctx, req.(*GetCheckoutStatusRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*GetCheckoutStatusResponse)
+		return ctx.Result(200, reply)
+	}
+}
+
 type OrderServiceHTTPClient interface {
 	CancelOrder(ctx context.Context, req *CancelOrderRequest, opts ...http.CallOption) (rsp *Order, err error)
+	Checkout(ctx context.Context, req *CheckoutRequest, opts ...http.CallOption) (rsp *CheckoutResponse, err error)
 	CreateOrder(ctx context.Context, req *CreateOrderRequest, opts ...http.CallOption) (rsp *Order, err error)
+	GetCheckoutStatus(ctx context.Context, req *GetCheckoutStatusRequest, opts ...http.CallOption) (rsp *GetCheckoutStatusResponse, err error)
 	GetOrder(ctx context.Context, req *GetOrderRequest, opts ...http.CallOption) (rsp *Order, err error)
 	ListOrders(ctx context.Context, req *ListOrdersRequest, opts ...http.CallOption) (rsp *ListOrdersResponse, err error)
 	UpdateOrderStatus(ctx context.Context, req *UpdateOrderStatusRequest, opts ...http.CallOption) (rsp *Order, err error)
@@ -184,6 +236,19 @@ func (c *OrderServiceHTTPClientImpl) CancelOrder(ctx context.Context, in *Cancel
 	return &out, nil
 }
 
+func (c *OrderServiceHTTPClientImpl) Checkout(ctx context.Context, in *CheckoutRequest, opts ...http.CallOption) (*CheckoutResponse, error) {
+	var out CheckoutResponse
+	pattern := "/v1/orders/checkout"
+	path := binding.EncodeURL(pattern, in, false)
+	opts = append(opts, http.Operation(OperationOrderServiceCheckout))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
 func (c *OrderServiceHTTPClientImpl) CreateOrder(ctx context.Context, in *CreateOrderRequest, opts ...http.CallOption) (*Order, error) {
 	var out Order
 	pattern := "/v1/orders"
@@ -191,6 +256,19 @@ func (c *OrderServiceHTTPClientImpl) CreateOrder(ctx context.Context, in *Create
 	opts = append(opts, http.Operation(OperationOrderServiceCreateOrder))
 	opts = append(opts, http.PathTemplate(pattern))
 	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *OrderServiceHTTPClientImpl) GetCheckoutStatus(ctx context.Context, in *GetCheckoutStatusRequest, opts ...http.CallOption) (*GetCheckoutStatusResponse, error) {
+	var out GetCheckoutStatusResponse
+	pattern := "/v1/orders/checkout/{checkout_id}"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationOrderServiceGetCheckoutStatus))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
 	if err != nil {
 		return nil, err
 	}

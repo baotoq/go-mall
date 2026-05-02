@@ -19,10 +19,12 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	PaymentService_CreatePayment_FullMethodName = "/payment.v1.PaymentService/CreatePayment"
-	PaymentService_GetPayment_FullMethodName    = "/payment.v1.PaymentService/GetPayment"
-	PaymentService_ListPayments_FullMethodName  = "/payment.v1.PaymentService/ListPayments"
-	PaymentService_RefundPayment_FullMethodName = "/payment.v1.PaymentService/RefundPayment"
+	PaymentService_CreatePayment_FullMethodName   = "/payment.v1.PaymentService/CreatePayment"
+	PaymentService_GetPayment_FullMethodName      = "/payment.v1.PaymentService/GetPayment"
+	PaymentService_ListPayments_FullMethodName    = "/payment.v1.PaymentService/ListPayments"
+	PaymentService_RefundPayment_FullMethodName   = "/payment.v1.PaymentService/RefundPayment"
+	PaymentService_CompletePayment_FullMethodName = "/payment.v1.PaymentService/CompletePayment"
+	PaymentService_FailPayment_FullMethodName     = "/payment.v1.PaymentService/FailPayment"
 )
 
 // PaymentServiceClient is the client API for PaymentService service.
@@ -33,6 +35,8 @@ type PaymentServiceClient interface {
 	GetPayment(ctx context.Context, in *GetPaymentRequest, opts ...grpc.CallOption) (*Payment, error)
 	ListPayments(ctx context.Context, in *ListPaymentsRequest, opts ...grpc.CallOption) (*ListPaymentsResponse, error)
 	RefundPayment(ctx context.Context, in *RefundPaymentRequest, opts ...grpc.CallOption) (*Payment, error)
+	CompletePayment(ctx context.Context, in *CompletePaymentRequest, opts ...grpc.CallOption) (*Payment, error)
+	FailPayment(ctx context.Context, in *FailPaymentRequest, opts ...grpc.CallOption) (*Payment, error)
 }
 
 type paymentServiceClient struct {
@@ -83,6 +87,26 @@ func (c *paymentServiceClient) RefundPayment(ctx context.Context, in *RefundPaym
 	return out, nil
 }
 
+func (c *paymentServiceClient) CompletePayment(ctx context.Context, in *CompletePaymentRequest, opts ...grpc.CallOption) (*Payment, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Payment)
+	err := c.cc.Invoke(ctx, PaymentService_CompletePayment_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *paymentServiceClient) FailPayment(ctx context.Context, in *FailPaymentRequest, opts ...grpc.CallOption) (*Payment, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Payment)
+	err := c.cc.Invoke(ctx, PaymentService_FailPayment_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // PaymentServiceServer is the server API for PaymentService service.
 // All implementations must embed UnimplementedPaymentServiceServer
 // for forward compatibility.
@@ -91,6 +115,8 @@ type PaymentServiceServer interface {
 	GetPayment(context.Context, *GetPaymentRequest) (*Payment, error)
 	ListPayments(context.Context, *ListPaymentsRequest) (*ListPaymentsResponse, error)
 	RefundPayment(context.Context, *RefundPaymentRequest) (*Payment, error)
+	CompletePayment(context.Context, *CompletePaymentRequest) (*Payment, error)
+	FailPayment(context.Context, *FailPaymentRequest) (*Payment, error)
 	mustEmbedUnimplementedPaymentServiceServer()
 }
 
@@ -112,6 +138,12 @@ func (UnimplementedPaymentServiceServer) ListPayments(context.Context, *ListPaym
 }
 func (UnimplementedPaymentServiceServer) RefundPayment(context.Context, *RefundPaymentRequest) (*Payment, error) {
 	return nil, status.Error(codes.Unimplemented, "method RefundPayment not implemented")
+}
+func (UnimplementedPaymentServiceServer) CompletePayment(context.Context, *CompletePaymentRequest) (*Payment, error) {
+	return nil, status.Error(codes.Unimplemented, "method CompletePayment not implemented")
+}
+func (UnimplementedPaymentServiceServer) FailPayment(context.Context, *FailPaymentRequest) (*Payment, error) {
+	return nil, status.Error(codes.Unimplemented, "method FailPayment not implemented")
 }
 func (UnimplementedPaymentServiceServer) mustEmbedUnimplementedPaymentServiceServer() {}
 func (UnimplementedPaymentServiceServer) testEmbeddedByValue()                        {}
@@ -206,6 +238,42 @@ func _PaymentService_RefundPayment_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
+func _PaymentService_CompletePayment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CompletePaymentRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PaymentServiceServer).CompletePayment(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PaymentService_CompletePayment_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PaymentServiceServer).CompletePayment(ctx, req.(*CompletePaymentRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PaymentService_FailPayment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(FailPaymentRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PaymentServiceServer).FailPayment(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PaymentService_FailPayment_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PaymentServiceServer).FailPayment(ctx, req.(*FailPaymentRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // PaymentService_ServiceDesc is the grpc.ServiceDesc for PaymentService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -228,6 +296,14 @@ var PaymentService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RefundPayment",
 			Handler:    _PaymentService_RefundPayment_Handler,
+		},
+		{
+			MethodName: "CompletePayment",
+			Handler:    _PaymentService_CompletePayment_Handler,
+		},
+		{
+			MethodName: "FailPayment",
+			Handler:    _PaymentService_FailPayment_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

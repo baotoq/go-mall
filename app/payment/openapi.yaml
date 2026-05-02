@@ -72,6 +72,54 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/payment.v1.Payment'
+    /v1/payments/{id}/complete:
+        post:
+            tags:
+                - PaymentService
+            operationId: PaymentService_CompletePayment
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/payment.v1.CompletePaymentRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/payment.v1.Payment'
+    /v1/payments/{id}/fail:
+        post:
+            tags:
+                - PaymentService
+            operationId: PaymentService_FailPayment
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/payment.v1.FailPaymentRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/payment.v1.Payment'
     /v1/payments/{id}/refund:
         post:
             tags:
@@ -98,6 +146,11 @@ paths:
                                 $ref: '#/components/schemas/payment.v1.Payment'
 components:
     schemas:
+        payment.v1.CompletePaymentRequest:
+            type: object
+            properties:
+                id:
+                    type: string
         payment.v1.CreatePaymentRequest:
             type: object
             properties:
@@ -110,6 +163,13 @@ components:
                 currency:
                     type: string
                 provider:
+                    type: string
+        payment.v1.FailPaymentRequest:
+            type: object
+            properties:
+                id:
+                    type: string
+                reasonCode:
                     type: string
         payment.v1.ListPaymentsResponse:
             type: object

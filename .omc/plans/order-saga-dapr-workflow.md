@@ -1,8 +1,8 @@
 # Plan: Order Saga via Dapr Workflow
 
-**Status:** Draft — v0.3 (Consensus review iteration 1 — RALPLAN-DR deliberate mode)
+**Status:** Draft — v0.4 (Step 0 research applied — durabletask-go v0.11.3 + Dapr state.postgresql v2 verified)
 **Date:** 2026-05-02
-**Author:** /plan interview → RALPLAN-DR deliberate mode
+**Author:** /plan interview → RALPLAN-DR deliberate mode → /ultrawork research
 **Scope:** Order + Payment only
 **Risk:** High (distributed transactions, money flow, first cross-service flow in repo)
 
@@ -115,16 +115,19 @@ client──Checkout─▶ service │───▶│ OrderSaga workflow        
               │       ▲          │  loop(1..3):                 │    │  │ {workflow_id, order_id,
               │       │ poll     │    PublishPaymentRequested    │    │  │  amount, currency, attempt}
               │  ┌────┴─────┐    │    WaitForExternalEvent      │    │  ▼
-              │  │GetCheckout    │    "payment-completed-{N}"    │    │ ┌────────────────────┐
-              │  │  Status  │    │    "payment-failed-{N}"       │    │ │   pubsub (Redis)   │
-              │  └──────────┘    │  MarkPaid (post-pivot retry)  │    │ └────────────────────┘
-              │                  │  CancelOrder (compensation)   │    │  ▲                │
-              │  ┌─────────────────────────────────────────────┐│    │  │                │ sub:
-              │  │ event router (subscriber.go)                ││    │  │ payment.        │ payment.
-              │  │ sub: payment.completed, payment.failed       ││    │  │ completed/failed│ requested
-              │  │ → RaiseEvent(wfID, "pay-{done|fail}-{N}", ..)│────┘  │ {workflow_id,   │ {attempt=N}
-              │  └─────────────────────────────────────────────┘│      │  pay_id, reason}│
-              └──────────────────────────────────────────────────┘      │                │
+              │  │GetCheckout    │    "payment-result-{N}"      │    │ ┌────────────────────┐
+              │  │  Status  │    │    (timeout via SDK arg →    │    │ │   pubsub (Redis)   │
+              │  └──────────┘    │     task.ErrTaskCanceled)    │    │ └────────────────────┘
+              │                  │  MarkPaid (post-pivot retry)  │    │  ▲                │
+              │                  │  CancelOrder (compensation)   │    │  │                │ sub:
+              │  ┌─────────────────────────────────────────────┐│    │  │ payment.        │ payment.
+              │  │ event router (subscriber.go)                ││    │  │ completed/failed│ requested
+              │  │ sub: payment.completed, payment.failed       ││    │  │ {workflow_id,   │ {attempt=N}
+              │  │ map → "payment-result-{N}" w/ payload         ││    │  │  pay_id, reason,│
+              │  │      {Success, PaymentID, ReasonCode}        ││    │  │  attempt=N}     │
+              │  │ → RaiseEvent(wfID, "payment-result-{N}", ..) │────┘  │                 │
+              │  └─────────────────────────────────────────────┘│      │                 │
+              └──────────────────────────────────────────────────┘      │                 │
                                                                          │                ▼
                                ┌──────────────────────────────────────────────────────────────┐
                                │                  payment service                             │
@@ -141,6 +144,10 @@ client──Checkout─▶ service │───▶│ OrderSaga workflow        
 
 ```go
 // app/order/internal/biz/saga.go
+// Step 0 research (v0.4): durabletask-go v0.11.3 has NO Any/WhenAny helper.
+// WaitForExternalEvent(name, timeout) natively races the event vs an internal
+// timer; on expiry it returns task.ErrTaskCanceled. Single-event-per-attempt
+// pattern carries outcome in payload.
 func OrderSaga(ctx *workflow.WorkflowContext) (any, error) {
     var in CheckoutInput
     if err := ctx.GetInput(&in); err != nil { return nil, err }
@@ -164,26 +171,22 @@ func OrderSaga(ctx *workflow.WorkflowContext) (any, error) {
             })).Await(nil); err != nil {
             outcome.reasonCode = "publish_failed"
         } else {
-            // Attempt-keyed events prevent cross-attempt routing race.
-            completedEvt := fmt.Sprintf("payment-completed-%d", attempt)
-            failedEvt    := fmt.Sprintf("payment-failed-%d",    attempt)
-            completed := ctx.WaitForExternalEvent(completedEvt, perAttemptTimeout)
-            failed    := ctx.WaitForExternalEvent(failedEvt,    perAttemptTimeout)
-            timer     := ctx.CreateTimer(perAttemptTimeout)
-            // workflow.Any: confirm exact API name during Step 0.1 research.
-            winner, _ := workflow.Any(ctx, completed, failed, timer).Await(nil)
-            switch winner {
-            case completed:
-                var p PaymentOutcome
-                if completed.Await(&p) == nil {
-                    outcome = po{paymentID: p.PaymentID, success: true}
-                }
-            case failed:
-                var p PaymentOutcome
-                _ = failed.Await(&p)
-                outcome.reasonCode = p.ReasonCode // enum, not err.Error()
-            default:
+            // Attempt-keyed event name prevents cross-attempt routing race.
+            // Subscriber merges payment.completed + payment.failed → single
+            // "payment-result-{N}" event with {Success, PaymentID, ReasonCode}.
+            evtName := fmt.Sprintf("payment-result-%d", attempt)
+            ev := ctx.WaitForExternalEvent(evtName, perAttemptTimeout)
+            var r PaymentResult
+            err := ev.Await(&r)
+            switch {
+            case err == nil && r.Success:
+                outcome = po{paymentID: r.PaymentID, success: true}
+            case err == nil && !r.Success:
+                outcome.reasonCode = r.ReasonCode
+            case errors.Is(err, task.ErrTaskCanceled):
                 outcome.reasonCode = "timeout"
+            default:
+                outcome.reasonCode = "wait_error"
             }
         }
         if outcome.success { break }
@@ -212,9 +215,16 @@ func OrderSaga(ctx *workflow.WorkflowContext) (any, error) {
     }
     return CheckoutResult{State: "COMPLETED", OrderID: orderID, PaymentID: outcome.paymentID}, nil
 }
+
+// PaymentResult is the merged-outcome payload raised by subscriber.go.
+type PaymentResult struct {
+    Success    bool   `json:"success"`
+    PaymentID  string `json:"payment_id,omitempty"`
+    ReasonCode string `json:"reason_code,omitempty"`
+}
 ```
 
-> `workflow.Any` / `Task.Any` exact API must be verified in Step 0.1 before implementation. The pseudocode shape is correct per `docs/saga.md:128-172`.
+> Step 0.1 confirmed: no `workflow.Any` in v0.11.3. `WaitForExternalEvent(name, timeout)` is the canonical pattern (cite: `task/orchestrator.go:471-509`, `workflow/workflow.go:77-96`). Subscriber owns the topic→event-name mapping (Step 4.3).
 
 ### 4.3 Activity contract
 
@@ -242,27 +252,30 @@ func OrderSaga(ctx *workflow.WorkflowContext) (any, error) {
 | AC6 | No payment event within `perAttemptTimeout × maxAttempts + backoffs` (~3.1min): order CANCELLED, workflow FAILED. **Test bound: within 3.5min.** | Integration: no `CompletePayment`; assert within 3.5min |
 | AC7 | Workflow body has zero forbidden non-deterministic calls. Verified by custom `golangci-lint` analyzer (not grep) covering: `time.Now/Since/Until/After/NewTicker/NewTimer`, `rand.*`, `os.Getenv`, `go func()`, raw map-range, channel ops outside activities. Applied to `app/order/internal/biz/` package. | Custom analyzer + CI gate |
 | AC8 | All cross-service event publishes go through `pkg/outbox/` — no direct `client.PublishEvent` in `app/order/internal/biz/` or `app/order/internal/data/` | `grep -rn 'PublishEvent' app/order/internal/biz/ app/order/internal/data/` matches only outbox internals |
-| AC9 | `workflowstore` Dapr component with `actorStateStore=true` present in `deploy/k8s/base/infra/dapr/` | YAML present + `kubectl get components -n go-mall workflowstore` |
+| AC9a | `workflowstore` Dapr component with `actorStateStore=true` + `cleanupInterval=1h` present in `deploy/k8s/base/infra/dapr/` | YAML present + `kubectl get components -n go-mall workflowstore` |
 | AC9b | `workflowstore` uses a **separate database** from ent business DB; backed by secret key `WORKFLOWSTORE_DATABASE_CONNECTION_STRING` | Helm chart diff + `kubectl get secret` |
+| AC9c | `order-workflow-config` Dapr Configuration resource present with `spec.workflow.stateRetentionPolicy` (completed/failed/terminated set); order Deployment annotated `dapr.io/config: order-workflow-config` | YAML present + `kubectl get configuration -n go-mall order-workflow-config` |
 | AC10 | *(Deferred to follow-up iteration — requires Step 4.6 tracing injection to be shipped first)* W3C `traceparent` propagates across the full saga path | — |
 | AC11 | `make build` green for all services; `make test` passes `app/order/` and `app/payment/`; `make e2e-saga` happy-path passes | CI |
-| AC12 | Late `payment.completed-{N}` for terminated workflow: inserted into `workflow_dead_letter_events` table, `saga_orphan_payment_total` incremented, no DB mutation, no panic. Subscriber distinguishes "workflow terminated" (`RaiseEvent` terminal error → DLQ) from transient error (inbox NACK → redelivery). | Integration: trigger cancel, publish late event |
+| AC12 | Late `payment.completed` (or `payment.failed`) topic message for a terminated workflow: subscriber's `RaiseEvent` for `payment-result-{N}` returns gRPC `codes.NotFound`/`FailedPrecondition` → row inserted into `workflow_dead_letter_events`, `saga_orphan_payment_total` incremented, no DB mutation, no panic. Subscriber distinguishes "workflow terminated" (terminal error → DLQ) from transient error (inbox NACK → redelivery). | Integration: trigger cancel, publish late `payment.completed` |
 
 ---
 
 ## 6. Implementation Steps
 
-### Step 0 — Research (before coding)
+### Step 0 — Research (RESOLVED in v0.4)
 
-- **0.1** Confirm `workflow.Any` / `Task.Any` API name in `durabletask-go v0.11.3`. Fallback: use the two-`WaitForExternalEvent` + timer pattern from `docs/saga.md:161-172`.
-- **0.2** Confirm `client.ScheduleWorkflow` error type for duplicate instance ID (typed error for `errors.Is` vs string-only).
-- **0.3** Confirm `wfc.StopWorker(ctx)` or equivalent drain API in `go-sdk`. Document fallback if absent.
-- **0.4** Confirm Dapr `state.postgresql v2` supports `retentionPeriod` metadata.
+All four items resolved by /ultrawork research wave on 2026-05-02. Findings folded into the plan as Deltas A–D:
+
+- **0.1 ✅** No `workflow.Any` / `Task.Any` helper in `durabletask-go v0.11.3` (cite `task/task.go:14-25`, `workflow/workflow.go:77-96`). `WaitForExternalEvent(name, timeout)` natively races event vs internal timer (`task/orchestrator.go:471-509`); on expiry returns `task.ErrTaskCanceled`. **Delta A:** single-event-per-attempt with merged `PaymentResult` payload — see §4.2.
+- **0.2 ✅** `client.ScheduleWorkflow` returns gRPC `codes.AlreadyExists` on duplicate instance (the local `api.ErrDuplicateInstance` sentinel does not survive the gRPC wire boundary — `client/client_grpc.go:36-62`). **Delta D:** Step 3.6 detects via `status.FromError` + `codes.AlreadyExists`, `strings.Contains` fallback.
+- **0.3 ✅** No public worker drain API on the gRPC client path; lifecycle owned by ctx passed to `StartWorker` (`client/worker_grpc.go:53-156`). In-flight activity goroutines detach on cancel. **Delta C:** Step 6.3 best-effort `Stop`; mitigation = activity idempotency. R7 likelihood Low → Medium.
+- **0.4 ✅** `state.postgresql v2` does **not** accept `retentionPeriod` metadata (component struct only declares `tablePrefix`, `metadataTableName`, `timeout`, `cleanupInterval`; unknown keys silently ignored). Workflow history retention is configured at runtime via Dapr `Configuration` resource `spec.workflow.stateRetentionPolicy`. **Delta B:** Step 1.2 drops `retentionPeriod`; Step 1.2b adds Configuration resource; Deployment annotated `dapr.io/config: order-workflow-config`.
 
 ### Step 1 — Dependencies and infra
 
 - **1.1** Promote `github.com/dapr/durabletask-go v0.11.3` from **indirect to direct** in `go.mod` (already present at `go.mod:42` — do NOT re-add).
-- **1.2** Create `deploy/k8s/base/infra/dapr/workflowstore.yaml`:
+- **1.2** Create `deploy/k8s/base/infra/dapr/workflowstore.yaml`. Step 0.4 confirmed `retentionPeriod` is **not** a metadata key for `state.postgresql v2` (silently ignored). Use `cleanupInterval` for per-row TTL pruning; workflow history retention is configured via the `Configuration` resource in Step 1.2b.
   ```yaml
   apiVersion: dapr.io/v1alpha1
   kind: Component
@@ -277,10 +290,25 @@ func OrderSaga(ctx *workflow.WorkflowContext) (any, error) {
         secretKeyRef: { name: workflow-db-secret, key: WORKFLOWSTORE_DATABASE_CONNECTION_STRING }
       - name: actorStateStore
         value: "true"
-      - name: retentionPeriod   # verify per Step 0.4; omit if unsupported
-        value: "168h"
+      - name: cleanupInterval
+        value: "1h"
   ```
-- **1.3** Add `workflowstore.yaml` to `deploy/k8s/base/infra/dapr/kustomization.yaml`.
+- **1.2b** Create `deploy/k8s/base/infra/dapr/workflow-config.yaml` — Dapr Configuration resource for runtime-side workflow history retention (Step 0.4 finding):
+  ```yaml
+  apiVersion: dapr.io/v1alpha1
+  kind: Configuration
+  metadata:
+    name: order-workflow-config
+    namespace: go-mall
+  spec:
+    workflow:
+      stateRetentionPolicy:
+        completed: "168h"
+        failed: "720h"
+        terminated: "168h"
+  ```
+  Annotate the order Deployment (`deploy/k8s/base/order/deployment.yaml`) with `dapr.io/config: order-workflow-config` so the runtime applies the policy. (Citation: https://docs.dapr.io/developing-applications/building-blocks/workflow/workflow-history-retention-policy/)
+- **1.3** Add `workflowstore.yaml` and `workflow-config.yaml` to `deploy/k8s/base/infra/dapr/kustomization.yaml`.
 - **1.4** Provision **separate** Postgres database for workflow state in `deploy/helm/` — add `workflow` DB to `initdbScripts` in `values.yaml`. Add `workflow-db-secret` Secret with key `WORKFLOWSTORE_DATABASE_CONNECTION_STRING` fetched from Dapr secret store (fallback: `DATABASE_CONNECTION_STRING`).
 - **1.5** Update `app/order/cmd/server/main.go` to load `WORKFLOWSTORE_DATABASE_CONNECTION_STRING` via `secrets.Parse` (same pattern as `main.go:84`).
 - **1.6** Add DLQ ent schema `workflow_dead_letter_events` to order service: fields `(id, topic, payload_json, workflow_instance_id, reason, created_at)`. Run `make ent` from `app/order/`.
@@ -330,7 +358,20 @@ func OrderSaga(ctx *workflow.WorkflowContext) (any, error) {
 - **3.4** `CancelOrderActivity` — wraps `OrderUsecase.Cancel` (`app/order/internal/biz/order.go:124-136`); treats `ErrOrderCannotCancel` (already CANCELLED) as success.
 - **3.5** **`MarkPaid` idempotency fix** — modify `app/order/internal/biz/order.go:138-150`: return existing order row (not error) if already `PAID` with the **same** `payment_id`; return new error `ErrPaymentConflict` if PAID with a *different* `payment_id`. This prevents `FAILED_AFTER_PIVOT` on any worker crash+replay after the DB commit.
 - **3.6** `CheckoutUsecase` in `checkout.go`:
-  - `Schedule`: call `wfc.ScheduleWorkflow` with `WithInstanceID(req.IdempotencyKey)`. Check error type (Step 0.2) — "already exists" → return existing checkout_id; validate `(idempotency_key, user_id)` match → reject with `CHECKOUT_DUPLICATE_KEY` on mismatch.
+  - `Schedule`: call `wfc.ScheduleWorkflow` with `WithInstanceID(req.IdempotencyKey)`. Step 0.2 confirmed the duplicate signal arrives over gRPC as `codes.AlreadyExists` (not the local `api.ErrDuplicateInstance` sentinel — that does not survive the wire). Detection:
+    ```go
+    _, err := wfc.ScheduleWorkflow(ctx, "OrderSaga", workflow.WithInstanceID(idemKey))
+    if err != nil {
+        if st, ok := status.FromError(errors.Unwrap(err)); ok && st.Code() == codes.AlreadyExists {
+            return existingCheckoutID(ctx, idemKey)
+        }
+        if strings.Contains(err.Error(), "already exists") { // string fallback
+            return existingCheckoutID(ctx, idemKey)
+        }
+        return "", err
+    }
+    ```
+    Then validate stored `(idempotency_key, user_id)` match → reject with `CHECKOUT_DUPLICATE_KEY` on mismatch.
   - `Status`: `wfc.FetchWorkflowMetadata` → map Dapr runtime states + deserialise `CheckoutResult` output.
 - **3.7** Update `app/order/internal/biz/biz.go` `ProviderSet` to include `NewCheckoutUsecase`, workflow registry provider, `wfc` client provider.
 
@@ -338,11 +379,13 @@ func OrderSaga(ctx *workflow.WorkflowContext) (any, error) {
 
 - **4.1** Add `app/order/internal/data/ent/schema/idempotencykey.go`: fields `(key PK, response_json, created_at)` with cleanup cron (TTL 7 days — matching workflowstore retention).
 - **4.2** Verify outbox `messageID` column has UNIQUE constraint; add migration if absent. Update `insertOutboxSQL` → `INSERT ... ON CONFLICT (messageID) DO NOTHING`. Confirm `pkg/outbox/outbox.go:38-41` exposes `WithMessageID` option; add if absent.
-- **4.3** Create `app/order/internal/server/subscriber.go`:
+- **4.3** Create `app/order/internal/server/subscriber.go` (post-Delta-A: merges both topics into single workflow event):
   - Subscribe to `payment.completed` and `payment.failed` on `pubsub` component.
-  - Parse `attempt` from payload; compose event name (`"payment-completed-{N}"` / `"payment-failed-{N}"`).
+  - Parse `{workflow_instance_id, attempt, payment_id?, reason_code?}` from payload.
+  - Compose **single** event name: `eventName := fmt.Sprintf("payment-result-%d", attempt)`.
+  - Build merged payload `PaymentResult{Success: <true if topic==payment.completed>, PaymentID: <when success>, ReasonCode: <when failed>}`.
   - Call `wfc.RaiseEvent(ctx, instanceID, eventName, payload)`.
-  - On "workflow terminated/not found" error → insert into `workflow_dead_letter_events` + increment `saga_orphan_payment_total` + log with `workflow_instance_id`.
+  - On "workflow terminated/not found" error → insert into `workflow_dead_letter_events` + increment `saga_orphan_payment_total` + log with `workflow_instance_id`. Distinguish via gRPC `codes.NotFound` / `codes.FailedPrecondition` from the sidecar.
   - On transient error → inbox NACK → redelivery.
   - Idempotent via `pkg/outbox/inbox.go`.
 - **4.4** Register subscriber as kratos `transport.Server` in `app/order/internal/server/server.go`.
@@ -358,12 +401,13 @@ func OrderSaga(ctx *workflow.WorkflowContext) (any, error) {
 
 - **6.1** Wire `workflow.Registry` provider; register `OrderSaga` + four activities.
 - **6.2** Wire `wfc, _ := client.NewWorkflowClient()` provider (retry per R6 pattern).
-- **6.3** `WorkflowWorker` kratos transport adapter with **drain semantics**:
+- **6.3** `WorkflowWorker` kratos transport adapter — **best-effort cancel** (Step 0.3 finding: `durabletask-go v0.11.3` exposes no public `StopWorker`/`Drain` API on the gRPC client path; lifecycle is owned by the ctx passed to `StartWorker`. In-flight activity goroutines detach on cancel — see `client/worker_grpc.go:53-156`):
   ```go
   type WorkflowWorker struct {
-      wfc    *client.WorkflowClient
-      reg    *workflow.Registry
-      cancel context.CancelFunc
+      wfc          *client.WorkflowClient
+      reg          *workflow.Registry
+      cancel       context.CancelFunc
+      drainTimeout time.Duration // from conf.Saga.DrainTimeout
   }
   func (w *WorkflowWorker) Start(ctx context.Context) error {
       c, cancel := context.WithCancel(context.Background())
@@ -371,12 +415,17 @@ func OrderSaga(ctx *workflow.WorkflowContext) (any, error) {
       return w.wfc.StartWorker(c, w.reg)
   }
   func (w *WorkflowWorker) Stop(ctx context.Context) error {
-      // If StopWorker(drainCtx) API confirmed in Step 0.3, call it here with conf.Saga.DrainTimeout.
-      w.cancel()
+      w.cancel()                              // signal worker; in-flight activities detach
+      select {
+      case <-ctx.Done():
+      case <-time.After(w.drainTimeout):      // best-effort grace period
+      }
       return nil
   }
   ```
-  **Shutdown ordering** in `app.New(...)`: `transport.Server(httpServer, grpcServer, workflowWorker, outboxServer)` — HTTP/gRPC stops first (no new requests accepted), then workflow worker drains, then outbox relay stops.
+  **Accepted risk:** an activity goroutine may complete *after* `Stop` returns. Safe because activities are idempotent (Step 3.5 MarkPaid same-payment_id success; outbox `WithMessageID` + UNIQUE; idempotency-key upsert). Worst case: brief metric noise on shutdown.
+
+  **Shutdown ordering** in `app.New(...)`: `transport.Server(httpServer, grpcServer, workflowWorker, outboxServer)` — HTTP/gRPC stops first (no new requests accepted), then workflow worker best-effort drain, then outbox relay stops.
 - **6.4** Run `make wire` from `app/order/`.
 - **6.5** **PurgeWorkflow cron** — runs every 6h; queries terminal workflows older than 1h via a local `completed_workflows` tracking table; calls `wfc.PurgeWorkflow(ctx, instanceID)` for each. Wire into app lifecycle.
 
@@ -389,7 +438,7 @@ func OrderSaga(ctx *workflow.WorkflowContext) (any, error) {
   - State machine: PENDING → COMPLETED or PENDING → FAILED only. Reject all other transitions with `PAYMENT_INVALID_TRANSITION`.
   - On COMPLETED: outbox publish `payment.completed` with payload `{workflow_instance_id, attempt, payment_id, order_id}`.
   - On FAILED: outbox publish `payment.failed` with payload `{workflow_instance_id, attempt, order_id, reason_code}`.
-  - Subscriber in order service reads `attempt` and routes to `payment-completed-{N}` / `payment-failed-{N}` event.
+  - **Topic→event mapping happens in the order subscriber** (Step 4.3, post-Delta-A): both topics merge into the single `payment-result-{N}` workflow event with a `Success` flag in the payload. Payment service publishes two distinct topics; order side does the merge so the workflow body needs only one `WaitForExternalEvent` per attempt.
 - **7.5** Add unit tests for state machine guards.
 
 ### Step 8 — Tests (see §7 for detail)
@@ -436,7 +485,7 @@ func OrderSaga(ctx *workflow.WorkflowContext) (any, error) {
 | Payment failure ×3 | Checkout → `FailPayment` ×3 | Order CANCELLED, workflow FAILED `payment_exhausted` | AC5 |
 | Timeout exhaustion | Checkout → no payment events → wait | Order CANCELLED within 3.5min | AC6 |
 | Late completion (AC12) | Cancel via timeout → publish late `payment.completed-1` | DLQ entry; no DB mutation | AC12 |
-| Cross-attempt event leak | Checkout → fail attempt 1 → inject late `payment.completed-1` while attempt 2 in flight | Workflow accepts only `payment-completed-2`; no double-PAID | M2, R1 |
+| Cross-attempt event leak | Checkout → fail attempt 1 → inject late `payment.completed{attempt=1}` topic message while attempt 2 in flight | Subscriber raises `payment-result-1` (buffered by name; never matched as workflow waits on `payment-result-2`); no double-PAID; orphan-payment metric incremented after workflow terminates | M2, R1 |
 | MarkPaid idempotency | Workflow reaches pivot → crash worker → restart → replay MarkPaid | Order stays PAID (not FAILED_AFTER_PIVOT) | AC4, M7 |
 | Outbox lag injection | Inject 90s delay in outbox relay | No spurious cancellation | R5 |
 | Sidecar dies mid-RaiseEvent | Kill sidecar after `RaiseEvent` dispatched | Inbox NACK → redelivery on restart → workflow receives event | R7 |
@@ -486,8 +535,8 @@ Require Step 4.5 (traceparent injection) and Step 4.6 (metric registration) to b
 | R4 | Idempotency-key collision / UUID reuse post-purge | Low | High | `(idempotency_key, user_id)` mismatch guard. Post-purge → `CHECKOUT_DUPLICATE_KEY` (use new key). |
 | R5 | Outbox `BackoffMax=5min` exceeds `perAttemptTimeout=60s` → spurious cancellation | **HIGH** | Medium | Reduce outbox `BackoffMax` for saga-related topics; alert on `outbox_pending > 100` for > 5min. |
 | R6 | Worker registers before Dapr sidecar reachable | Medium | Medium | Reuse existing 12×5s retry pattern (`main.go:74-99`). |
-| R7 | Subscriber + outbox relay double-handling inbound events | Low | Medium | Inbox dedup (`pkg/outbox/inbox.go`). Two-replica integration test. |
-| R8 | Workflow history grows unbounded | Low | **Medium** | PurgeWorkflow cron (Step 6.5) + Dapr `retentionPeriod` (Step 1.2) + separate DB (Step 1.4) + disk alerts (Step 9.6). |
+| R7 | Subscriber + outbox relay double-handling inbound events; or activity goroutine completing after `Stop` returns (Step 0.3 finding: no SDK drain API) | **Medium** | Medium | Inbox dedup (`pkg/outbox/inbox.go`). Activity idempotency: outbox `WithMessageID` UNIQUE, MarkPaid same-payment_id success (Step 3.5), idempotency-key upsert. Two-replica integration test. |
+| R8 | Workflow history grows unbounded | Low | **Medium** | **3-layer mitigation:** (a) Dapr `Configuration` resource `spec.workflow.stateRetentionPolicy` (Step 1.2b — runtime-side, the only mechanism that actually works on `state.postgresql v2`); (b) PurgeWorkflow cron (Step 6.5); (c) separate workflow DB (Step 1.4) + disk alerts (Step 9.6). |
 | R9 | `Checkout` vs `CreateOrder` confusion | Low | Low | `CLAUDE.md` update (Step 9.1). Feature flag `saga.enabled` (Step 1.7). |
 | R10 | First cross-service flow stresses untested infra | Medium | Medium | Feature flag (Step 1.7). Canary 5%→100% rollout (Step 9.7). |
 | R11 | Workflowstore DSN shares rotation cycle with business DB | Low | High | Separate secret key (Step 1.4 + 1.5). Key-rotation procedure in runbook (Step 9.4). |
@@ -550,7 +599,7 @@ Require Step 4.5 (traceparent injection) and Step 4.6 (metric registration) to b
 4. **Cart `Checkout` RPC** — cart-side endpoint that hydrates items and forwards to `order.Checkout`.
 5. **Workflow versioning** — adopt `AddVersionedWorkflow` (Dapr v1.17+) before the second saga lands.
 6. **Replay-against-staging tooling** — `dapr workflow ...` CLI for incident response.
-7. **Pub/sub topic naming convention** — `payment.completed` (single topic, attempt in payload) confirmed as the standard; document in `deploy/k8s/base/infra/dapr/pubsub.yaml` subscription declarations.
+7. **Pub/sub topic naming convention** — payment service publishes two topics (`payment.completed`, `payment.failed`) with `attempt` in payload. Order subscriber merges both into the single attempt-keyed workflow event `payment-result-{N}` (per Delta A). Document subscription declarations in `deploy/k8s/base/infra/dapr/pubsub.yaml`.
 8. **v2 restructure — Synthesis A** (publish-once + cancel round-trip): publish `payment.requested` once per workflow; on overall deadline → publish `payment.cancel.requested`; wait for `payment.cancelled` → cancel order. Eliminates the outbox-lag + spurious-retry window (R5). Deferred to v2.
 
 ---
@@ -589,3 +638,9 @@ Require Step 4.5 (traceparent injection) and Step 4.6 (metric registration) to b
   - R1 → HIGH/HIGH; R5 → HIGH/Medium; R8 impact → Medium. Added R11-R14.
   - Added: Scenario 4 (MarkPaid replay bug), Step 0 research checklist, Steps 4.5-4.6, Steps 9.4-9.7, 8 missing integration test scenarios, `OrderCreatedEvent.WorkflowInstanceID`, deploy-order section (Step 9.7).
   - Option E added to alternatives. `durabletask-go` promote-not-add clarified (Step 1.1).
+- **v0.4 (2026-05-02)** — Step 0 research wave (parallel /ultrawork agents) resolved all four blockers against `durabletask-go v0.11.3` source + Dapr `components-contrib` source + Dapr docs. Four deltas applied:
+  - **Delta A — Event topology.** No `workflow.Any` helper exists; `WaitForExternalEvent(name, timeout)` natively races against an internal timer. Plan switches to single-event-per-attempt: subscriber merges `payment.completed` + `payment.failed` topics into one attempt-keyed `payment-result-{N}` workflow event with `PaymentResult{Success, PaymentID, ReasonCode}` payload. §4.1 diagram, §4.2 pseudocode, §6 Step 4.3, §6 Step 7.4, AC12, §7.2 cross-attempt test row updated.
+  - **Delta B — Retention mechanism.** `state.postgresql v2` does NOT accept `retentionPeriod`; workflow history retention is configured via Dapr `Configuration` resource `spec.workflow.stateRetentionPolicy`. Step 1.2 drops the metadata key (adds `cleanupInterval=1h`); new Step 1.2b creates `workflow-config.yaml`; Deployment annotated `dapr.io/config: order-workflow-config`. AC9 split into AC9a + AC9c. R8 mitigation now 3-layer.
+  - **Delta C — Worker drain.** No public drain API on gRPC client path; `Stop(ctx)` is best-effort cancel + grace timeout. Activity idempotency (Step 3.5 + outbox `WithMessageID` + idem-key upsert) is the safety net. R7 likelihood Low → Medium.
+  - **Delta D — Duplicate-instance detection.** `api.ErrDuplicateInstance` sentinel does not survive gRPC; use `status.FromError` + `codes.AlreadyExists` with `strings.Contains` fallback. Step 3.6 code spelled out.
+  - Step 0 marked RESOLVED with cited line numbers.
