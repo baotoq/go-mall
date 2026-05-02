@@ -55,6 +55,42 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/order.v1.Order'
+    /v1/orders/checkout:
+        post:
+            tags:
+                - OrderService
+            operationId: OrderService_Checkout
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/order.v1.CheckoutRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/order.v1.CheckoutResponse'
+    /v1/orders/checkout/{checkoutId}:
+        get:
+            tags:
+                - OrderService
+            operationId: OrderService_GetCheckoutStatus
+            parameters:
+                - name: checkoutId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/order.v1.GetCheckoutStatusResponse'
     /v1/orders/{id}:
         get:
             tags:
@@ -128,6 +164,28 @@ components:
             properties:
                 id:
                     type: string
+        order.v1.CheckoutRequest:
+            type: object
+            properties:
+                idempotencyKey:
+                    type: string
+                userId:
+                    type: string
+                sessionId:
+                    type: string
+                currency:
+                    type: string
+                items:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/order.v1.OrderItem'
+        order.v1.CheckoutResponse:
+            type: object
+            properties:
+                checkoutId:
+                    type: string
+                orderId:
+                    type: string
         order.v1.CreateOrderItem:
             type: object
             properties:
@@ -154,6 +212,20 @@ components:
                     items:
                         $ref: '#/components/schemas/order.v1.CreateOrderItem'
                 currency:
+                    type: string
+        order.v1.GetCheckoutStatusResponse:
+            type: object
+            properties:
+                state:
+                    type: string
+                orderId:
+                    type: string
+                paymentId:
+                    type: string
+                attempts:
+                    type: integer
+                    format: int32
+                error:
                     type: string
         order.v1.ListOrdersResponse:
             type: object

@@ -119,6 +119,47 @@ func (_u *PaymentUpdate) SetNillableProvider(v *string) *PaymentUpdate {
 	return _u
 }
 
+// SetWorkflowInstanceID sets the "workflow_instance_id" field.
+func (_u *PaymentUpdate) SetWorkflowInstanceID(v string) *PaymentUpdate {
+	_u.mutation.SetWorkflowInstanceID(v)
+	return _u
+}
+
+// SetNillableWorkflowInstanceID sets the "workflow_instance_id" field if the given value is not nil.
+func (_u *PaymentUpdate) SetNillableWorkflowInstanceID(v *string) *PaymentUpdate {
+	if v != nil {
+		_u.SetWorkflowInstanceID(*v)
+	}
+	return _u
+}
+
+// ClearWorkflowInstanceID clears the value of the "workflow_instance_id" field.
+func (_u *PaymentUpdate) ClearWorkflowInstanceID() *PaymentUpdate {
+	_u.mutation.ClearWorkflowInstanceID()
+	return _u
+}
+
+// SetAttempt sets the "attempt" field.
+func (_u *PaymentUpdate) SetAttempt(v int32) *PaymentUpdate {
+	_u.mutation.ResetAttempt()
+	_u.mutation.SetAttempt(v)
+	return _u
+}
+
+// SetNillableAttempt sets the "attempt" field if the given value is not nil.
+func (_u *PaymentUpdate) SetNillableAttempt(v *int32) *PaymentUpdate {
+	if v != nil {
+		_u.SetAttempt(*v)
+	}
+	return _u
+}
+
+// AddAttempt adds value to the "attempt" field.
+func (_u *PaymentUpdate) AddAttempt(v int32) *PaymentUpdate {
+	_u.mutation.AddAttempt(v)
+	return _u
+}
+
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *PaymentUpdate) SetUpdatedAt(v time.Time) *PaymentUpdate {
 	_u.mutation.SetUpdatedAt(v)
@@ -193,6 +234,11 @@ func (_u *PaymentUpdate) check() error {
 			return &ValidationError{Name: "provider", err: fmt.Errorf(`ent: validator failed for field "Payment.provider": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.WorkflowInstanceID(); ok {
+		if err := payment.WorkflowInstanceIDValidator(v); err != nil {
+			return &ValidationError{Name: "workflow_instance_id", err: fmt.Errorf(`ent: validator failed for field "Payment.workflow_instance_id": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -228,6 +274,18 @@ func (_u *PaymentUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.Provider(); ok {
 		_spec.SetField(payment.FieldProvider, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.WorkflowInstanceID(); ok {
+		_spec.SetField(payment.FieldWorkflowInstanceID, field.TypeString, value)
+	}
+	if _u.mutation.WorkflowInstanceIDCleared() {
+		_spec.ClearField(payment.FieldWorkflowInstanceID, field.TypeString)
+	}
+	if value, ok := _u.mutation.Attempt(); ok {
+		_spec.SetField(payment.FieldAttempt, field.TypeInt32, value)
+	}
+	if value, ok := _u.mutation.AddedAttempt(); ok {
+		_spec.AddField(payment.FieldAttempt, field.TypeInt32, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(payment.FieldUpdatedAt, field.TypeTime, value)
@@ -343,6 +401,47 @@ func (_u *PaymentUpdateOne) SetNillableProvider(v *string) *PaymentUpdateOne {
 	return _u
 }
 
+// SetWorkflowInstanceID sets the "workflow_instance_id" field.
+func (_u *PaymentUpdateOne) SetWorkflowInstanceID(v string) *PaymentUpdateOne {
+	_u.mutation.SetWorkflowInstanceID(v)
+	return _u
+}
+
+// SetNillableWorkflowInstanceID sets the "workflow_instance_id" field if the given value is not nil.
+func (_u *PaymentUpdateOne) SetNillableWorkflowInstanceID(v *string) *PaymentUpdateOne {
+	if v != nil {
+		_u.SetWorkflowInstanceID(*v)
+	}
+	return _u
+}
+
+// ClearWorkflowInstanceID clears the value of the "workflow_instance_id" field.
+func (_u *PaymentUpdateOne) ClearWorkflowInstanceID() *PaymentUpdateOne {
+	_u.mutation.ClearWorkflowInstanceID()
+	return _u
+}
+
+// SetAttempt sets the "attempt" field.
+func (_u *PaymentUpdateOne) SetAttempt(v int32) *PaymentUpdateOne {
+	_u.mutation.ResetAttempt()
+	_u.mutation.SetAttempt(v)
+	return _u
+}
+
+// SetNillableAttempt sets the "attempt" field if the given value is not nil.
+func (_u *PaymentUpdateOne) SetNillableAttempt(v *int32) *PaymentUpdateOne {
+	if v != nil {
+		_u.SetAttempt(*v)
+	}
+	return _u
+}
+
+// AddAttempt adds value to the "attempt" field.
+func (_u *PaymentUpdateOne) AddAttempt(v int32) *PaymentUpdateOne {
+	_u.mutation.AddAttempt(v)
+	return _u
+}
+
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *PaymentUpdateOne) SetUpdatedAt(v time.Time) *PaymentUpdateOne {
 	_u.mutation.SetUpdatedAt(v)
@@ -430,6 +529,11 @@ func (_u *PaymentUpdateOne) check() error {
 			return &ValidationError{Name: "provider", err: fmt.Errorf(`ent: validator failed for field "Payment.provider": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.WorkflowInstanceID(); ok {
+		if err := payment.WorkflowInstanceIDValidator(v); err != nil {
+			return &ValidationError{Name: "workflow_instance_id", err: fmt.Errorf(`ent: validator failed for field "Payment.workflow_instance_id": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -482,6 +586,18 @@ func (_u *PaymentUpdateOne) sqlSave(ctx context.Context) (_node *Payment, err er
 	}
 	if value, ok := _u.mutation.Provider(); ok {
 		_spec.SetField(payment.FieldProvider, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.WorkflowInstanceID(); ok {
+		_spec.SetField(payment.FieldWorkflowInstanceID, field.TypeString, value)
+	}
+	if _u.mutation.WorkflowInstanceIDCleared() {
+		_spec.ClearField(payment.FieldWorkflowInstanceID, field.TypeString)
+	}
+	if value, ok := _u.mutation.Attempt(); ok {
+		_spec.SetField(payment.FieldAttempt, field.TypeInt32, value)
+	}
+	if value, ok := _u.mutation.AddedAttempt(); ok {
+		_spec.AddField(payment.FieldAttempt, field.TypeInt32, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(payment.FieldUpdatedAt, field.TypeTime, value)

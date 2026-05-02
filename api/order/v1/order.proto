@@ -31,6 +31,17 @@ service OrderService {
       body: "*"
     };
   }
+  rpc Checkout(CheckoutRequest) returns (CheckoutResponse) {
+    option (google.api.http) = {
+      post: "/v1/orders/checkout"
+      body: "*"
+    };
+  }
+  rpc GetCheckoutStatus(GetCheckoutStatusRequest) returns (GetCheckoutStatusResponse) {
+    option (google.api.http) = {
+      get: "/v1/orders/checkout/{checkout_id}"
+    };
+  }
 }
 
 enum OrderStatus {
@@ -103,4 +114,29 @@ message UpdateOrderStatusRequest {
 
 message CancelOrderRequest {
   string id = 1;
+}
+
+message CheckoutRequest {
+  string idempotency_key = 1;
+  string user_id = 2;
+  string session_id = 3;
+  string currency = 4;
+  repeated OrderItem items = 5;
+}
+
+message CheckoutResponse {
+  string checkout_id = 1;
+  string order_id = 2;
+}
+
+message GetCheckoutStatusRequest {
+  string checkout_id = 1;
+}
+
+message GetCheckoutStatusResponse {
+  string state = 1;
+  string order_id = 2;
+  string payment_id = 3;
+  int32 attempts = 4;
+  string error = 5;
 }

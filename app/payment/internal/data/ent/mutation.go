@@ -31,22 +31,25 @@ const (
 // PaymentMutation represents an operation that mutates the Payment nodes in the graph.
 type PaymentMutation struct {
 	config
-	op              Op
-	typ             string
-	id              *uuid.UUID
-	order_id        *string
-	user_id         *string
-	amount_cents    *int64
-	addamount_cents *int64
-	currency        *string
-	status          *string
-	provider        *string
-	created_at      *time.Time
-	updated_at      *time.Time
-	clearedFields   map[string]struct{}
-	done            bool
-	oldValue        func(context.Context) (*Payment, error)
-	predicates      []predicate.Payment
+	op                   Op
+	typ                  string
+	id                   *uuid.UUID
+	order_id             *string
+	user_id              *string
+	amount_cents         *int64
+	addamount_cents      *int64
+	currency             *string
+	status               *string
+	provider             *string
+	workflow_instance_id *string
+	attempt              *int32
+	addattempt           *int32
+	created_at           *time.Time
+	updated_at           *time.Time
+	clearedFields        map[string]struct{}
+	done                 bool
+	oldValue             func(context.Context) (*Payment, error)
+	predicates           []predicate.Payment
 }
 
 var _ ent.Mutation = (*PaymentMutation)(nil)
@@ -389,6 +392,111 @@ func (m *PaymentMutation) ResetProvider() {
 	m.provider = nil
 }
 
+// SetWorkflowInstanceID sets the "workflow_instance_id" field.
+func (m *PaymentMutation) SetWorkflowInstanceID(s string) {
+	m.workflow_instance_id = &s
+}
+
+// WorkflowInstanceID returns the value of the "workflow_instance_id" field in the mutation.
+func (m *PaymentMutation) WorkflowInstanceID() (r string, exists bool) {
+	v := m.workflow_instance_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldWorkflowInstanceID returns the old "workflow_instance_id" field's value of the Payment entity.
+// If the Payment object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PaymentMutation) OldWorkflowInstanceID(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldWorkflowInstanceID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldWorkflowInstanceID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldWorkflowInstanceID: %w", err)
+	}
+	return oldValue.WorkflowInstanceID, nil
+}
+
+// ClearWorkflowInstanceID clears the value of the "workflow_instance_id" field.
+func (m *PaymentMutation) ClearWorkflowInstanceID() {
+	m.workflow_instance_id = nil
+	m.clearedFields[payment.FieldWorkflowInstanceID] = struct{}{}
+}
+
+// WorkflowInstanceIDCleared returns if the "workflow_instance_id" field was cleared in this mutation.
+func (m *PaymentMutation) WorkflowInstanceIDCleared() bool {
+	_, ok := m.clearedFields[payment.FieldWorkflowInstanceID]
+	return ok
+}
+
+// ResetWorkflowInstanceID resets all changes to the "workflow_instance_id" field.
+func (m *PaymentMutation) ResetWorkflowInstanceID() {
+	m.workflow_instance_id = nil
+	delete(m.clearedFields, payment.FieldWorkflowInstanceID)
+}
+
+// SetAttempt sets the "attempt" field.
+func (m *PaymentMutation) SetAttempt(i int32) {
+	m.attempt = &i
+	m.addattempt = nil
+}
+
+// Attempt returns the value of the "attempt" field in the mutation.
+func (m *PaymentMutation) Attempt() (r int32, exists bool) {
+	v := m.attempt
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAttempt returns the old "attempt" field's value of the Payment entity.
+// If the Payment object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PaymentMutation) OldAttempt(ctx context.Context) (v int32, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAttempt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAttempt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAttempt: %w", err)
+	}
+	return oldValue.Attempt, nil
+}
+
+// AddAttempt adds i to the "attempt" field.
+func (m *PaymentMutation) AddAttempt(i int32) {
+	if m.addattempt != nil {
+		*m.addattempt += i
+	} else {
+		m.addattempt = &i
+	}
+}
+
+// AddedAttempt returns the value that was added to the "attempt" field in this mutation.
+func (m *PaymentMutation) AddedAttempt() (r int32, exists bool) {
+	v := m.addattempt
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetAttempt resets all changes to the "attempt" field.
+func (m *PaymentMutation) ResetAttempt() {
+	m.attempt = nil
+	m.addattempt = nil
+}
+
 // SetCreatedAt sets the "created_at" field.
 func (m *PaymentMutation) SetCreatedAt(t time.Time) {
 	m.created_at = &t
@@ -495,7 +603,7 @@ func (m *PaymentMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *PaymentMutation) Fields() []string {
-	fields := make([]string, 0, 8)
+	fields := make([]string, 0, 10)
 	if m.order_id != nil {
 		fields = append(fields, payment.FieldOrderID)
 	}
@@ -513,6 +621,12 @@ func (m *PaymentMutation) Fields() []string {
 	}
 	if m.provider != nil {
 		fields = append(fields, payment.FieldProvider)
+	}
+	if m.workflow_instance_id != nil {
+		fields = append(fields, payment.FieldWorkflowInstanceID)
+	}
+	if m.attempt != nil {
+		fields = append(fields, payment.FieldAttempt)
 	}
 	if m.created_at != nil {
 		fields = append(fields, payment.FieldCreatedAt)
@@ -540,6 +654,10 @@ func (m *PaymentMutation) Field(name string) (ent.Value, bool) {
 		return m.Status()
 	case payment.FieldProvider:
 		return m.Provider()
+	case payment.FieldWorkflowInstanceID:
+		return m.WorkflowInstanceID()
+	case payment.FieldAttempt:
+		return m.Attempt()
 	case payment.FieldCreatedAt:
 		return m.CreatedAt()
 	case payment.FieldUpdatedAt:
@@ -565,6 +683,10 @@ func (m *PaymentMutation) OldField(ctx context.Context, name string) (ent.Value,
 		return m.OldStatus(ctx)
 	case payment.FieldProvider:
 		return m.OldProvider(ctx)
+	case payment.FieldWorkflowInstanceID:
+		return m.OldWorkflowInstanceID(ctx)
+	case payment.FieldAttempt:
+		return m.OldAttempt(ctx)
 	case payment.FieldCreatedAt:
 		return m.OldCreatedAt(ctx)
 	case payment.FieldUpdatedAt:
@@ -620,6 +742,20 @@ func (m *PaymentMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetProvider(v)
 		return nil
+	case payment.FieldWorkflowInstanceID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetWorkflowInstanceID(v)
+		return nil
+	case payment.FieldAttempt:
+		v, ok := value.(int32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAttempt(v)
+		return nil
 	case payment.FieldCreatedAt:
 		v, ok := value.(time.Time)
 		if !ok {
@@ -645,6 +781,9 @@ func (m *PaymentMutation) AddedFields() []string {
 	if m.addamount_cents != nil {
 		fields = append(fields, payment.FieldAmountCents)
 	}
+	if m.addattempt != nil {
+		fields = append(fields, payment.FieldAttempt)
+	}
 	return fields
 }
 
@@ -655,6 +794,8 @@ func (m *PaymentMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
 	case payment.FieldAmountCents:
 		return m.AddedAmountCents()
+	case payment.FieldAttempt:
+		return m.AddedAttempt()
 	}
 	return nil, false
 }
@@ -671,6 +812,13 @@ func (m *PaymentMutation) AddField(name string, value ent.Value) error {
 		}
 		m.AddAmountCents(v)
 		return nil
+	case payment.FieldAttempt:
+		v, ok := value.(int32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddAttempt(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Payment numeric field %s", name)
 }
@@ -678,7 +826,11 @@ func (m *PaymentMutation) AddField(name string, value ent.Value) error {
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
 func (m *PaymentMutation) ClearedFields() []string {
-	return nil
+	var fields []string
+	if m.FieldCleared(payment.FieldWorkflowInstanceID) {
+		fields = append(fields, payment.FieldWorkflowInstanceID)
+	}
+	return fields
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
@@ -691,6 +843,11 @@ func (m *PaymentMutation) FieldCleared(name string) bool {
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *PaymentMutation) ClearField(name string) error {
+	switch name {
+	case payment.FieldWorkflowInstanceID:
+		m.ClearWorkflowInstanceID()
+		return nil
+	}
 	return fmt.Errorf("unknown Payment nullable field %s", name)
 }
 
@@ -715,6 +872,12 @@ func (m *PaymentMutation) ResetField(name string) error {
 		return nil
 	case payment.FieldProvider:
 		m.ResetProvider()
+		return nil
+	case payment.FieldWorkflowInstanceID:
+		m.ResetWorkflowInstanceID()
+		return nil
+	case payment.FieldAttempt:
+		m.ResetAttempt()
 		return nil
 	case payment.FieldCreatedAt:
 		m.ResetCreatedAt()

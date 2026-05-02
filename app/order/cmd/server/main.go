@@ -4,7 +4,9 @@ import (
 	"flag"
 	"os"
 
+	"gomall/app/order/internal/biz"
 	"gomall/app/order/internal/conf"
+	"gomall/app/order/internal/server"
 	"gomall/pkg/outbox"
 	"gomall/pkg/secrets"
 
@@ -33,14 +35,14 @@ func init() {
 	flag.StringVar(&flagconf, "conf", "../../configs", "config path, eg: -conf config.yaml")
 }
 
-func newApp(logger log.Logger, gs *grpc.Server, hs *http.Server, ob *outbox.Client) *kratos.App {
+func newApp(logger log.Logger, gs *grpc.Server, hs *http.Server, ob *outbox.Client, ww *server.WorkflowWorker, ps *biz.PurgeService, rs *biz.ReconciliationService) *kratos.App {
 	return kratos.New(
 		kratos.ID(id),
 		kratos.Name(Name),
 		kratos.Version(Version),
 		kratos.Metadata(map[string]string{}),
 		kratos.Logger(logger),
-		kratos.Server(gs, hs),
+		kratos.Server(hs, gs, ww, ps, rs),
 		kratos.BeforeStart(ob.Start),
 		kratos.AfterStop(ob.Stop),
 	)
@@ -86,8 +88,12 @@ func main() {
 
 	sec := secrets.Parse(secret, "ORDER_DATABASE_CONNECTION_STRING")
 	bc.Data.Database.Source = sec.DatabaseConnectionString
+	if bc.Data.Workflow == nil {
+		bc.Data.Workflow = &conf.Data_Workflow{}
+	}
+	bc.Data.Workflow.WorkflowstoreConnectionString = sec.WorkflowstoreConnectionString
 
-	app, cleanup, err := wireApp(bc.Server, bc.Data, logger, daprClient)
+	app, cleanup, err := wireApp(bc.Server, bc.Data, bc.Saga, logger, daprClient)
 	if err != nil {
 		panic(err)
 	}

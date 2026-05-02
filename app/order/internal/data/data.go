@@ -26,6 +26,10 @@ var ProviderSet = wire.NewSet(
 	NewOutboxPublisher,
 	NewData,
 	NewOrderRepo,
+	NewIdempotencyKeyRepo,
+	NewWorkflowDeadLetterEventRepo,
+	NewCompletedWorkflowRepo,
+	NewReconciliationRepo,
 )
 
 type Data struct {
@@ -51,6 +55,17 @@ type outboxPub struct{ c *outbox.Client }
 
 func (a *outboxPub) Publish(ctx context.Context, tx biz.TxExecer, topic string, payload any) (string, error) {
 	return a.c.Publish(ctx, tx, topic, payload)
+}
+
+func (a *outboxPub) PublishWithOpts(ctx context.Context, tx biz.TxExecer, topic string, payload any, opts biz.OutboxPublishOpts) (string, error) {
+	var callOpts []outbox.PublishOption
+	if opts.MessageID != "" {
+		callOpts = append(callOpts, outbox.WithMessageID(opts.MessageID))
+	}
+	if len(opts.Headers) > 0 {
+		callOpts = append(callOpts, outbox.WithHeaders(opts.Headers))
+	}
+	return a.c.Publish(ctx, tx, topic, payload, callOpts...)
 }
 
 func NewOutboxPublisher(c *outbox.Client) biz.OutboxPublisher {

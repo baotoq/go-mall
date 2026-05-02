@@ -3,8 +3,11 @@
 package ent
 
 import (
+	"gomall/app/order/internal/data/ent/completedworkflow"
+	"gomall/app/order/internal/data/ent/idempotencykey"
 	"gomall/app/order/internal/data/ent/order"
 	"gomall/app/order/internal/data/ent/schema"
+	"gomall/app/order/internal/data/ent/workflowdeadletterevent"
 	"time"
 
 	"github.com/google/uuid"
@@ -14,6 +17,30 @@ import (
 // (default values, validators, hooks and policies) and stitches it
 // to their package variables.
 func init() {
+	completedworkflowFields := schema.CompletedWorkflow{}.Fields()
+	_ = completedworkflowFields
+	// completedworkflowDescTerminatedAt is the schema descriptor for terminated_at field.
+	completedworkflowDescTerminatedAt := completedworkflowFields[2].Descriptor()
+	// completedworkflow.DefaultTerminatedAt holds the default value on creation for the terminated_at field.
+	completedworkflow.DefaultTerminatedAt = completedworkflowDescTerminatedAt.Default.(func() time.Time)
+	idempotencykeyFields := schema.IdempotencyKey{}.Fields()
+	_ = idempotencykeyFields
+	// idempotencykeyDescKey is the schema descriptor for key field.
+	idempotencykeyDescKey := idempotencykeyFields[0].Descriptor()
+	// idempotencykey.KeyValidator is a validator for the "key" field. It is called by the builders before save.
+	idempotencykey.KeyValidator = idempotencykeyDescKey.Validators[0].(func(string) error)
+	// idempotencykeyDescResponseJSON is the schema descriptor for response_json field.
+	idempotencykeyDescResponseJSON := idempotencykeyFields[1].Descriptor()
+	// idempotencykey.ResponseJSONValidator is a validator for the "response_json" field. It is called by the builders before save.
+	idempotencykey.ResponseJSONValidator = idempotencykeyDescResponseJSON.Validators[0].(func(string) error)
+	// idempotencykeyDescUserID is the schema descriptor for user_id field.
+	idempotencykeyDescUserID := idempotencykeyFields[2].Descriptor()
+	// idempotencykey.UserIDValidator is a validator for the "user_id" field. It is called by the builders before save.
+	idempotencykey.UserIDValidator = idempotencykeyDescUserID.Validators[0].(func(string) error)
+	// idempotencykeyDescCreatedAt is the schema descriptor for created_at field.
+	idempotencykeyDescCreatedAt := idempotencykeyFields[3].Descriptor()
+	// idempotencykey.DefaultCreatedAt holds the default value on creation for the created_at field.
+	idempotencykey.DefaultCreatedAt = idempotencykeyDescCreatedAt.Default.(func() time.Time)
 	orderFields := schema.Order{}.Fields()
 	_ = orderFields
 	// orderDescUserID is the schema descriptor for user_id field.
@@ -44,12 +71,16 @@ func init() {
 	orderDescPaymentID := orderFields[7].Descriptor()
 	// order.PaymentIDValidator is a validator for the "payment_id" field. It is called by the builders before save.
 	order.PaymentIDValidator = orderDescPaymentID.Validators[0].(func(string) error)
+	// orderDescWorkflowInstanceID is the schema descriptor for workflow_instance_id field.
+	orderDescWorkflowInstanceID := orderFields[8].Descriptor()
+	// order.WorkflowInstanceIDValidator is a validator for the "workflow_instance_id" field. It is called by the builders before save.
+	order.WorkflowInstanceIDValidator = orderDescWorkflowInstanceID.Validators[0].(func(string) error)
 	// orderDescCreatedAt is the schema descriptor for created_at field.
-	orderDescCreatedAt := orderFields[8].Descriptor()
+	orderDescCreatedAt := orderFields[9].Descriptor()
 	// order.DefaultCreatedAt holds the default value on creation for the created_at field.
 	order.DefaultCreatedAt = orderDescCreatedAt.Default.(func() time.Time)
 	// orderDescUpdatedAt is the schema descriptor for updated_at field.
-	orderDescUpdatedAt := orderFields[9].Descriptor()
+	orderDescUpdatedAt := orderFields[10].Descriptor()
 	// order.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	order.DefaultUpdatedAt = orderDescUpdatedAt.Default.(func() time.Time)
 	// order.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
@@ -58,4 +89,26 @@ func init() {
 	orderDescID := orderFields[0].Descriptor()
 	// order.DefaultID holds the default value on creation for the id field.
 	order.DefaultID = orderDescID.Default.(func() uuid.UUID)
+	workflowdeadlettereventFields := schema.WorkflowDeadLetterEvent{}.Fields()
+	_ = workflowdeadlettereventFields
+	// workflowdeadlettereventDescTopic is the schema descriptor for topic field.
+	workflowdeadlettereventDescTopic := workflowdeadlettereventFields[1].Descriptor()
+	// workflowdeadletterevent.TopicValidator is a validator for the "topic" field. It is called by the builders before save.
+	workflowdeadletterevent.TopicValidator = workflowdeadlettereventDescTopic.Validators[0].(func(string) error)
+	// workflowdeadlettereventDescWorkflowInstanceID is the schema descriptor for workflow_instance_id field.
+	workflowdeadlettereventDescWorkflowInstanceID := workflowdeadlettereventFields[3].Descriptor()
+	// workflowdeadletterevent.WorkflowInstanceIDValidator is a validator for the "workflow_instance_id" field. It is called by the builders before save.
+	workflowdeadletterevent.WorkflowInstanceIDValidator = workflowdeadlettereventDescWorkflowInstanceID.Validators[0].(func(string) error)
+	// workflowdeadlettereventDescReason is the schema descriptor for reason field.
+	workflowdeadlettereventDescReason := workflowdeadlettereventFields[4].Descriptor()
+	// workflowdeadletterevent.ReasonValidator is a validator for the "reason" field. It is called by the builders before save.
+	workflowdeadletterevent.ReasonValidator = workflowdeadlettereventDescReason.Validators[0].(func(string) error)
+	// workflowdeadlettereventDescCreatedAt is the schema descriptor for created_at field.
+	workflowdeadlettereventDescCreatedAt := workflowdeadlettereventFields[5].Descriptor()
+	// workflowdeadletterevent.DefaultCreatedAt holds the default value on creation for the created_at field.
+	workflowdeadletterevent.DefaultCreatedAt = workflowdeadlettereventDescCreatedAt.Default.(func() time.Time)
+	// workflowdeadlettereventDescID is the schema descriptor for id field.
+	workflowdeadlettereventDescID := workflowdeadlettereventFields[0].Descriptor()
+	// workflowdeadletterevent.DefaultID holds the default value on creation for the id field.
+	workflowdeadletterevent.DefaultID = workflowdeadlettereventDescID.Default.(func() uuid.UUID)
 }

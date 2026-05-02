@@ -5,6 +5,11 @@ postgres:
     password: mall
     database: mall
   primary:
+    initdb:
+      scripts:
+        create_workflow_db.sql: |
+          CREATE DATABASE workflow;
+          GRANT ALL PRIVILEGES ON DATABASE workflow TO mall;
     persistence:
       enabled: false
     resources:

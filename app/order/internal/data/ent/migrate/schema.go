@@ -8,6 +8,48 @@ import (
 )
 
 var (
+	// CompletedWorkflowsColumns holds the columns for the "completed_workflows" table.
+	CompletedWorkflowsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "instance_id", Type: field.TypeString, Unique: true},
+		{Name: "terminal_state", Type: field.TypeString},
+		{Name: "terminated_at", Type: field.TypeTime},
+		{Name: "purged_at", Type: field.TypeTime, Nullable: true},
+	}
+	// CompletedWorkflowsTable holds the schema information for the "completed_workflows" table.
+	CompletedWorkflowsTable = &schema.Table{
+		Name:       "completed_workflows",
+		Columns:    CompletedWorkflowsColumns,
+		PrimaryKey: []*schema.Column{CompletedWorkflowsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "completedworkflow_purged_at",
+				Unique:  false,
+				Columns: []*schema.Column{CompletedWorkflowsColumns[4]},
+			},
+		},
+	}
+	// IdempotencyKeysColumns holds the columns for the "idempotency_keys" table.
+	IdempotencyKeysColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "key", Type: field.TypeString, Unique: true, Size: 255},
+		{Name: "response_json", Type: field.TypeString},
+		{Name: "user_id", Type: field.TypeString, Size: 128},
+		{Name: "created_at", Type: field.TypeTime},
+	}
+	// IdempotencyKeysTable holds the schema information for the "idempotency_keys" table.
+	IdempotencyKeysTable = &schema.Table{
+		Name:       "idempotency_keys",
+		Columns:    IdempotencyKeysColumns,
+		PrimaryKey: []*schema.Column{IdempotencyKeysColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "idempotencykey_key_user_id",
+				Unique:  false,
+				Columns: []*schema.Column{IdempotencyKeysColumns[1], IdempotencyKeysColumns[3]},
+			},
+		},
+	}
 	// OrdersColumns holds the columns for the "orders" table.
 	OrdersColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
@@ -18,6 +60,7 @@ var (
 		{Name: "currency", Type: field.TypeString, Size: 3, Default: "USD"},
 		{Name: "status", Type: field.TypeString, Size: 20, Default: "PENDING"},
 		{Name: "payment_id", Type: field.TypeString, Nullable: true, Size: 64},
+		{Name: "workflow_instance_id", Type: field.TypeString, Nullable: true, Size: 255},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
 	}
@@ -37,11 +80,51 @@ var (
 				Unique:  false,
 				Columns: []*schema.Column{OrdersColumns[6]},
 			},
+			{
+				Name:    "order_workflow_instance_id",
+				Unique:  true,
+				Columns: []*schema.Column{OrdersColumns[8]},
+			},
+		},
+	}
+	// WorkflowDeadLetterEventsColumns holds the columns for the "workflow_dead_letter_events" table.
+	WorkflowDeadLetterEventsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "topic", Type: field.TypeString, Size: 256},
+		{Name: "payload_json", Type: field.TypeBytes},
+		{Name: "workflow_instance_id", Type: field.TypeString, Size: 256},
+		{Name: "reason", Type: field.TypeString, Nullable: true, Size: 512},
+		{Name: "created_at", Type: field.TypeTime},
+	}
+	// WorkflowDeadLetterEventsTable holds the schema information for the "workflow_dead_letter_events" table.
+	WorkflowDeadLetterEventsTable = &schema.Table{
+		Name:       "workflow_dead_letter_events",
+		Columns:    WorkflowDeadLetterEventsColumns,
+		PrimaryKey: []*schema.Column{WorkflowDeadLetterEventsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "workflowdeadletterevent_topic",
+				Unique:  false,
+				Columns: []*schema.Column{WorkflowDeadLetterEventsColumns[1]},
+			},
+			{
+				Name:    "workflowdeadletterevent_workflow_instance_id",
+				Unique:  false,
+				Columns: []*schema.Column{WorkflowDeadLetterEventsColumns[3]},
+			},
+			{
+				Name:    "workflowdeadletterevent_workflow_instance_id_topic",
+				Unique:  true,
+				Columns: []*schema.Column{WorkflowDeadLetterEventsColumns[3], WorkflowDeadLetterEventsColumns[1]},
+			},
 		},
 	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
+		CompletedWorkflowsTable,
+		IdempotencyKeysTable,
 		OrdersTable,
+		WorkflowDeadLetterEventsTable,
 	}
 )
 

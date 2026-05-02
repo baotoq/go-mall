@@ -17,6 +17,8 @@ var (
 		{Name: "currency", Type: field.TypeString, Size: 3, Default: "USD"},
 		{Name: "status", Type: field.TypeString, Size: 20, Default: "PENDING"},
 		{Name: "provider", Type: field.TypeString, Size: 64},
+		{Name: "workflow_instance_id", Type: field.TypeString, Nullable: true, Size: 255},
+		{Name: "attempt", Type: field.TypeInt32, Default: 0},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
 	}
@@ -35,6 +37,16 @@ var (
 				Name:    "payment_user_id",
 				Unique:  false,
 				Columns: []*schema.Column{PaymentsColumns[2]},
+			},
+			{
+				Name:    "payment_workflow_instance_id",
+				Unique:  false,
+				Columns: []*schema.Column{PaymentsColumns[7]},
+			},
+			{
+				Name:    "payment_workflow_instance_id_attempt",
+				Unique:  true,
+				Columns: []*schema.Column{PaymentsColumns[7], PaymentsColumns[8]},
 			},
 		},
 	}

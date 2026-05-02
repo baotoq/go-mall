@@ -95,8 +95,26 @@ func (r *stubOrderRepo) MarkPaid(_ context.Context, id uuid.UUID, paymentID stri
 	return &cp, nil
 }
 
+func (r *stubOrderRepo) GetByWorkflowInstanceID(_ context.Context, workflowInstanceID string) (*biz.Order, bool, error) {
+	for _, o := range r.orders {
+		if o.WorkflowInstanceID == workflowInstanceID {
+			cp := *o
+			return &cp, true, nil
+		}
+	}
+	return nil, false, nil
+}
+
+func (r *stubOrderRepo) RunInTx(_ context.Context, fn func(biz.TxExecer) error) error {
+	return fn(nil)
+}
+
+func (s *stubOutbox) PublishWithOpts(_ context.Context, _ biz.TxExecer, _ string, _ any, _ biz.OutboxPublishOpts) (string, error) {
+	return "stub-id", nil
+}
+
 func newSvc(repo *stubOrderRepo) *service.OrderService {
-	return service.NewOrderService(biz.NewOrderUsecase(repo, &stubOutbox{}))
+	return service.NewOrderService(biz.NewOrderUsecase(repo, &stubOutbox{}), nil, nil)
 }
 
 func TestOrderService_CreateOrder_validatesEmptyItems(t *testing.T) {

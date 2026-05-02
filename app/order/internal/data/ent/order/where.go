@@ -85,6 +85,11 @@ func PaymentID(v string) predicate.Order {
 	return predicate.Order(sql.FieldEQ(FieldPaymentID, v))
 }
 
+// WorkflowInstanceID applies equality check predicate on the "workflow_instance_id" field. It's identical to WorkflowInstanceIDEQ.
+func WorkflowInstanceID(v string) predicate.Order {
+	return predicate.Order(sql.FieldEQ(FieldWorkflowInstanceID, v))
+}
+
 // CreatedAt applies equality check predicate on the "created_at" field. It's identical to CreatedAtEQ.
 func CreatedAt(v time.Time) predicate.Order {
 	return predicate.Order(sql.FieldEQ(FieldCreatedAt, v))
@@ -478,6 +483,81 @@ func PaymentIDEqualFold(v string) predicate.Order {
 // PaymentIDContainsFold applies the ContainsFold predicate on the "payment_id" field.
 func PaymentIDContainsFold(v string) predicate.Order {
 	return predicate.Order(sql.FieldContainsFold(FieldPaymentID, v))
+}
+
+// WorkflowInstanceIDEQ applies the EQ predicate on the "workflow_instance_id" field.
+func WorkflowInstanceIDEQ(v string) predicate.Order {
+	return predicate.Order(sql.FieldEQ(FieldWorkflowInstanceID, v))
+}
+
+// WorkflowInstanceIDNEQ applies the NEQ predicate on the "workflow_instance_id" field.
+func WorkflowInstanceIDNEQ(v string) predicate.Order {
+	return predicate.Order(sql.FieldNEQ(FieldWorkflowInstanceID, v))
+}
+
+// WorkflowInstanceIDIn applies the In predicate on the "workflow_instance_id" field.
+func WorkflowInstanceIDIn(vs ...string) predicate.Order {
+	return predicate.Order(sql.FieldIn(FieldWorkflowInstanceID, vs...))
+}
+
+// WorkflowInstanceIDNotIn applies the NotIn predicate on the "workflow_instance_id" field.
+func WorkflowInstanceIDNotIn(vs ...string) predicate.Order {
+	return predicate.Order(sql.FieldNotIn(FieldWorkflowInstanceID, vs...))
+}
+
+// WorkflowInstanceIDGT applies the GT predicate on the "workflow_instance_id" field.
+func WorkflowInstanceIDGT(v string) predicate.Order {
+	return predicate.Order(sql.FieldGT(FieldWorkflowInstanceID, v))
+}
+
+// WorkflowInstanceIDGTE applies the GTE predicate on the "workflow_instance_id" field.
+func WorkflowInstanceIDGTE(v string) predicate.Order {
+	return predicate.Order(sql.FieldGTE(FieldWorkflowInstanceID, v))
+}
+
+// WorkflowInstanceIDLT applies the LT predicate on the "workflow_instance_id" field.
+func WorkflowInstanceIDLT(v string) predicate.Order {
+	return predicate.Order(sql.FieldLT(FieldWorkflowInstanceID, v))
+}
+
+// WorkflowInstanceIDLTE applies the LTE predicate on the "workflow_instance_id" field.
+func WorkflowInstanceIDLTE(v string) predicate.Order {
+	return predicate.Order(sql.FieldLTE(FieldWorkflowInstanceID, v))
+}
+
+// WorkflowInstanceIDContains applies the Contains predicate on the "workflow_instance_id" field.
+func WorkflowInstanceIDContains(v string) predicate.Order {
+	return predicate.Order(sql.FieldContains(FieldWorkflowInstanceID, v))
+}
+
+// WorkflowInstanceIDHasPrefix applies the HasPrefix predicate on the "workflow_instance_id" field.
+func WorkflowInstanceIDHasPrefix(v string) predicate.Order {
+	return predicate.Order(sql.FieldHasPrefix(FieldWorkflowInstanceID, v))
+}
+
+// WorkflowInstanceIDHasSuffix applies the HasSuffix predicate on the "workflow_instance_id" field.
+func WorkflowInstanceIDHasSuffix(v string) predicate.Order {
+	return predicate.Order(sql.FieldHasSuffix(FieldWorkflowInstanceID, v))
+}
+
+// WorkflowInstanceIDIsNil applies the IsNil predicate on the "workflow_instance_id" field.
+func WorkflowInstanceIDIsNil() predicate.Order {
+	return predicate.Order(sql.FieldIsNull(FieldWorkflowInstanceID))
+}
+
+// WorkflowInstanceIDNotNil applies the NotNil predicate on the "workflow_instance_id" field.
+func WorkflowInstanceIDNotNil() predicate.Order {
+	return predicate.Order(sql.FieldNotNull(FieldWorkflowInstanceID))
+}
+
+// WorkflowInstanceIDEqualFold applies the EqualFold predicate on the "workflow_instance_id" field.
+func WorkflowInstanceIDEqualFold(v string) predicate.Order {
+	return predicate.Order(sql.FieldEqualFold(FieldWorkflowInstanceID, v))
+}
+
+// WorkflowInstanceIDContainsFold applies the ContainsFold predicate on the "workflow_instance_id" field.
+func WorkflowInstanceIDContainsFold(v string) predicate.Order {
+	return predicate.Order(sql.FieldContainsFold(FieldWorkflowInstanceID, v))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.

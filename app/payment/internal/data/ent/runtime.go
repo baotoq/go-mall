@@ -44,12 +44,20 @@ func init() {
 	paymentDescProvider := paymentFields[6].Descriptor()
 	// payment.ProviderValidator is a validator for the "provider" field. It is called by the builders before save.
 	payment.ProviderValidator = paymentDescProvider.Validators[0].(func(string) error)
+	// paymentDescWorkflowInstanceID is the schema descriptor for workflow_instance_id field.
+	paymentDescWorkflowInstanceID := paymentFields[7].Descriptor()
+	// payment.WorkflowInstanceIDValidator is a validator for the "workflow_instance_id" field. It is called by the builders before save.
+	payment.WorkflowInstanceIDValidator = paymentDescWorkflowInstanceID.Validators[0].(func(string) error)
+	// paymentDescAttempt is the schema descriptor for attempt field.
+	paymentDescAttempt := paymentFields[8].Descriptor()
+	// payment.DefaultAttempt holds the default value on creation for the attempt field.
+	payment.DefaultAttempt = paymentDescAttempt.Default.(int32)
 	// paymentDescCreatedAt is the schema descriptor for created_at field.
-	paymentDescCreatedAt := paymentFields[7].Descriptor()
+	paymentDescCreatedAt := paymentFields[9].Descriptor()
 	// payment.DefaultCreatedAt holds the default value on creation for the created_at field.
 	payment.DefaultCreatedAt = paymentDescCreatedAt.Default.(func() time.Time)
 	// paymentDescUpdatedAt is the schema descriptor for updated_at field.
-	paymentDescUpdatedAt := paymentFields[8].Descriptor()
+	paymentDescUpdatedAt := paymentFields[10].Descriptor()
 	// payment.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	payment.DefaultUpdatedAt = paymentDescUpdatedAt.Default.(func() time.Time)
 	// payment.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.

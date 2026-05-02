@@ -40,7 +40,7 @@ cd app/catalog && go test -v -run TestFunctionName ./internal/...
 | `order` | Order lifecycle (PENDING→PAID→SHIPPED→DELIVERED/CANCELLED); items stored as denormalized JSON | ent + Postgres | none |
 | `payment` | Payment record ledger; status machine (PENDING→COMPLETED→REFUNDED/FAILED) | ent + Postgres | none |
 
-**Cross-service calls:** none. Services do not call each other via gRPC or HTTP. Product data is not validated on order creation; cart prices come from the caller and are not checked against catalog.
+**Cross-service calls:** The `app/web` Next.js frontend acts as a BFF orchestrator for the UCP checkout layer and makes cross-service HTTP calls: `GET http://localhost:8002/v1/carts/:sessionId` (cart) and `POST http://localhost:8004/v1/orders` (order). Go services themselves do not call each other. Product data is not validated on order creation; cart prices come from the caller and are not checked against catalog.
 
 **catalog-only notes:**
 - Read operations (List/Get products and categories) are public; write operations require JWT.

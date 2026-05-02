@@ -1,10 +1,10 @@
 "use client";
 
-import { ShoppingCart, Check } from "lucide-react";
+import { Check, ShoppingCart } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { useCartStore } from "@/store/cart";
 import type { Product } from "@/lib/types";
+import { useCartStore } from "@/store/cart";
 
 export function AddToCartButton({ product }: { product: Product }) {
   const [added, setAdded] = useState(false);

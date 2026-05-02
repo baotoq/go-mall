@@ -4,6 +4,7 @@ import (
 	v1 "gomall/api/payment/v1"
 	"gomall/app/payment/internal/conf"
 	"gomall/app/payment/internal/service"
+	pkgdapr "gomall/pkg/dapr"
 	pkgserver "gomall/pkg/server"
 
 	"github.com/MicahParks/keyfunc/v3"
@@ -15,7 +16,7 @@ import (
 	jwtv5 "github.com/golang-jwt/jwt/v5"
 )
 
-func NewHTTPServer(c *conf.Server, auth *conf.Auth, payment *service.PaymentService, logger log.Logger) *http.Server {
+func NewHTTPServer(c *conf.Server, auth *conf.Auth, payment *service.PaymentService, sub *PaymentSubscriber, logger log.Logger) *http.Server {
 	mw := []middleware.Middleware{recovery.Recovery()}
 	if auth.JwksURL != "" {
 		jwks, err := keyfunc.NewDefault([]string{auth.JwksURL})
@@ -39,5 +40,7 @@ func NewHTTPServer(c *conf.Server, auth *conf.Auth, payment *service.PaymentServ
 	srv := http.NewServer(opts...)
 	v1.RegisterPaymentServiceHTTPServer(srv, payment)
 	srv.HandleFunc("/healthz", pkgserver.Healthz)
+	srv.HandleFunc("/dapr/subscribe", pkgdapr.LoopbackOnly(pkgdapr.SubscribeHandler(sub.Subscriptions())))
+	sub.Register(srv)
 	return srv
 }

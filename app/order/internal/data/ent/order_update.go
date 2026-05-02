@@ -145,6 +145,26 @@ func (_u *OrderUpdate) ClearPaymentID() *OrderUpdate {
 	return _u
 }
 
+// SetWorkflowInstanceID sets the "workflow_instance_id" field.
+func (_u *OrderUpdate) SetWorkflowInstanceID(v string) *OrderUpdate {
+	_u.mutation.SetWorkflowInstanceID(v)
+	return _u
+}
+
+// SetNillableWorkflowInstanceID sets the "workflow_instance_id" field if the given value is not nil.
+func (_u *OrderUpdate) SetNillableWorkflowInstanceID(v *string) *OrderUpdate {
+	if v != nil {
+		_u.SetWorkflowInstanceID(*v)
+	}
+	return _u
+}
+
+// ClearWorkflowInstanceID clears the value of the "workflow_instance_id" field.
+func (_u *OrderUpdate) ClearWorkflowInstanceID() *OrderUpdate {
+	_u.mutation.ClearWorkflowInstanceID()
+	return _u
+}
+
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *OrderUpdate) SetUpdatedAt(v time.Time) *OrderUpdate {
 	_u.mutation.SetUpdatedAt(v)
@@ -219,6 +239,11 @@ func (_u *OrderUpdate) check() error {
 			return &ValidationError{Name: "payment_id", err: fmt.Errorf(`ent: validator failed for field "Order.payment_id": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.WorkflowInstanceID(); ok {
+		if err := order.WorkflowInstanceIDValidator(v); err != nil {
+			return &ValidationError{Name: "workflow_instance_id", err: fmt.Errorf(`ent: validator failed for field "Order.workflow_instance_id": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -268,6 +293,12 @@ func (_u *OrderUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.PaymentIDCleared() {
 		_spec.ClearField(order.FieldPaymentID, field.TypeString)
+	}
+	if value, ok := _u.mutation.WorkflowInstanceID(); ok {
+		_spec.SetField(order.FieldWorkflowInstanceID, field.TypeString, value)
+	}
+	if _u.mutation.WorkflowInstanceIDCleared() {
+		_spec.ClearField(order.FieldWorkflowInstanceID, field.TypeString)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(order.FieldUpdatedAt, field.TypeTime, value)
@@ -407,6 +438,26 @@ func (_u *OrderUpdateOne) ClearPaymentID() *OrderUpdateOne {
 	return _u
 }
 
+// SetWorkflowInstanceID sets the "workflow_instance_id" field.
+func (_u *OrderUpdateOne) SetWorkflowInstanceID(v string) *OrderUpdateOne {
+	_u.mutation.SetWorkflowInstanceID(v)
+	return _u
+}
+
+// SetNillableWorkflowInstanceID sets the "workflow_instance_id" field if the given value is not nil.
+func (_u *OrderUpdateOne) SetNillableWorkflowInstanceID(v *string) *OrderUpdateOne {
+	if v != nil {
+		_u.SetWorkflowInstanceID(*v)
+	}
+	return _u
+}
+
+// ClearWorkflowInstanceID clears the value of the "workflow_instance_id" field.
+func (_u *OrderUpdateOne) ClearWorkflowInstanceID() *OrderUpdateOne {
+	_u.mutation.ClearWorkflowInstanceID()
+	return _u
+}
+
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *OrderUpdateOne) SetUpdatedAt(v time.Time) *OrderUpdateOne {
 	_u.mutation.SetUpdatedAt(v)
@@ -494,6 +545,11 @@ func (_u *OrderUpdateOne) check() error {
 			return &ValidationError{Name: "payment_id", err: fmt.Errorf(`ent: validator failed for field "Order.payment_id": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.WorkflowInstanceID(); ok {
+		if err := order.WorkflowInstanceIDValidator(v); err != nil {
+			return &ValidationError{Name: "workflow_instance_id", err: fmt.Errorf(`ent: validator failed for field "Order.workflow_instance_id": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -560,6 +616,12 @@ func (_u *OrderUpdateOne) sqlSave(ctx context.Context) (_node *Order, err error)
 	}
 	if _u.mutation.PaymentIDCleared() {
 		_spec.ClearField(order.FieldPaymentID, field.TypeString)
+	}
+	if value, ok := _u.mutation.WorkflowInstanceID(); ok {
+		_spec.SetField(order.FieldWorkflowInstanceID, field.TypeString, value)
+	}
+	if _u.mutation.WorkflowInstanceIDCleared() {
+		_spec.ClearField(order.FieldWorkflowInstanceID, field.TypeString)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(order.FieldUpdatedAt, field.TypeTime, value)
