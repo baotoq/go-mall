@@ -9,8 +9,28 @@ export function initStore(): void {
 // Eagerly initialize on module load so dynamic import() rejects in production
 initStore();
 
-const sessions = new Map<string, CheckoutSession>();
-const idempotency = new Map<string, IdempotencyEntry>();
+// Survive Next.js dev HMR: route module reloads must not duplicate the
+// session/idempotency Maps or stack a new setInterval on every reload.
+type StoreSingleton = {
+  sessions: Map<string, CheckoutSession>;
+  idempotency: Map<string, IdempotencyEntry>;
+  intervalId?: NodeJS.Timeout;
+};
+
+declare global {
+  // eslint-disable-next-line no-var
+  var __UCP_STORE__: StoreSingleton | undefined;
+}
+
+const store: StoreSingleton =
+  globalThis.__UCP_STORE__ ??
+  (globalThis.__UCP_STORE__ = {
+    sessions: new Map(),
+    idempotency: new Map(),
+  });
+
+const sessions = store.sessions;
+const idempotency = store.idempotency;
 
 export function getSession(id: string): CheckoutSession | null {
   const session = sessions.get(id);
@@ -27,30 +47,35 @@ export function setSession(id: string, session: CheckoutSession): void {
 }
 
 export function getIdempotency(key: string): IdempotencyEntry | null {
-  const entry = idempotency.get(`idempotency:${key}`);
+  const entry = idempotency.get(key);
   if (!entry) return null;
   if (entry.expires_at < Date.now()) {
-    idempotency.delete(`idempotency:${key}`);
+    idempotency.delete(key);
     return null;
   }
   return entry;
 }
 
 export function setIdempotency(key: string, entry: IdempotencyEntry): void {
-  idempotency.set(`idempotency:${key}`, entry);
+  idempotency.set(key, entry);
 }
 
-// Periodic eviction every 60s (only in non-production)
-setInterval(() => {
-  const now = Date.now();
-  for (const [id, session] of sessions) {
-    if (new Date(session.expires_at).getTime() < now) {
-      sessions.delete(id);
+// Periodic eviction every 60s, only registered once per process even
+// across HMR reloads.
+if (!store.intervalId) {
+  const id = setInterval(() => {
+    const now = Date.now();
+    for (const [id, session] of sessions) {
+      if (new Date(session.expires_at).getTime() < now) {
+        sessions.delete(id);
+      }
     }
-  }
-  for (const [key, entry] of idempotency) {
-    if (entry.expires_at < now) {
-      idempotency.delete(key);
+    for (const [key, entry] of idempotency) {
+      if (entry.expires_at < now) {
+        idempotency.delete(key);
+      }
     }
-  }
-}, 60_000).unref();
+  }, 60_000);
+  id.unref();
+  store.intervalId = id;
+}
