@@ -85,9 +85,9 @@ export async function createKeycloakUser(
     },
     body: JSON.stringify({
       email,
-      username: email,
+      username: crypto.randomUUID(),
       enabled: true,
-      emailVerified: false,
+      emailVerified: true,
     }),
   });
   if (createRes.status === 409) throw new Error("UserAlreadyExists");

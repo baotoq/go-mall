@@ -42,3 +42,4 @@ deploy/helm/tmpcharts/
 .worktrees/
 .claude/worktrees/
 .omc/
+.playwright-mcp/

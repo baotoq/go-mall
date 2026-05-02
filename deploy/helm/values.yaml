@@ -28,9 +28,9 @@ keycloak:
   resources:
     requests:
       cpu: 100m
-      memory: 128Mi
+      memory: 512Mi
     limits:
-      memory: 384Mi
+      memory: 768Mi
 
 redis:
   fullnameOverride: redis
