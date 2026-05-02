@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 export function CartClient() {
   const {
     items,
+    isLoading,
     removeItem,
     updateQuantity,
     totalItems,
@@ -20,6 +21,29 @@ export function CartClient() {
   useEffect(() => {
     loadCart();
   }, [loadCart]);
+
+  if (isLoading) {
+    return (
+      <div className="flex-1 py-8 px-4">
+        <div className="mx-auto max-w-3xl space-y-4">
+          {[1, 2, 3].map((i) => (
+            <div
+              key={i}
+              className="flex items-center gap-4 rounded-xl border bg-card p-4 animate-pulse"
+            >
+              <div className="size-16 rounded-lg bg-muted shrink-0" />
+              <div className="flex-1 space-y-2">
+                <div className="h-4 w-40 rounded bg-muted" />
+                <div className="h-3 w-20 rounded bg-muted" />
+              </div>
+              <div className="h-8 w-24 rounded bg-muted" />
+              <div className="h-4 w-16 rounded bg-muted" />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   if (items.length === 0) {
     return (

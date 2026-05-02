@@ -84,22 +84,22 @@ const CART_API_URL =
 function mapCartItem(raw: Record<string, unknown>): CartItemData {
   return {
     id: String(raw.id ?? ""),
-    productId: String(raw.product_id ?? ""),
+    productId: String(raw.productId ?? ""),
     name: String(raw.name ?? ""),
-    priceCents: Number(raw.price_cents ?? 0),
+    priceCents: Number(raw.priceCents ?? 0),
     currency: String(raw.currency ?? "USD"),
-    imageUrl: String(raw.image_url ?? ""),
+    imageUrl: String(raw.imageUrl ?? ""),
     quantity: Number(raw.quantity ?? 0),
-    subtotalCents: Number(raw.subtotal_cents ?? 0),
+    subtotalCents: Number(raw.subtotalCents ?? 0),
   };
 }
 
 function mapCart(raw: Record<string, unknown>): CartData {
   return {
     id: String(raw.id ?? ""),
-    sessionId: String(raw.session_id ?? ""),
+    sessionId: String(raw.sessionId ?? ""),
     items: ((raw.items ?? []) as Record<string, unknown>[]).map(mapCartItem),
-    totalCents: Number(raw.total_cents ?? 0),
+    totalCents: Number(raw.totalCents ?? 0),
   };
 }
 

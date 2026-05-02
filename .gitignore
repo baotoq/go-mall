@@ -41,5 +41,6 @@ deploy/helm/tmpcharts/
 # Git worktrees
 .worktrees/
 .claude/worktrees/
-.omc/
+**/.omc/*
+!.omc/plans
 .playwright-mcp/

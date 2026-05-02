@@ -30,6 +30,7 @@ function getSessionId(): string {
 
 interface CartStore {
   items: CartItem[];
+  isLoading: boolean;
   addItem: (item: Omit<CartItem, "quantity">) => void;
   removeItem: (id: string) => void;
   updateQuantity: (id: string, quantity: number) => void;
@@ -42,6 +43,7 @@ interface CartStore {
 
 export const useCartStore = create<CartStore>((set, get) => ({
   items: [],
+  isLoading: true,
   addItem: (item) => {
     set((state) => {
       const existing = state.items.find((i) => i.id === item.id);
@@ -96,8 +98,12 @@ export const useCartStore = create<CartStore>((set, get) => ({
   },
   loadCart: async () => {
     const sessionId = getSessionId();
-    const cart = await getCart(sessionId);
-    if (cart) get().syncFromBackend(cart);
+    try {
+      const cart = await getCart(sessionId);
+      if (cart) get().syncFromBackend(cart);
+    } finally {
+      set({ isLoading: false });
+    }
   },
   syncFromBackend: (cart: CartData) => {
     set({
