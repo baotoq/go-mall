@@ -3,13 +3,20 @@ package biz
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"strings"
 
+	"github.com/dapr/durabletask-go/api/protos"
 	"github.com/dapr/durabletask-go/workflow"
 	"github.com/go-kratos/kratos/v2/log"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
+
+// ErrCheckoutMissingKey is returned when Schedule is called without an
+// idempotency_key. Service-layer validators should catch this earlier; the
+// biz-layer guard exists for direct callers (tests, future internal flows).
+var ErrCheckoutMissingKey = errors.New("checkout: idempotency_key required")
 
 // IdempotencyKeyRepo persists checkout idempotency keys so that duplicate
 // Schedule calls with the same key + same user return the previously scheduled
@@ -62,7 +69,7 @@ func NewCheckoutUsecase(
 //  4. Store new entry on success.
 func (uc *CheckoutUsecase) Schedule(ctx context.Context, in CheckoutInput) (checkoutID, orderID string, err error) {
 	if in.IdempotencyKey == "" {
-		return "", "", ErrOrderEmptyItems // placeholder; service layer validates UUID format
+		return "", "", ErrCheckoutMissingKey
 	}
 
 	// 1. Check idempotency-key store.
@@ -110,17 +117,39 @@ func (uc *CheckoutUsecase) Schedule(ctx context.Context, in CheckoutInput) (chec
 	return id, "", nil
 }
 
-// fetchExisting retrieves the checkout_id and (empty) order_id for an already-
-// scheduled workflow instance.
+// fetchExisting retrieves the checkout_id and order_id for an already-scheduled
+// workflow instance. When the stored entry has an empty OrderID (e.g. the
+// activity that produces it had not yet completed at Put time), this falls
+// back to the workflow's own metadata to recover the order_id from the saga's
+// CheckoutResult output, then refreshes the idempotency-key store best-effort
+// so subsequent Get calls return it directly.
 func (uc *CheckoutUsecase) fetchExisting(ctx context.Context, idemKey string) (checkoutID, orderID string, err error) {
+	var stored StoredCheckout
+	hit := false
 	if uc.idemRepo != nil {
-		stored, hit, gerr := uc.idemRepo.Get(ctx, idemKey)
-		if gerr == nil && hit {
+		var gerr error
+		stored, hit, gerr = uc.idemRepo.Get(ctx, idemKey)
+		if gerr == nil && hit && stored.OrderID != "" {
 			return stored.CheckoutID, stored.OrderID, nil
 		}
 	}
-	// Fall back to the workflow instance ID itself.
-	return idemKey, "", nil
+
+	// Try to recover OrderID from the workflow's own output.
+	checkoutID = idemKey
+	if hit {
+		checkoutID = stored.CheckoutID
+	}
+	if uc.wfc != nil {
+		if res, statusErr := uc.Status(ctx, checkoutID); statusErr == nil && res.OrderID != "" {
+			orderID = res.OrderID
+			if uc.idemRepo != nil && hit {
+				stored.OrderID = orderID
+				_ = uc.idemRepo.Put(ctx, idemKey, stored)
+			}
+			return checkoutID, orderID, nil
+		}
+	}
+	return checkoutID, "", nil
 }
 
 // Status fetches the current state of a checkout workflow.
@@ -146,13 +175,34 @@ func (uc *CheckoutUsecase) Status(ctx context.Context, checkoutID string) (Check
 	return result, nil
 }
 
-// workflowStateString maps a Dapr workflow runtime status to a CheckoutResult
-// state string.
+// workflowStateString maps a Dapr workflow runtime status to a clean
+// CheckoutResult state string.
 func workflowStateString(meta *workflow.WorkflowMetadata) string {
 	if meta == nil {
 		return "UNKNOWN"
 	}
-	return meta.String()
+	switch meta.RuntimeStatus {
+	case protos.OrchestrationStatus_ORCHESTRATION_STATUS_RUNNING:
+		return "RUNNING"
+	case protos.OrchestrationStatus_ORCHESTRATION_STATUS_COMPLETED:
+		return "COMPLETED"
+	case protos.OrchestrationStatus_ORCHESTRATION_STATUS_FAILED:
+		return "FAILED"
+	case protos.OrchestrationStatus_ORCHESTRATION_STATUS_CANCELED:
+		return "CANCELED"
+	case protos.OrchestrationStatus_ORCHESTRATION_STATUS_TERMINATED:
+		return "TERMINATED"
+	case protos.OrchestrationStatus_ORCHESTRATION_STATUS_PENDING:
+		return "PENDING"
+	case protos.OrchestrationStatus_ORCHESTRATION_STATUS_SUSPENDED:
+		return "SUSPENDED"
+	case protos.OrchestrationStatus_ORCHESTRATION_STATUS_CONTINUED_AS_NEW:
+		return "CONTINUED_AS_NEW"
+	case protos.OrchestrationStatus_ORCHESTRATION_STATUS_STALLED:
+		return "STALLED"
+	default:
+		return "UNKNOWN"
+	}
 }
 
 // unwrapAll walks the error chain to find the deepest wrapped error, which is

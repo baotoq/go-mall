@@ -47,4 +47,6 @@ message Saga {
   int32 mark_paid_retry_max = 6;
   google.protobuf.Duration mark_paid_budget = 7;
   google.protobuf.Duration drain_timeout = 8;
+  google.protobuf.Duration purge_interval = 9;
+  google.protobuf.Duration reconcile_interval = 10;
 }

@@ -26,5 +26,9 @@ func (WorkflowDeadLetterEvent) Indexes() []ent.Index {
 	return []ent.Index{
 		index.Fields("topic"),
 		index.Fields("workflow_instance_id"),
+		// UNIQUE on (workflow_instance_id, topic) bounds DLQ row growth from
+		// crafted orphan events: at most one row per (workflow, topic) pair.
+		// Insert path uses ON CONFLICT DO NOTHING for idempotency.
+		index.Fields("workflow_instance_id", "topic").Unique(),
 	}
 }

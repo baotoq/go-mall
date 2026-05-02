@@ -36,9 +36,15 @@ type PurgeService struct {
 	cancel   context.CancelFunc
 }
 
-// NewPurgeService constructs a PurgeService.
+// NewPurgeService constructs a PurgeService. The tick interval is read from
+// conf.Saga.PurgeInterval; a missing or zero value falls back to 6h.
 func NewPurgeService(wfc *workflow.Client, repo CompletedWorkflowRepo, sagaCfg *conf.Saga, logger log.Logger) *PurgeService {
 	interval := 6 * time.Hour
+	if sagaCfg != nil && sagaCfg.PurgeInterval != nil {
+		if d := sagaCfg.PurgeInterval.AsDuration(); d > 0 {
+			interval = d
+		}
+	}
 	return &PurgeService{
 		wfc:      wfc,
 		repo:     repo,

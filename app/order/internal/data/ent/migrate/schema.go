@@ -106,6 +106,11 @@ var (
 				Unique:  false,
 				Columns: []*schema.Column{WorkflowDeadLetterEventsColumns[3]},
 			},
+			{
+				Name:    "workflowdeadletterevent_workflow_instance_id_topic",
+				Unique:  true,
+				Columns: []*schema.Column{WorkflowDeadLetterEventsColumns[3], WorkflowDeadLetterEventsColumns[1]},
+			},
 		},
 	}
 	// Tables holds all the tables in the schema.

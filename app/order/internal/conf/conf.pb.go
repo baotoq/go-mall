@@ -196,6 +196,8 @@ type Saga struct {
 	MarkPaidRetryMax    int32                  `protobuf:"varint,6,opt,name=mark_paid_retry_max,json=markPaidRetryMax,proto3" json:"mark_paid_retry_max,omitempty"`
 	MarkPaidBudget      *durationpb.Duration   `protobuf:"bytes,7,opt,name=mark_paid_budget,json=markPaidBudget,proto3" json:"mark_paid_budget,omitempty"`
 	DrainTimeout        *durationpb.Duration   `protobuf:"bytes,8,opt,name=drain_timeout,json=drainTimeout,proto3" json:"drain_timeout,omitempty"`
+	PurgeInterval       *durationpb.Duration   `protobuf:"bytes,9,opt,name=purge_interval,json=purgeInterval,proto3" json:"purge_interval,omitempty"`
+	ReconcileInterval   *durationpb.Duration   `protobuf:"bytes,10,opt,name=reconcile_interval,json=reconcileInterval,proto3" json:"reconcile_interval,omitempty"`
 	unknownFields       protoimpl.UnknownFields
 	sizeCache           protoimpl.SizeCache
 }
@@ -282,6 +284,20 @@ func (x *Saga) GetMarkPaidBudget() *durationpb.Duration {
 func (x *Saga) GetDrainTimeout() *durationpb.Duration {
 	if x != nil {
 		return x.DrainTimeout
+	}
+	return nil
+}
+
+func (x *Saga) GetPurgeInterval() *durationpb.Duration {
+	if x != nil {
+		return x.PurgeInterval
+	}
+	return nil
+}
+
+func (x *Saga) GetReconcileInterval() *durationpb.Duration {
+	if x != nil {
+		return x.ReconcileInterval
 	}
 	return nil
 }
@@ -530,7 +546,7 @@ const file_app_order_internal_conf_conf_proto_rawDesc = "" +
 	"\x06driver\x18\x01 \x01(\tR\x06driver\x12\x16\n" +
 	"\x06source\x18\x02 \x01(\tR\x06source\x1aR\n" +
 	"\bWorkflow\x12F\n" +
-	"\x1fworkflowstore_connection_string\x18\x01 \x01(\tR\x1dworkflowstoreConnectionString\"\xeb\x03\n" +
+	"\x1fworkflowstore_connection_string\x18\x01 \x01(\tR\x1dworkflowstoreConnectionString\"\xf7\x04\n" +
 	"\x04Saga\x12\x18\n" +
 	"\aenabled\x18\x01 \x01(\bR\aenabled\x120\n" +
 	"\x14max_payment_attempts\x18\x02 \x01(\x05R\x12maxPaymentAttempts\x12I\n" +
@@ -539,7 +555,10 @@ const file_app_order_internal_conf_conf_proto_rawDesc = "" +
 	"\x13payment_backoff_max\x18\x05 \x01(\v2\x19.google.protobuf.DurationR\x11paymentBackoffMax\x12-\n" +
 	"\x13mark_paid_retry_max\x18\x06 \x01(\x05R\x10markPaidRetryMax\x12C\n" +
 	"\x10mark_paid_budget\x18\a \x01(\v2\x19.google.protobuf.DurationR\x0emarkPaidBudget\x12>\n" +
-	"\rdrain_timeout\x18\b \x01(\v2\x19.google.protobuf.DurationR\fdrainTimeoutB%Z#gomall/app/order/internal/conf;confb\x06proto3"
+	"\rdrain_timeout\x18\b \x01(\v2\x19.google.protobuf.DurationR\fdrainTimeout\x12@\n" +
+	"\x0epurge_interval\x18\t \x01(\v2\x19.google.protobuf.DurationR\rpurgeInterval\x12H\n" +
+	"\x12reconcile_interval\x18\n" +
+	" \x01(\v2\x19.google.protobuf.DurationR\x11reconcileIntervalB%Z#gomall/app/order/internal/conf;confb\x06proto3"
 
 var (
 	file_app_order_internal_conf_conf_proto_rawDescOnce sync.Once
@@ -578,13 +597,15 @@ var file_app_order_internal_conf_conf_proto_depIdxs = []int32{
 	8,  // 9: order.conf.Saga.payment_backoff_max:type_name -> google.protobuf.Duration
 	8,  // 10: order.conf.Saga.mark_paid_budget:type_name -> google.protobuf.Duration
 	8,  // 11: order.conf.Saga.drain_timeout:type_name -> google.protobuf.Duration
-	8,  // 12: order.conf.Server.HTTP.timeout:type_name -> google.protobuf.Duration
-	8,  // 13: order.conf.Server.GRPC.timeout:type_name -> google.protobuf.Duration
-	14, // [14:14] is the sub-list for method output_type
-	14, // [14:14] is the sub-list for method input_type
-	14, // [14:14] is the sub-list for extension type_name
-	14, // [14:14] is the sub-list for extension extendee
-	0,  // [0:14] is the sub-list for field type_name
+	8,  // 12: order.conf.Saga.purge_interval:type_name -> google.protobuf.Duration
+	8,  // 13: order.conf.Saga.reconcile_interval:type_name -> google.protobuf.Duration
+	8,  // 14: order.conf.Server.HTTP.timeout:type_name -> google.protobuf.Duration
+	8,  // 15: order.conf.Server.GRPC.timeout:type_name -> google.protobuf.Duration
+	16, // [16:16] is the sub-list for method output_type
+	16, // [16:16] is the sub-list for method input_type
+	16, // [16:16] is the sub-list for extension type_name
+	16, // [16:16] is the sub-list for extension extendee
+	0,  // [0:16] is the sub-list for field type_name
 }
 
 func init() { file_app_order_internal_conf_conf_proto_init() }

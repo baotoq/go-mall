@@ -24,7 +24,7 @@ func NewCreateOrderActivity(uc *OrderUsecase) workflow.Activity {
 		if err := actx.GetInput(&in); err != nil {
 			return nil, fmt.Errorf("CreateOrderActivity: decode input: %w", err)
 		}
-		ctx := context.Background()
+		ctx := actx.Context()
 		orderID, err := uc.CreateForCheckout(ctx, in)
 		if err != nil {
 			return nil, fmt.Errorf("CreateOrderActivity: %w", err)
@@ -44,7 +44,7 @@ func NewPublishPaymentRequestedActivity(uc *OrderUsecase) workflow.Activity {
 		if err := actx.GetInput(&in); err != nil {
 			return nil, fmt.Errorf("PublishPaymentRequestedActivity: decode input: %w", err)
 		}
-		ctx := context.Background()
+		ctx := actx.Context()
 		messageID := fmt.Sprintf("%s:pay-req:%d", in.WorkflowID, in.Attempt)
 		if err := uc.PublishPaymentRequested(ctx, in, messageID); err != nil {
 			return nil, fmt.Errorf("PublishPaymentRequestedActivity: %w", err)
@@ -63,7 +63,7 @@ func NewCancelOrderActivity(uc *OrderUsecase, completedRepo CompletedWorkflowRep
 		if err := actx.GetInput(&in); err != nil {
 			return nil, fmt.Errorf("CancelOrderActivity: decode input: %w", err)
 		}
-		ctx := context.Background()
+		ctx := actx.Context()
 		id, err := uuid.Parse(in.OrderID)
 		if err != nil {
 			return nil, fmt.Errorf("CancelOrderActivity: parse order id: %w", err)
@@ -96,7 +96,7 @@ func NewMarkPaidActivity(uc *OrderUsecase, completedRepo CompletedWorkflowRepo) 
 		if err := actx.GetInput(&in); err != nil {
 			return nil, fmt.Errorf("MarkPaidActivity: decode input: %w", err)
 		}
-		ctx := context.Background()
+		ctx := actx.Context()
 		id, err := uuid.Parse(in.OrderID)
 		if err != nil {
 			return nil, fmt.Errorf("MarkPaidActivity: parse order id: %w", err)

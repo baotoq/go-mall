@@ -30,9 +30,16 @@ type ReconciliationService struct {
 	cancel   context.CancelFunc
 }
 
-// NewReconciliationService constructs a ReconciliationService.
+// NewReconciliationService constructs a ReconciliationService. The tick
+// interval is read from conf.Saga.ReconcileInterval; missing or zero falls
+// back to 24h.
 func NewReconciliationService(repo ReconciliationRepo, sagaCfg *conf.Saga, logger log.Logger) *ReconciliationService {
 	interval := 24 * time.Hour
+	if sagaCfg != nil && sagaCfg.ReconcileInterval != nil {
+		if d := sagaCfg.ReconcileInterval.AsDuration(); d > 0 {
+			interval = d
+		}
+	}
 	return &ReconciliationService{repo: repo, interval: interval, log: log.NewHelper(logger)}
 }
 
