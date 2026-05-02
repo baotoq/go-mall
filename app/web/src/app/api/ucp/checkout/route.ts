@@ -57,8 +57,16 @@ export async function POST(req: Request) {
       req,
     );
 
-  if (idempotencyKey) {
-    const cached = getIdempotency(idempotencyKey);
+  // Scope the store key by cart_session_id so a leaked Idempotency-Key cannot
+  // replay another caller's session (the cart_session_id acts as a second factor).
+  const scopedKey = idempotencyKey
+    ? createHash("sha256")
+        .update(`${idempotencyKey}:${parsed.data.cart_session_id}`)
+        .digest("hex")
+    : null;
+
+  if (scopedKey) {
+    const cached = getIdempotency(scopedKey);
     if (cached) {
       const ucpAgent = parseUCPAgent(req.headers.get("UCP-Agent"));
       const negotiation = await negotiateCapabilities(ucpAgent?.profile);
@@ -93,8 +101,8 @@ export async function POST(req: Request) {
     );
   }
 
-  if (idempotencyKey) {
-    setIdempotency(idempotencyKey, {
+  if (scopedKey) {
+    setIdempotency(scopedKey, {
       response: structuredClone(result.session),
       hash: createHash("sha256").update(result.session.id).digest("hex"),
       expires_at: Date.now() + IDEMPOTENCY_TTL_MS,
