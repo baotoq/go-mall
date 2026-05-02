@@ -40,16 +40,20 @@ func NewPaymentSubscriber(uc *biz.PaymentUsecase, inbox *outbox.Client, logger l
 	}
 }
 
-// Register mounts the Dapr subscription discovery route and the
-// payment.requested handler on srv.
-func (s *PaymentSubscriber) Register(srv *kratoshttp.Server) {
-	subs := []pkgdapr.Subscription{
+// Subscriptions returns the Dapr pub/sub subscriptions served by this subscriber.
+// NewHTTPServer aggregates these and registers /dapr/subscribe once.
+func (s *PaymentSubscriber) Subscriptions() []pkgdapr.Subscription {
+	return []pkgdapr.Subscription{
 		{PubsubName: "pubsub", Topic: "payment.requested", Route: "/dapr/events/payment/requested"},
 	}
-	srv.HandleFunc("/dapr/subscribe", pkgdapr.SubscribeHandler(subs))
+}
 
+// Register mounts the Dapr event delivery route on srv. The route is wrapped
+// with LoopbackOnly so only the sidecar (127.0.0.1) can call it.
+// Called from NewHTTPServer before the server starts.
+func (s *PaymentSubscriber) Register(srv *kratoshttp.Server) {
 	handler := s.inbox.Subscribe("payment.requested", outbox.TypedHandler(s.handlePaymentRequested))
-	srv.HandleFunc("/dapr/events/payment/requested", pkgdapr.TopicHandler(handler))
+	srv.HandleFunc("/dapr/events/payment/requested", pkgdapr.LoopbackOnly(pkgdapr.TopicHandler(handler)))
 }
 
 func (s *PaymentSubscriber) handlePaymentRequested(ctx context.Context, evt paymentRequestedEvent) error {

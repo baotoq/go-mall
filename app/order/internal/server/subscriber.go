@@ -16,6 +16,12 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+// raiseEventer is the subset of *workflow.Client used by OrderSubscriber,
+// extracted so tests can inject a fake without a live gRPC connection.
+type raiseEventer interface {
+	RaiseEvent(ctx context.Context, id, eventName string, opts ...workflow.RaiseEventOptions) error
+}
+
 // paymentResultEvent is the payload received on payment.completed and
 // payment.failed topics from the payment service.
 type paymentResultEvent struct {
@@ -30,7 +36,7 @@ type paymentResultEvent struct {
 // server so the Dapr sidecar can discover subscriptions and deliver events on
 // the same app-port (8000) as the REST API.
 type OrderSubscriber struct {
-	wfc   *workflow.Client
+	wfc   raiseEventer
 	dlq   biz.WorkflowDeadLetterEventRepo
 	inbox *outbox.Client
 	log   *log.Helper
@@ -47,20 +53,24 @@ func NewOrderSubscriber(wfc *workflow.Client, dlq biz.WorkflowDeadLetterEventRep
 	}
 }
 
-// Register mounts the Dapr subscription discovery route and event handlers on
-// srv. Called from NewHTTPServer so routes are registered before the server starts.
-func (s *OrderSubscriber) Register(srv *kratoshttp.Server) {
-	subs := []pkgdapr.Subscription{
+// Subscriptions returns the Dapr pub/sub subscriptions served by this subscriber.
+// NewHTTPServer aggregates these and registers /dapr/subscribe once.
+func (s *OrderSubscriber) Subscriptions() []pkgdapr.Subscription {
+	return []pkgdapr.Subscription{
 		{PubsubName: "pubsub", Topic: "payment.completed", Route: "/dapr/events/payment/completed"},
 		{PubsubName: "pubsub", Topic: "payment.failed", Route: "/dapr/events/payment/failed"},
 	}
-	srv.HandleFunc("/dapr/subscribe", pkgdapr.SubscribeHandler(subs))
+}
 
+// Register mounts the Dapr event delivery routes on srv. Routes are wrapped
+// with LoopbackOnly so only the sidecar (127.0.0.1) can call them.
+// Called from NewHTTPServer before the server starts.
+func (s *OrderSubscriber) Register(srv *kratoshttp.Server) {
 	completedHandler := s.inbox.Subscribe("payment.completed", outbox.TypedHandler(s.handlePaymentCompleted))
 	failedHandler := s.inbox.Subscribe("payment.failed", outbox.TypedHandler(s.handlePaymentFailed))
 
-	srv.HandleFunc("/dapr/events/payment/completed", pkgdapr.TopicHandler(completedHandler))
-	srv.HandleFunc("/dapr/events/payment/failed", pkgdapr.TopicHandler(failedHandler))
+	srv.HandleFunc("/dapr/events/payment/completed", pkgdapr.LoopbackOnly(pkgdapr.TopicHandler(completedHandler)))
+	srv.HandleFunc("/dapr/events/payment/failed", pkgdapr.LoopbackOnly(pkgdapr.TopicHandler(failedHandler)))
 }
 
 func (s *OrderSubscriber) handlePaymentCompleted(ctx context.Context, evt paymentResultEvent) error {

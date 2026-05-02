@@ -3,6 +3,7 @@ package dapr
 import (
 	"encoding/base64"
 	"encoding/json"
+	"net"
 	"net/http"
 
 	daprcommon "github.com/dapr/go-sdk/service/common"
@@ -93,5 +94,23 @@ func SubscribeHandler(subs []Subscription) http.HandlerFunc {
 	return func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(subs)
+	}
+}
+
+// LoopbackOnly rejects requests not originating from the loopback interface.
+// The Dapr sidecar always delivers via the pod-local loopback (127.0.0.1/::1),
+// so this guard ensures no external caller can reach Dapr delivery routes.
+func LoopbackOnly(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		host, _, err := net.SplitHostPort(r.RemoteAddr)
+		if err != nil {
+			http.Error(w, "forbidden", http.StatusForbidden)
+			return
+		}
+		if ip := net.ParseIP(host); ip == nil || !ip.IsLoopback() {
+			http.Error(w, "forbidden", http.StatusForbidden)
+			return
+		}
+		next(w, r)
 	}
 }
