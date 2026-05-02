@@ -1,5 +1,6 @@
 export const runtime = "nodejs";
 
+import { createHash } from "node:crypto";
 import { auth } from "@/auth";
 import { corsHeaders, withCors } from "@/lib/ucp/cors";
 import { createCheckout } from "@/lib/ucp/handlers/checkout";
@@ -9,6 +10,10 @@ import {
   CreateCheckoutInputSchema,
   validateIdempotencyKey,
 } from "@/lib/ucp/schemas/checkout";
+import { getIdempotency, setIdempotency } from "@/lib/ucp/store";
+import type { CheckoutSession } from "@/lib/ucp/types/checkout";
+
+const IDEMPOTENCY_TTL_MS = 24 * 60 * 60 * 1000;
 
 function isUcpEnabled(): boolean {
   return process.env.UCP_ENABLED === "true";
@@ -52,13 +57,28 @@ export async function POST(req: Request) {
       req,
     );
 
+  if (idempotencyKey) {
+    const cached = getIdempotency(idempotencyKey);
+    if (cached) {
+      const ucpAgent = parseUCPAgent(req.headers.get("UCP-Agent"));
+      const negotiation = await negotiateCapabilities(ucpAgent?.profile);
+      const session = structuredClone(cached.response) as CheckoutSession;
+      return withCors(
+        wrapResponse(
+          { ...session, session_id: session.id } as Record<string, unknown>,
+          negotiation,
+          201,
+        ),
+        req,
+      );
+    }
+  }
+
   let userId: string | undefined;
   try {
     const session = await auth();
     userId = session?.user?.id ?? undefined;
   } catch (err) {
-    // Misconfigured auth must not silently fall through to anonymous.
-    // Log the cause so an operator can spot a broken next-auth setup.
     console.error("[ucp] auth() failed; treating as anonymous:", err);
   }
 
@@ -71,6 +91,14 @@ export async function POST(req: Request) {
       errorResponse(result.status, result.code, result.content),
       req,
     );
+  }
+
+  if (idempotencyKey) {
+    setIdempotency(idempotencyKey, {
+      response: structuredClone(result.session),
+      hash: createHash("sha256").update(result.session.id).digest("hex"),
+      expires_at: Date.now() + IDEMPOTENCY_TTL_MS,
+    });
   }
 
   const responseBody = { ...result.session, session_id: result.session.id };

@@ -16,6 +16,26 @@ vi.mock("@/lib/ucp/negotiation", () => ({
   }),
 }));
 
+// Real-ish in-memory store so idempotency dedup is actually exercised.
+const idemStore = new Map<
+  string,
+  { response: unknown; hash: string; expires_at: number }
+>();
+vi.mock("@/lib/ucp/store", () => ({
+  getIdempotency: vi.fn((key: string) => idemStore.get(key) ?? null),
+  setIdempotency: vi.fn(
+    (
+      key: string,
+      entry: { response: unknown; hash: string; expires_at: number },
+    ) => {
+      idemStore.set(key, entry);
+    },
+  ),
+  getSession: vi.fn(),
+  setSession: vi.fn(),
+  initStore: vi.fn(),
+}));
+
 import { createCheckout } from "@/lib/ucp/handlers/checkout";
 
 const mockCreateCheckout = vi.mocked(createCheckout);
@@ -35,6 +55,7 @@ describe("POST /api/ucp/checkout", () => {
   beforeEach(() => {
     process.env.UCP_ENABLED = "true";
     vi.clearAllMocks();
+    idemStore.clear();
   });
 
   afterEach(() => {
@@ -100,35 +121,36 @@ describe("POST /api/ucp/checkout", () => {
   });
 
   it("Idempotency-Key dedup works: second request with same key returns cached", async () => {
-    mockCreateCheckout
-      .mockResolvedValueOnce({
-        session: {
-          id: "idem-id",
-          status: "incomplete",
-          currency: "USD",
-          cart_session_id: "cart-456",
-          user_id: "guest",
-          totals: { subtotal_cents: 500, currency: "USD" },
-          messages: [],
-          expires_at: new Date().toISOString(),
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        },
-      })
-      .mockResolvedValueOnce({
-        session: {
-          id: "idem-id",
-          status: "incomplete",
-          currency: "USD",
-          cart_session_id: "cart-456",
-          user_id: "guest",
-          totals: { subtotal_cents: 500, currency: "USD" },
-          messages: [],
-          expires_at: new Date().toISOString(),
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        },
-      });
+    // First call creates session with id "idem-id"
+    mockCreateCheckout.mockResolvedValueOnce({
+      session: {
+        id: "idem-id",
+        status: "incomplete",
+        currency: "USD",
+        cart_session_id: "cart-456",
+        user_id: "guest",
+        totals: { subtotal_cents: 500, currency: "USD" },
+        messages: [],
+        expires_at: new Date().toISOString(),
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+    });
+    // Second call would create a DIFFERENT session if dedup were absent.
+    mockCreateCheckout.mockResolvedValueOnce({
+      session: {
+        id: "different-id",
+        status: "incomplete",
+        currency: "USD",
+        cart_session_id: "cart-456",
+        user_id: "guest",
+        totals: { subtotal_cents: 500, currency: "USD" },
+        messages: [],
+        expires_at: new Date().toISOString(),
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+    });
 
     const { POST } = await import("../route");
 
@@ -141,6 +163,7 @@ describe("POST /api/ucp/checkout", () => {
     const body1 = await res1.json();
     expect(body1.session_id).toBe("idem-id");
 
+    // Second request with same key must return the cached session, not "different-id".
     const req2 = makeRequest(
       { cart_session_id: "cart-456", currency: "USD" },
       { "Idempotency-Key": "key-abc-123" },
@@ -149,5 +172,7 @@ describe("POST /api/ucp/checkout", () => {
     expect(res2.status).toBe(201);
     const body2 = await res2.json();
     expect(body2.session_id).toBe("idem-id");
+    // createCheckout must only have been called once — the second was served from cache.
+    expect(mockCreateCheckout).toHaveBeenCalledTimes(1);
   });
 });
