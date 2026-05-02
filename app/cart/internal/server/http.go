@@ -13,6 +13,7 @@ import (
 
 func NewHTTPServer(c *conf.Server, cart *service.CartService, logger log.Logger) *http.Server {
 	var opts = []http.ServerOption{
+		http.Filter(pkgserver.CORSFilter),
 		http.Middleware(
 			recovery.Recovery(),
 		),

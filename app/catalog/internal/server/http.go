@@ -30,6 +30,7 @@ func NewHTTPServer(c *conf.Server, catalog *service.CatalogService, logger log.L
 		panic(err)
 	}
 	var opts = []http.ServerOption{
+		http.Filter(pkgserver.CORSFilter),
 		http.Middleware(
 			recovery.Recovery(),
 			selector.Server(
