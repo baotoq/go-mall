@@ -11,7 +11,7 @@ import (
 	"github.com/go-kratos/kratos/v2/transport/http"
 )
 
-func NewHTTPServer(c *conf.Server, order *service.OrderService, logger log.Logger) *http.Server {
+func NewHTTPServer(c *conf.Server, order *service.OrderService, sub *OrderSubscriber, logger log.Logger) *http.Server {
 	var opts = []http.ServerOption{
 		http.Middleware(
 			recovery.Recovery(),
@@ -29,5 +29,6 @@ func NewHTTPServer(c *conf.Server, order *service.OrderService, logger log.Logge
 	srv := http.NewServer(opts...)
 	v1.RegisterOrderServiceHTTPServer(srv, order)
 	srv.HandleFunc("/healthz", pkgserver.Healthz)
+	sub.Register(srv)
 	return srv
 }

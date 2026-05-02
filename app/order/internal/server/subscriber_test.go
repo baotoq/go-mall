@@ -40,10 +40,9 @@ func (f *fakeDLQ) Insert(_ context.Context, topic string, payload []byte, workfl
 // paths that never reach wfc.RaiseEvent).
 func newTestSubscriber(dlq biz.WorkflowDeadLetterEventRepo) *OrderSubscriber {
 	return &OrderSubscriber{
-		wfc:  nil,
-		dlq:  dlq,
-		log:  log.NewHelper(log.DefaultLogger),
-		addr: ":0",
+		wfc: nil,
+		dlq: dlq,
+		log: log.NewHelper(log.DefaultLogger),
 	}
 }
 

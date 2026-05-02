@@ -7,7 +7,7 @@
 package main
 
 import (
-	dapr "github.com/dapr/go-sdk/client"
+	"github.com/dapr/go-sdk/client"
 	"github.com/go-kratos/kratos/v2"
 	"github.com/go-kratos/kratos/v2/log"
 	"gomall/app/order/internal/biz"
@@ -16,18 +16,21 @@ import (
 	"gomall/app/order/internal/server"
 	"gomall/app/order/internal/service"
 	"gomall/pkg/outbox"
+)
+
+import (
 	_ "go.uber.org/automaxprocs"
 )
 
 // Injectors from wire.go:
 
-func wireApp(confServer *conf.Server, confData *conf.Data, confSaga *conf.Saga, logger log.Logger, daprClient dapr.Client) (*kratos.App, func(), error) {
+func wireApp(confServer *conf.Server, confData *conf.Data, saga *conf.Saga, logger log.Logger, clientClient client.Client) (*kratos.App, func(), error) {
 	db, cleanup, err := data.ProvideSQLDB(confData)
 	if err != nil {
 		return nil, nil, err
 	}
-	outboxConfig := data.ProvideOutboxConfig()
-	outboxClient, cleanup2, err := outbox.ProvideClient(db, daprClient, outboxConfig, logger)
+	config := data.ProvideOutboxConfig()
+	outboxClient, cleanup2, err := outbox.ProvideClient(db, clientClient, config, logger)
 	if err != nil {
 		cleanup()
 		return nil, nil, err
@@ -41,37 +44,37 @@ func wireApp(confServer *conf.Server, confData *conf.Data, confSaga *conf.Saga, 
 	orderRepo := data.NewOrderRepo(dataData, logger)
 	outboxPublisher := data.NewOutboxPublisher(outboxClient)
 	orderUsecase := biz.NewOrderUsecase(orderRepo, outboxPublisher)
+	workflowClient, cleanup4, err := biz.NewWorkflowClient(logger)
+	if err != nil {
+		cleanup3()
+		cleanup2()
+		cleanup()
+		return nil, nil, err
+	}
 	idempotencyKeyRepo := data.NewIdempotencyKeyRepo(dataData, logger)
-	workflowDeadLetterEventRepo := data.NewWorkflowDeadLetterEventRepo(dataData, logger)
-	completedWorkflowRepo := data.NewCompletedWorkflowRepo(dataData, logger)
-	sagaConfig := biz.ProvideSagaConfig(confSaga)
-	workflowClient, cleanupWfc, err := biz.NewWorkflowClient(logger)
-	if err != nil {
-		cleanup3()
-		cleanup2()
-		cleanup()
-		return nil, nil, err
-	}
-	reconciliationRepo := data.NewReconciliationRepo(dataData)
-	workflowRegistry, err := biz.NewWorkflowRegistry(orderUsecase, completedWorkflowRepo, sagaConfig)
-	if err != nil {
-		cleanupWfc()
-		cleanup3()
-		cleanup2()
-		cleanup()
-		return nil, nil, err
-	}
+	sagaConfig := biz.ProvideSagaConfig(saga)
 	checkoutUsecase := biz.NewCheckoutUsecase(workflowClient, idempotencyKeyRepo, sagaConfig, logger)
-	purgeService := biz.NewPurgeService(workflowClient, completedWorkflowRepo, confSaga, logger)
-	reconciliationService := biz.NewReconciliationService(reconciliationRepo, confSaga, logger)
-	orderService := service.NewOrderService(orderUsecase, checkoutUsecase, confSaga)
+	orderService := service.NewOrderService(orderUsecase, checkoutUsecase, saga)
 	grpcServer := server.NewGRPCServer(confServer, orderService, logger)
-	httpServer := server.NewHTTPServer(confServer, orderService, logger)
-	orderSubscriber := server.NewOrderSubscriber(confServer, workflowClient, workflowDeadLetterEventRepo, outboxClient, logger)
-	workflowWorker := server.NewWorkflowWorker(workflowClient, workflowRegistry, confSaga, logger)
-	app := newApp(logger, grpcServer, httpServer, outboxClient, orderSubscriber, workflowWorker, purgeService, reconciliationService)
+	workflowDeadLetterEventRepo := data.NewWorkflowDeadLetterEventRepo(dataData, logger)
+	orderSubscriber := server.NewOrderSubscriber(workflowClient, workflowDeadLetterEventRepo, outboxClient, logger)
+	httpServer := server.NewHTTPServer(confServer, orderService, orderSubscriber, logger)
+	completedWorkflowRepo := data.NewCompletedWorkflowRepo(dataData, logger)
+	registry, err := biz.NewWorkflowRegistry(orderUsecase, completedWorkflowRepo, sagaConfig)
+	if err != nil {
+		cleanup4()
+		cleanup3()
+		cleanup2()
+		cleanup()
+		return nil, nil, err
+	}
+	workflowWorker := server.NewWorkflowWorker(workflowClient, registry, saga, logger)
+	purgeService := biz.NewPurgeService(workflowClient, completedWorkflowRepo, saga, logger)
+	reconciliationRepo := data.NewReconciliationRepo(dataData)
+	reconciliationService := biz.NewReconciliationService(reconciliationRepo, saga, logger)
+	app := newApp(logger, grpcServer, httpServer, outboxClient, workflowWorker, purgeService, reconciliationService)
 	return app, func() {
-		cleanupWfc()
+		cleanup4()
 		cleanup3()
 		cleanup2()
 		cleanup()

@@ -5,7 +5,6 @@ import (
 	"os"
 
 	"gomall/app/payment/internal/conf"
-	"gomall/app/payment/internal/server"
 	"gomall/pkg/outbox"
 	"gomall/pkg/secrets"
 
@@ -34,14 +33,14 @@ func init() {
 	flag.StringVar(&flagconf, "conf", "../../configs", "config path, eg: -conf config.yaml")
 }
 
-func newApp(logger log.Logger, gs *grpc.Server, hs *http.Server, sub *server.PaymentSubscriber, ob *outbox.Client) *kratos.App {
+func newApp(logger log.Logger, gs *grpc.Server, hs *http.Server, ob *outbox.Client) *kratos.App {
 	return kratos.New(
 		kratos.ID(id),
 		kratos.Name(Name),
 		kratos.Version(Version),
 		kratos.Metadata(map[string]string{}),
 		kratos.Logger(logger),
-		kratos.Server(gs, hs, sub),
+		kratos.Server(gs, hs),
 		kratos.BeforeStart(ob.Start),
 		kratos.AfterStop(ob.Stop),
 	)

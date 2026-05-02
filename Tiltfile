@@ -115,3 +115,11 @@ k8s_resource(
     resource_deps=['dapr'],
     labels=['infra'],
 )
+
+local_resource(
+    'web',
+    serve_cmd='npm run dev',
+    serve_dir='./app/web',
+    deps=['./app/web/src', './app/web/package.json', './app/web/next.config.ts'],
+    labels=['app'],
+)

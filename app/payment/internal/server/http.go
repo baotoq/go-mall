@@ -15,7 +15,7 @@ import (
 	jwtv5 "github.com/golang-jwt/jwt/v5"
 )
 
-func NewHTTPServer(c *conf.Server, auth *conf.Auth, payment *service.PaymentService, logger log.Logger) *http.Server {
+func NewHTTPServer(c *conf.Server, auth *conf.Auth, payment *service.PaymentService, sub *PaymentSubscriber, logger log.Logger) *http.Server {
 	mw := []middleware.Middleware{recovery.Recovery()}
 	if auth.JwksURL != "" {
 		jwks, err := keyfunc.NewDefault([]string{auth.JwksURL})
@@ -39,5 +39,6 @@ func NewHTTPServer(c *conf.Server, auth *conf.Auth, payment *service.PaymentServ
 	srv := http.NewServer(opts...)
 	v1.RegisterPaymentServiceHTTPServer(srv, payment)
 	srv.HandleFunc("/healthz", pkgserver.Healthz)
+	sub.Register(srv)
 	return srv
 }

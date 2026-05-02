@@ -90,9 +90,8 @@ func (nopSubOutbox) Publish(_ context.Context, _ biz.TxExecer, _ string, _ any) 
 func newTestPaymentSubscriber(repo biz.PaymentRepo) *PaymentSubscriber {
 	uc := biz.NewPaymentUsecase(repo, nopSubOutbox{})
 	return &PaymentSubscriber{
-		uc:   uc,
-		log:  log.NewHelper(log.DefaultLogger),
-		addr: ":0",
+		uc:  uc,
+		log: log.NewHelper(log.DefaultLogger),
 	}
 }
 
