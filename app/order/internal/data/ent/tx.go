@@ -14,6 +14,8 @@ type Tx struct {
 	config
 	// Order is the client for interacting with the Order builders.
 	Order *OrderClient
+	// WorkflowDeadLetterEvent is the client for interacting with the WorkflowDeadLetterEvent builders.
+	WorkflowDeadLetterEvent *WorkflowDeadLetterEventClient
 
 	// lazily loaded.
 	client     *Client
@@ -146,6 +148,7 @@ func (tx *Tx) Client() *Client {
 
 func (tx *Tx) init() {
 	tx.Order = NewOrderClient(tx.config)
+	tx.WorkflowDeadLetterEvent = NewWorkflowDeadLetterEventClient(tx.config)
 }
 
 // txDriver wraps the given dialect.Tx with a nop dialect.Driver implementation.

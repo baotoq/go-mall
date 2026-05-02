@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"gomall/app/order/internal/data/ent/order"
+	"gomall/app/order/internal/data/ent/workflowdeadletterevent"
 	"reflect"
 	"sync"
 
@@ -73,7 +74,8 @@ var (
 func checkColumn(t, c string) error {
 	initCheck.Do(func() {
 		columnCheck = sql.NewColumnCheck(map[string]func(string) bool{
-			order.Table: order.ValidColumn,
+			order.Table:                   order.ValidColumn,
+			workflowdeadletterevent.Table: workflowdeadletterevent.ValidColumn,
 		})
 	})
 	return columnCheck(t, c)

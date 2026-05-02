@@ -28,6 +28,7 @@ spec:
         dapr.io/app-id: "order"
         dapr.io/app-port: "8000"
         dapr.io/log-as-json: "true"
+        dapr.io/config: "order-workflow-config"
     spec:
       containers:
         - name: order

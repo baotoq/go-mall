@@ -20,6 +20,18 @@ func (f OrderFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.OrderMutation", m)
 }
 
+// The WorkflowDeadLetterEventFunc type is an adapter to allow the use of ordinary
+// function as WorkflowDeadLetterEvent mutator.
+type WorkflowDeadLetterEventFunc func(context.Context, *ent.WorkflowDeadLetterEventMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f WorkflowDeadLetterEventFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.WorkflowDeadLetterEventMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.WorkflowDeadLetterEventMutation", m)
+}
+
 // Condition is a hook condition function.
 type Condition func(context.Context, ent.Mutation) bool
 

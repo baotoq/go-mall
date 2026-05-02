@@ -8,3 +8,6 @@ import (
 
 // Order is the predicate function for order builders.
 type Order func(*sql.Selector)
+
+// WorkflowDeadLetterEvent is the predicate function for workflowdeadletterevent builders.
+type WorkflowDeadLetterEvent func(*sql.Selector)

@@ -5,6 +5,7 @@ package ent
 import (
 	"gomall/app/order/internal/data/ent/order"
 	"gomall/app/order/internal/data/ent/schema"
+	"gomall/app/order/internal/data/ent/workflowdeadletterevent"
 	"time"
 
 	"github.com/google/uuid"
@@ -58,4 +59,26 @@ func init() {
 	orderDescID := orderFields[0].Descriptor()
 	// order.DefaultID holds the default value on creation for the id field.
 	order.DefaultID = orderDescID.Default.(func() uuid.UUID)
+	workflowdeadlettereventFields := schema.WorkflowDeadLetterEvent{}.Fields()
+	_ = workflowdeadlettereventFields
+	// workflowdeadlettereventDescTopic is the schema descriptor for topic field.
+	workflowdeadlettereventDescTopic := workflowdeadlettereventFields[1].Descriptor()
+	// workflowdeadletterevent.TopicValidator is a validator for the "topic" field. It is called by the builders before save.
+	workflowdeadletterevent.TopicValidator = workflowdeadlettereventDescTopic.Validators[0].(func(string) error)
+	// workflowdeadlettereventDescWorkflowInstanceID is the schema descriptor for workflow_instance_id field.
+	workflowdeadlettereventDescWorkflowInstanceID := workflowdeadlettereventFields[3].Descriptor()
+	// workflowdeadletterevent.WorkflowInstanceIDValidator is a validator for the "workflow_instance_id" field. It is called by the builders before save.
+	workflowdeadletterevent.WorkflowInstanceIDValidator = workflowdeadlettereventDescWorkflowInstanceID.Validators[0].(func(string) error)
+	// workflowdeadlettereventDescReason is the schema descriptor for reason field.
+	workflowdeadlettereventDescReason := workflowdeadlettereventFields[4].Descriptor()
+	// workflowdeadletterevent.ReasonValidator is a validator for the "reason" field. It is called by the builders before save.
+	workflowdeadletterevent.ReasonValidator = workflowdeadlettereventDescReason.Validators[0].(func(string) error)
+	// workflowdeadlettereventDescCreatedAt is the schema descriptor for created_at field.
+	workflowdeadlettereventDescCreatedAt := workflowdeadlettereventFields[5].Descriptor()
+	// workflowdeadletterevent.DefaultCreatedAt holds the default value on creation for the created_at field.
+	workflowdeadletterevent.DefaultCreatedAt = workflowdeadlettereventDescCreatedAt.Default.(func() time.Time)
+	// workflowdeadlettereventDescID is the schema descriptor for id field.
+	workflowdeadlettereventDescID := workflowdeadlettereventFields[0].Descriptor()
+	// workflowdeadletterevent.DefaultID holds the default value on creation for the id field.
+	workflowdeadletterevent.DefaultID = workflowdeadlettereventDescID.Default.(func() uuid.UUID)
 }

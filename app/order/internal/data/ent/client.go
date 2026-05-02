@@ -12,6 +12,7 @@ import (
 	"gomall/app/order/internal/data/ent/migrate"
 
 	"gomall/app/order/internal/data/ent/order"
+	"gomall/app/order/internal/data/ent/workflowdeadletterevent"
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect"
@@ -26,6 +27,8 @@ type Client struct {
 	Schema *migrate.Schema
 	// Order is the client for interacting with the Order builders.
 	Order *OrderClient
+	// WorkflowDeadLetterEvent is the client for interacting with the WorkflowDeadLetterEvent builders.
+	WorkflowDeadLetterEvent *WorkflowDeadLetterEventClient
 }
 
 // NewClient creates a new client configured with the given options.
@@ -38,6 +41,7 @@ func NewClient(opts ...Option) *Client {
 func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
 	c.Order = NewOrderClient(c.config)
+	c.WorkflowDeadLetterEvent = NewWorkflowDeadLetterEventClient(c.config)
 }
 
 type (
@@ -128,9 +132,10 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	cfg := c.config
 	cfg.driver = tx
 	return &Tx{
-		ctx:    ctx,
-		config: cfg,
-		Order:  NewOrderClient(cfg),
+		ctx:                     ctx,
+		config:                  cfg,
+		Order:                   NewOrderClient(cfg),
+		WorkflowDeadLetterEvent: NewWorkflowDeadLetterEventClient(cfg),
 	}, nil
 }
 
@@ -148,9 +153,10 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	cfg := c.config
 	cfg.driver = &txDriver{tx: tx, drv: c.driver}
 	return &Tx{
-		ctx:    ctx,
-		config: cfg,
-		Order:  NewOrderClient(cfg),
+		ctx:                     ctx,
+		config:                  cfg,
+		Order:                   NewOrderClient(cfg),
+		WorkflowDeadLetterEvent: NewWorkflowDeadLetterEventClient(cfg),
 	}, nil
 }
 
@@ -180,12 +186,14 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	c.Order.Use(hooks...)
+	c.WorkflowDeadLetterEvent.Use(hooks...)
 }
 
 // Intercept adds the query interceptors to all the entity clients.
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	c.Order.Intercept(interceptors...)
+	c.WorkflowDeadLetterEvent.Intercept(interceptors...)
 }
 
 // Mutate implements the ent.Mutator interface.
@@ -193,6 +201,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 	switch m := m.(type) {
 	case *OrderMutation:
 		return c.Order.mutate(ctx, m)
+	case *WorkflowDeadLetterEventMutation:
+		return c.WorkflowDeadLetterEvent.mutate(ctx, m)
 	default:
 		return nil, fmt.Errorf("ent: unknown mutation type %T", m)
 	}
@@ -331,12 +341,145 @@ func (c *OrderClient) mutate(ctx context.Context, m *OrderMutation) (Value, erro
 	}
 }
 
+// WorkflowDeadLetterEventClient is a client for the WorkflowDeadLetterEvent schema.
+type WorkflowDeadLetterEventClient struct {
+	config
+}
+
+// NewWorkflowDeadLetterEventClient returns a client for the WorkflowDeadLetterEvent from the given config.
+func NewWorkflowDeadLetterEventClient(c config) *WorkflowDeadLetterEventClient {
+	return &WorkflowDeadLetterEventClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `workflowdeadletterevent.Hooks(f(g(h())))`.
+func (c *WorkflowDeadLetterEventClient) Use(hooks ...Hook) {
+	c.hooks.WorkflowDeadLetterEvent = append(c.hooks.WorkflowDeadLetterEvent, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `workflowdeadletterevent.Intercept(f(g(h())))`.
+func (c *WorkflowDeadLetterEventClient) Intercept(interceptors ...Interceptor) {
+	c.inters.WorkflowDeadLetterEvent = append(c.inters.WorkflowDeadLetterEvent, interceptors...)
+}
+
+// Create returns a builder for creating a WorkflowDeadLetterEvent entity.
+func (c *WorkflowDeadLetterEventClient) Create() *WorkflowDeadLetterEventCreate {
+	mutation := newWorkflowDeadLetterEventMutation(c.config, OpCreate)
+	return &WorkflowDeadLetterEventCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of WorkflowDeadLetterEvent entities.
+func (c *WorkflowDeadLetterEventClient) CreateBulk(builders ...*WorkflowDeadLetterEventCreate) *WorkflowDeadLetterEventCreateBulk {
+	return &WorkflowDeadLetterEventCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *WorkflowDeadLetterEventClient) MapCreateBulk(slice any, setFunc func(*WorkflowDeadLetterEventCreate, int)) *WorkflowDeadLetterEventCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &WorkflowDeadLetterEventCreateBulk{err: fmt.Errorf("calling to WorkflowDeadLetterEventClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*WorkflowDeadLetterEventCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &WorkflowDeadLetterEventCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for WorkflowDeadLetterEvent.
+func (c *WorkflowDeadLetterEventClient) Update() *WorkflowDeadLetterEventUpdate {
+	mutation := newWorkflowDeadLetterEventMutation(c.config, OpUpdate)
+	return &WorkflowDeadLetterEventUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *WorkflowDeadLetterEventClient) UpdateOne(_m *WorkflowDeadLetterEvent) *WorkflowDeadLetterEventUpdateOne {
+	mutation := newWorkflowDeadLetterEventMutation(c.config, OpUpdateOne, withWorkflowDeadLetterEvent(_m))
+	return &WorkflowDeadLetterEventUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *WorkflowDeadLetterEventClient) UpdateOneID(id uuid.UUID) *WorkflowDeadLetterEventUpdateOne {
+	mutation := newWorkflowDeadLetterEventMutation(c.config, OpUpdateOne, withWorkflowDeadLetterEventID(id))
+	return &WorkflowDeadLetterEventUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for WorkflowDeadLetterEvent.
+func (c *WorkflowDeadLetterEventClient) Delete() *WorkflowDeadLetterEventDelete {
+	mutation := newWorkflowDeadLetterEventMutation(c.config, OpDelete)
+	return &WorkflowDeadLetterEventDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *WorkflowDeadLetterEventClient) DeleteOne(_m *WorkflowDeadLetterEvent) *WorkflowDeadLetterEventDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *WorkflowDeadLetterEventClient) DeleteOneID(id uuid.UUID) *WorkflowDeadLetterEventDeleteOne {
+	builder := c.Delete().Where(workflowdeadletterevent.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &WorkflowDeadLetterEventDeleteOne{builder}
+}
+
+// Query returns a query builder for WorkflowDeadLetterEvent.
+func (c *WorkflowDeadLetterEventClient) Query() *WorkflowDeadLetterEventQuery {
+	return &WorkflowDeadLetterEventQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeWorkflowDeadLetterEvent},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a WorkflowDeadLetterEvent entity by its id.
+func (c *WorkflowDeadLetterEventClient) Get(ctx context.Context, id uuid.UUID) (*WorkflowDeadLetterEvent, error) {
+	return c.Query().Where(workflowdeadletterevent.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *WorkflowDeadLetterEventClient) GetX(ctx context.Context, id uuid.UUID) *WorkflowDeadLetterEvent {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *WorkflowDeadLetterEventClient) Hooks() []Hook {
+	return c.hooks.WorkflowDeadLetterEvent
+}
+
+// Interceptors returns the client interceptors.
+func (c *WorkflowDeadLetterEventClient) Interceptors() []Interceptor {
+	return c.inters.WorkflowDeadLetterEvent
+}
+
+func (c *WorkflowDeadLetterEventClient) mutate(ctx context.Context, m *WorkflowDeadLetterEventMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&WorkflowDeadLetterEventCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&WorkflowDeadLetterEventUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&WorkflowDeadLetterEventUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&WorkflowDeadLetterEventDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown WorkflowDeadLetterEvent mutation op: %q", m.Op())
+	}
+}
+
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		Order []ent.Hook
+		Order, WorkflowDeadLetterEvent []ent.Hook
 	}
 	inters struct {
-		Order []ent.Interceptor
+		Order, WorkflowDeadLetterEvent []ent.Interceptor
 	}
 )

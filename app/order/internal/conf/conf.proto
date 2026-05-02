@@ -8,6 +8,7 @@ import "google/protobuf/duration.proto";
 message Bootstrap {
   Server server = 1;
   Data data = 2;
+  Saga saga = 3;
 }
 
 message Server {
@@ -30,5 +31,20 @@ message Data {
     string driver = 1;
     string source = 2;
   }
+  message Workflow {
+    string workflowstore_connection_string = 1;
+  }
   Database database = 1;
+  Workflow workflow = 2;
+}
+
+message Saga {
+  bool enabled = 1;
+  int32 max_payment_attempts = 2;
+  google.protobuf.Duration per_attempt_timeout = 3;
+  google.protobuf.Duration payment_initial_delay = 4;
+  google.protobuf.Duration payment_backoff_max = 5;
+  int32 mark_paid_retry_max = 6;
+  google.protobuf.Duration mark_paid_budget = 7;
+  google.protobuf.Duration drain_timeout = 8;
 }

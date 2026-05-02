@@ -86,6 +86,10 @@ func main() {
 
 	sec := secrets.Parse(secret, "ORDER_DATABASE_CONNECTION_STRING")
 	bc.Data.Database.Source = sec.DatabaseConnectionString
+	if bc.Data.Workflow == nil {
+		bc.Data.Workflow = &conf.Data_Workflow{}
+	}
+	bc.Data.Workflow.WorkflowstoreConnectionString = sec.WorkflowstoreConnectionString
 
 	app, cleanup, err := wireApp(bc.Server, bc.Data, logger, daprClient)
 	if err != nil {

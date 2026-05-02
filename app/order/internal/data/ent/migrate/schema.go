@@ -39,9 +39,37 @@ var (
 			},
 		},
 	}
+	// WorkflowDeadLetterEventsColumns holds the columns for the "workflow_dead_letter_events" table.
+	WorkflowDeadLetterEventsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "topic", Type: field.TypeString, Size: 256},
+		{Name: "payload_json", Type: field.TypeBytes},
+		{Name: "workflow_instance_id", Type: field.TypeString, Size: 256},
+		{Name: "reason", Type: field.TypeString, Nullable: true, Size: 512},
+		{Name: "created_at", Type: field.TypeTime},
+	}
+	// WorkflowDeadLetterEventsTable holds the schema information for the "workflow_dead_letter_events" table.
+	WorkflowDeadLetterEventsTable = &schema.Table{
+		Name:       "workflow_dead_letter_events",
+		Columns:    WorkflowDeadLetterEventsColumns,
+		PrimaryKey: []*schema.Column{WorkflowDeadLetterEventsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "workflowdeadletterevent_topic",
+				Unique:  false,
+				Columns: []*schema.Column{WorkflowDeadLetterEventsColumns[1]},
+			},
+			{
+				Name:    "workflowdeadletterevent_workflow_instance_id",
+				Unique:  false,
+				Columns: []*schema.Column{WorkflowDeadLetterEventsColumns[3]},
+			},
+		},
+	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
 		OrdersTable,
+		WorkflowDeadLetterEventsTable,
 	}
 )
 
