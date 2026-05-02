@@ -12,6 +12,10 @@ import { generateProfile } from "@/lib/ucp/profile";
 import { negotiateCapabilities } from "@/lib/ucp/negotiation";
 import ucpConfig from "@/../ucp.config.json";
 
+function isUcpEnabled(): boolean {
+  return process.env.UCP_ENABLED === "true";
+}
+
 const handler = createMcpHandler(
   (server) => {
     server.registerTool(
@@ -208,4 +212,17 @@ const handler = createMcpHandler(
   },
 );
 
-export { handler as GET, handler as POST };
+// MCP tools assume out-of-band auth (e.g. agent-side credentials, network
+// policy). The transport itself is gated by UCP_ENABLED so the kill switch
+// covers MCP just like REST.
+async function gatedHandler(req: Request): Promise<Response> {
+  if (!isUcpEnabled()) {
+    return Response.json(
+      { code: "ucp_disabled", content: "UCP is not enabled" },
+      { status: 503 },
+    );
+  }
+  return handler(req);
+}
+
+export { gatedHandler as GET, gatedHandler as POST };
