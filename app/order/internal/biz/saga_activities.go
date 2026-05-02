@@ -56,7 +56,8 @@ func NewPublishPaymentRequestedActivity(uc *OrderUsecase) workflow.Activity {
 // NewCancelOrderActivity cancels an order.
 // Treats ErrOrderCannotCancel (already CANCELLED or terminal state) as success
 // so compensation is idempotent under replay.
-func NewCancelOrderActivity(uc *OrderUsecase) workflow.Activity {
+// On success, records the workflow instance in completed_workflows (best-effort).
+func NewCancelOrderActivity(uc *OrderUsecase, completedRepo CompletedWorkflowRepo) workflow.Activity {
 	return func(actx workflow.ActivityContext) (any, error) {
 		var in cancelInput
 		if err := actx.GetInput(&in); err != nil {
@@ -70,10 +71,16 @@ func NewCancelOrderActivity(uc *OrderUsecase) workflow.Activity {
 		_, err = uc.Cancel(ctx, id)
 		if errors.Is(err, ErrOrderCannotCancel) {
 			// Already in a terminal non-cancellable state — treat as success.
+			if in.WorkflowID != "" {
+				_ = completedRepo.Insert(ctx, in.WorkflowID, "FAILED")
+			}
 			return nil, nil
 		}
 		if err != nil {
 			return nil, fmt.Errorf("CancelOrderActivity: %w", err)
+		}
+		if in.WorkflowID != "" {
+			_ = completedRepo.Insert(ctx, in.WorkflowID, "FAILED")
 		}
 		return nil, nil
 	}
@@ -82,7 +89,8 @@ func NewCancelOrderActivity(uc *OrderUsecase) workflow.Activity {
 // NewMarkPaidActivity marks an order as paid.
 // MarkPaid (order.go Step 3.5) is idempotent: same payment_id returns the
 // existing row without error, preventing FAILED_AFTER_PIVOT on replay.
-func NewMarkPaidActivity(uc *OrderUsecase) workflow.Activity {
+// On success, records the workflow instance in completed_workflows (best-effort).
+func NewMarkPaidActivity(uc *OrderUsecase, completedRepo CompletedWorkflowRepo) workflow.Activity {
 	return func(actx workflow.ActivityContext) (any, error) {
 		var in markPaidInput
 		if err := actx.GetInput(&in); err != nil {
@@ -96,6 +104,9 @@ func NewMarkPaidActivity(uc *OrderUsecase) workflow.Activity {
 		order, err := uc.MarkPaid(ctx, id, in.PaymentID)
 		if err != nil {
 			return nil, fmt.Errorf("MarkPaidActivity: %w", err)
+		}
+		if in.WorkflowID != "" {
+			_ = completedRepo.Insert(ctx, in.WorkflowID, "COMPLETED")
 		}
 		out, err := json.Marshal(order)
 		if err != nil {

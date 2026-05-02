@@ -52,7 +52,8 @@ func wireApp(confServer *conf.Server, confData *conf.Data, confSaga *conf.Saga, 
 		cleanup()
 		return nil, nil, err
 	}
-	workflowRegistry, err := biz.NewWorkflowRegistry(orderUsecase, sagaConfig)
+	reconciliationRepo := data.NewReconciliationRepo(dataData)
+	workflowRegistry, err := biz.NewWorkflowRegistry(orderUsecase, completedWorkflowRepo, sagaConfig)
 	if err != nil {
 		cleanupWfc()
 		cleanup3()
@@ -62,12 +63,13 @@ func wireApp(confServer *conf.Server, confData *conf.Data, confSaga *conf.Saga, 
 	}
 	checkoutUsecase := biz.NewCheckoutUsecase(workflowClient, idempotencyKeyRepo, sagaConfig, logger)
 	purgeService := biz.NewPurgeService(workflowClient, completedWorkflowRepo, confSaga, logger)
+	reconciliationService := biz.NewReconciliationService(reconciliationRepo, confSaga, logger)
 	orderService := service.NewOrderService(orderUsecase, checkoutUsecase, confSaga)
 	grpcServer := server.NewGRPCServer(confServer, orderService, logger)
 	httpServer := server.NewHTTPServer(confServer, orderService, logger)
 	orderSubscriber := server.NewOrderSubscriber(confServer, workflowClient, workflowDeadLetterEventRepo, outboxClient, logger)
 	workflowWorker := server.NewWorkflowWorker(workflowClient, workflowRegistry, confSaga, logger)
-	app := newApp(logger, grpcServer, httpServer, outboxClient, orderSubscriber, workflowWorker, purgeService)
+	app := newApp(logger, grpcServer, httpServer, outboxClient, orderSubscriber, workflowWorker, purgeService, reconciliationService)
 	return app, func() {
 		cleanupWfc()
 		cleanup3()

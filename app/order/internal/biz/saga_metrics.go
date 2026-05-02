@@ -28,6 +28,8 @@ type sagaMetrics struct {
 	compensations atomic.Int64
 	// saga_orphan_payment_total — incremented by subscriber on terminated workflow.
 	orphanPayments atomic.Int64
+	// saga_reconciliation_drift_total — incremented by ReconciliationService on each drift row.
+	reconcileDrift atomic.Int64
 }
 
 // SagaMetrics is the package-level singleton.
@@ -49,6 +51,9 @@ func (m *sagaMetrics) RecordCompensation() { m.compensations.Add(1) }
 // Called by the event subscriber when a payment event arrives for a terminated workflow.
 func (m *sagaMetrics) RecordOrphanPayment() { m.orphanPayments.Add(1) }
 
+// IncDrift increments the saga reconciliation drift counter.
+func (m *sagaMetrics) IncDrift() { m.reconcileDrift.Add(1) }
+
 // Snapshot returns a point-in-time copy of all counters.
 func (m *sagaMetrics) Snapshot() SagaMetricsSnapshot {
 	return SagaMetricsSnapshot{
@@ -57,6 +62,7 @@ func (m *sagaMetrics) Snapshot() SagaMetricsSnapshot {
 		AttemptsFailedAfterPivot: m.attemptsFailedAfterPivot.Load(),
 		Compensations:            m.compensations.Load(),
 		OrphanPayments:           m.orphanPayments.Load(),
+		ReconcileDrift:           m.reconcileDrift.Load(),
 	}
 }
 
@@ -67,4 +73,5 @@ type SagaMetricsSnapshot struct {
 	AttemptsFailedAfterPivot int64
 	Compensations            int64
 	OrphanPayments           int64
+	ReconcileDrift           int64
 }

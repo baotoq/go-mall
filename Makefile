@@ -118,6 +118,17 @@ generate:
 	go generate ./...
 	go mod tidy
 
+.PHONY: verify-saga-config
+# verify saga Dapr config AC9a + AC9c
+verify-saga-config:
+	@command -v yq >/dev/null 2>&1 || { echo "yq required (brew install yq or go install github.com/mikefarah/yq/v4@latest)"; exit 1; }
+	@echo "AC9a: workflowstore actorStateStore=true"
+	@yq -e '.spec.metadata[] | select(.name=="actorStateStore") | .value' deploy/k8s/base/infra/dapr/workflowstore.yaml | grep -q 'true' && echo PASS || { echo FAIL; exit 1; }
+	@echo "AC9c: order-workflow-config has stateRetentionPolicy"
+	@yq -e '.spec.workflow.stateRetentionPolicy' deploy/k8s/base/infra/dapr/workflow-config.yaml >/dev/null && echo PASS || { echo FAIL; exit 1; }
+	@echo "AC9c: order Deployment annotated with dapr.io/config=order-workflow-config"
+	@yq -e '.spec.template.metadata.annotations."dapr.io/config"' deploy/k8s/base/app/order.yaml | grep -q 'order-workflow-config' && echo PASS || { echo FAIL; exit 1; }
+
 .PHONY: dev
 # start dev environment, Delve starts immediately
 dev:

@@ -18,6 +18,8 @@ type CompletedWorkflowRepo interface {
 	ListPendingPurge(ctx context.Context, olderThan time.Duration) ([]string, error)
 	// MarkPurged records that the given instance has been purged.
 	MarkPurged(ctx context.Context, instanceID string) error
+	// Insert records a terminal workflow instance. Idempotent via UNIQUE on instance_id.
+	Insert(ctx context.Context, instanceID, terminalState string) error
 }
 
 // PurgeService is a kratos transport.Server-compatible background service that

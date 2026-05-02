@@ -64,14 +64,16 @@ type SagaConfig struct {
 
 // cancelInput is the input struct for CancelOrderActivity.
 type cancelInput struct {
-	OrderID string
-	Reason  string
+	WorkflowID string
+	OrderID    string
+	Reason     string
 }
 
 // markPaidInput is the input struct for MarkPaidActivity.
 type markPaidInput struct {
-	OrderID   string
-	PaymentID string
+	WorkflowID string
+	OrderID    string
+	PaymentID  string
 }
 
 // paymentRequestedInput is the input struct for PublishPaymentRequestedActivity.
@@ -155,8 +157,9 @@ func NewOrderSagaWorkflow(cfg SagaConfig) workflow.Workflow {
 		if !out.success {
 			_ = ctx.CallActivity(activityCancelOrder,
 				workflow.WithActivityInput(cancelInput{
-					OrderID: orderID,
-					Reason:  out.reasonCode,
+					WorkflowID: workflowID,
+					OrderID:    orderID,
+					Reason:     out.reasonCode,
 				})).Await(nil)
 			return CheckoutResult{
 				State:     "FAILED",
@@ -177,8 +180,9 @@ func NewOrderSagaWorkflow(cfg SagaConfig) workflow.Workflow {
 		}
 		if err := ctx.CallActivity(activityMarkPaid,
 			workflow.WithActivityInput(markPaidInput{
-				OrderID:   orderID,
-				PaymentID: out.paymentID,
+				WorkflowID: workflowID,
+				OrderID:    orderID,
+				PaymentID:  out.paymentID,
 			}),
 			workflow.WithActivityRetryPolicy(retry)).Await(nil); err != nil {
 			return CheckoutResult{

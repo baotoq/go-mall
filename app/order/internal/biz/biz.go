@@ -21,6 +21,7 @@ var ProviderSet = wire.NewSet(
 	NewWorkflowClient,
 	NewWorkflowRegistry,
 	NewPurgeService,
+	NewReconciliationService,
 )
 
 // ProvideSagaConfig converts *conf.Saga (proto Duration fields) to the biz
@@ -88,7 +89,7 @@ func NewWorkflowClient(logger log.Logger) (*workflow.Client, func(), error) {
 // NewWorkflowRegistry builds a *workflow.Registry with all four saga activities
 // and the OrderSaga workflow registered. The registry is passed to the
 // WorkflowWorker (Step 6.3) to start the worker.
-func NewWorkflowRegistry(uc *OrderUsecase, cfg SagaConfig) (*workflow.Registry, error) {
+func NewWorkflowRegistry(uc *OrderUsecase, completedRepo CompletedWorkflowRepo, cfg SagaConfig) (*workflow.Registry, error) {
 	r := workflow.NewRegistry()
 
 	if err := r.AddWorkflowN("OrderSaga", NewOrderSagaWorkflow(cfg)); err != nil {
@@ -100,10 +101,10 @@ func NewWorkflowRegistry(uc *OrderUsecase, cfg SagaConfig) (*workflow.Registry, 
 	if err := r.AddActivityN(activityPublishPaymentRequested, NewPublishPaymentRequestedActivity(uc)); err != nil {
 		return nil, err
 	}
-	if err := r.AddActivityN(activityCancelOrder, NewCancelOrderActivity(uc)); err != nil {
+	if err := r.AddActivityN(activityCancelOrder, NewCancelOrderActivity(uc, completedRepo)); err != nil {
 		return nil, err
 	}
-	if err := r.AddActivityN(activityMarkPaid, NewMarkPaidActivity(uc)); err != nil {
+	if err := r.AddActivityN(activityMarkPaid, NewMarkPaidActivity(uc, completedRepo)); err != nil {
 		return nil, err
 	}
 	return r, nil

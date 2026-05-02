@@ -35,7 +35,7 @@ func init() {
 	flag.StringVar(&flagconf, "conf", "../../configs", "config path, eg: -conf config.yaml")
 }
 
-func newApp(logger log.Logger, gs *grpc.Server, hs *http.Server, ob *outbox.Client, sub *server.OrderSubscriber, ww *server.WorkflowWorker, ps *biz.PurgeService) *kratos.App {
+func newApp(logger log.Logger, gs *grpc.Server, hs *http.Server, ob *outbox.Client, sub *server.OrderSubscriber, ww *server.WorkflowWorker, ps *biz.PurgeService, rs *biz.ReconciliationService) *kratos.App {
 	return kratos.New(
 		kratos.ID(id),
 		kratos.Name(Name),
@@ -43,8 +43,8 @@ func newApp(logger log.Logger, gs *grpc.Server, hs *http.Server, ob *outbox.Clie
 		kratos.Metadata(map[string]string{}),
 		kratos.Logger(logger),
 		// Registration order matters: kratos stops in reverse order.
-		// Stop sequence: ps → ww → sub → gs → hs
-		kratos.Server(hs, gs, sub, ww, ps),
+		// Stop sequence: rs → ps → ww → sub → gs → hs
+		kratos.Server(hs, gs, sub, ww, ps, rs),
 		kratos.BeforeStart(ob.Start),
 		kratos.AfterStop(ob.Stop),
 	)
