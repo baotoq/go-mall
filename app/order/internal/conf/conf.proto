@@ -48,14 +48,3 @@ message Saga {
   google.protobuf.Duration mark_paid_budget = 7;
   google.protobuf.Duration drain_timeout = 8;
 }
-
-message Saga {
-  bool enabled = 1;
-  int32 max_payment_attempts = 2;
-  google.protobuf.Duration per_attempt_timeout = 3;
-  google.protobuf.Duration payment_initial_delay = 4;
-  google.protobuf.Duration payment_backoff_max = 5;
-  int32 mark_paid_retry_max = 6;
-  google.protobuf.Duration mark_paid_budget = 7;
-  google.protobuf.Duration drain_timeout = 8;
-}

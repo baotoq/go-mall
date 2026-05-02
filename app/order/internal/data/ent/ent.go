@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"gomall/app/order/internal/data/ent/idempotencykey"
 	"gomall/app/order/internal/data/ent/order"
 	"gomall/app/order/internal/data/ent/workflowdeadletterevent"
 	"reflect"
@@ -74,6 +75,7 @@ var (
 func checkColumn(t, c string) error {
 	initCheck.Do(func() {
 		columnCheck = sql.NewColumnCheck(map[string]func(string) bool{
+			idempotencykey.Table:          idempotencykey.ValidColumn,
 			order.Table:                   order.ValidColumn,
 			workflowdeadletterevent.Table: workflowdeadletterevent.ValidColumn,
 		})

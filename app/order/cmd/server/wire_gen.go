@@ -16,21 +16,18 @@ import (
 	"gomall/app/order/internal/server"
 	"gomall/app/order/internal/service"
 	"gomall/pkg/outbox"
-)
-
-import (
 	_ "go.uber.org/automaxprocs"
 )
 
 // Injectors from wire.go:
 
-func wireApp(confServer *conf.Server, confData *conf.Data, logger log.Logger, daprClient dapr.Client) (*kratos.App, func(), error) {
+func wireApp(confServer *conf.Server, confData *conf.Data, confSaga *conf.Saga, logger log.Logger, daprClient dapr.Client) (*kratos.App, func(), error) {
 	db, cleanup, err := data.ProvideSQLDB(confData)
 	if err != nil {
 		return nil, nil, err
 	}
-	config := data.ProvideOutboxConfig()
-	outboxClient, cleanup2, err := outbox.ProvideClient(db, daprClient, config, logger)
+	outboxConfig := data.ProvideOutboxConfig()
+	outboxClient, cleanup2, err := outbox.ProvideClient(db, daprClient, outboxConfig, logger)
 	if err != nil {
 		cleanup()
 		return nil, nil, err
@@ -44,11 +41,25 @@ func wireApp(confServer *conf.Server, confData *conf.Data, logger log.Logger, da
 	orderRepo := data.NewOrderRepo(dataData, logger)
 	outboxPublisher := data.NewOutboxPublisher(outboxClient)
 	orderUsecase := biz.NewOrderUsecase(orderRepo, outboxPublisher)
+	idempotencyKeyRepo := data.NewIdempotencyKeyRepo(dataData, logger)
+	workflowDeadLetterEventRepo := data.NewWorkflowDeadLetterEventRepo(dataData, logger)
+	sagaConfig := biz.ProvideSagaConfig(confSaga)
+	workflowClient, cleanupWfc, err := biz.NewWorkflowClient(logger)
+	if err != nil {
+		cleanup3()
+		cleanup2()
+		cleanup()
+		return nil, nil, err
+	}
+	checkoutUsecase := biz.NewCheckoutUsecase(workflowClient, idempotencyKeyRepo, sagaConfig, logger)
+	_ = checkoutUsecase // used by service layer in Wave 3
 	orderService := service.NewOrderService(orderUsecase)
 	grpcServer := server.NewGRPCServer(confServer, orderService, logger)
 	httpServer := server.NewHTTPServer(confServer, orderService, logger)
-	app := newApp(logger, grpcServer, httpServer, outboxClient)
+	orderSubscriber := server.NewOrderSubscriber(confServer, workflowClient, workflowDeadLetterEventRepo, outboxClient, logger)
+	app := newApp(logger, grpcServer, httpServer, outboxClient, orderSubscriber)
 	return app, func() {
+		cleanupWfc()
 		cleanup3()
 		cleanup2()
 		cleanup()

@@ -16,9 +16,19 @@ type TxExecer interface {
 	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
 }
 
+// OutboxPublishOpts carries optional overrides for a Publish call.
+// Kept in biz to avoid importing pkg/outbox from biz.
+type OutboxPublishOpts struct {
+	MessageID string
+	Headers   map[string]string
+}
+
 // OutboxPublisher writes an event into the transactional outbox.
 type OutboxPublisher interface {
 	Publish(ctx context.Context, tx TxExecer, topic string, payload any) (string, error)
+	// PublishWithOpts is like Publish but forwards message-ID and headers for
+	// idempotent, trace-correlated delivery (used by saga activities).
+	PublishWithOpts(ctx context.Context, tx TxExecer, topic string, payload any, opts OutboxPublishOpts) (string, error)
 }
 
 var (
@@ -59,6 +69,9 @@ type OrderRepo interface {
 	ListByUser(ctx context.Context, userID, status string, page, pageSize int) ([]*Order, int, error)
 	UpdateStatus(ctx context.Context, id uuid.UUID, status string) (*Order, error)
 	MarkPaid(ctx context.Context, id uuid.UUID, paymentID string) (*Order, error)
+	// RunInTx executes fn inside a new database transaction. Used by saga
+	// activities that need to commit outbox rows atomically.
+	RunInTx(ctx context.Context, fn func(tx TxExecer) error) error
 }
 
 type OrderUsecase struct {

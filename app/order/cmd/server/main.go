@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"gomall/app/order/internal/conf"
+	"gomall/app/order/internal/server"
 	"gomall/pkg/outbox"
 	"gomall/pkg/secrets"
 
@@ -33,14 +34,14 @@ func init() {
 	flag.StringVar(&flagconf, "conf", "../../configs", "config path, eg: -conf config.yaml")
 }
 
-func newApp(logger log.Logger, gs *grpc.Server, hs *http.Server, ob *outbox.Client) *kratos.App {
+func newApp(logger log.Logger, gs *grpc.Server, hs *http.Server, ob *outbox.Client, sub *server.OrderSubscriber) *kratos.App {
 	return kratos.New(
 		kratos.ID(id),
 		kratos.Name(Name),
 		kratos.Version(Version),
 		kratos.Metadata(map[string]string{}),
 		kratos.Logger(logger),
-		kratos.Server(gs, hs),
+		kratos.Server(gs, hs, sub),
 		kratos.BeforeStart(ob.Start),
 		kratos.AfterStop(ob.Stop),
 	)
@@ -91,7 +92,7 @@ func main() {
 	}
 	bc.Data.Workflow.WorkflowstoreConnectionString = sec.WorkflowstoreConnectionString
 
-	app, cleanup, err := wireApp(bc.Server, bc.Data, logger, daprClient)
+	app, cleanup, err := wireApp(bc.Server, bc.Data, bc.Saga, logger, daprClient)
 	if err != nil {
 		panic(err)
 	}

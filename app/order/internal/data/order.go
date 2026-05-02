@@ -132,6 +132,18 @@ func (r *orderRepo) UpdateStatus(ctx context.Context, id uuid.UUID, status strin
 	return entToOrder(updated), nil
 }
 
+func (r *orderRepo) RunInTx(ctx context.Context, fn func(tx biz.TxExecer) error) error {
+	sqlTx, err := r.data.sqlDB.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = sqlTx.Rollback() }()
+	if err := fn(sqlTx); err != nil {
+		return err
+	}
+	return sqlTx.Commit()
+}
+
 func (r *orderRepo) MarkPaid(ctx context.Context, id uuid.UUID, paymentID string) (*biz.Order, error) {
 	updated, err := r.data.db.Order.UpdateOneID(id).
 		SetPaymentID(paymentID).

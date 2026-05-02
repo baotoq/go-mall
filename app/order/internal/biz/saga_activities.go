@@ -2,27 +2,17 @@ package biz
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
 
 	"github.com/dapr/durabletask-go/workflow"
 	"github.com/google/uuid"
+	"go.opentelemetry.io/otel/propagation"
 )
 
 // TopicPaymentRequested is the pub/sub topic for payment requests.
 const TopicPaymentRequested = "payment.requested"
-
-// noopTx satisfies TxExecer but always returns an error.
-// It is a placeholder until Wave 2b wires a real ent.Tx into
-// PublishPaymentRequested. Any call to ExecContext will return an error
-// that surfaces the Wave 2b TODO.
-type noopTx struct{}
-
-func (n *noopTx) ExecContext(_ context.Context, _ string, _ ...any) (sql.Result, error) {
-	return nil, fmt.Errorf("noopTx: real ent.Tx required — implement in Wave 2b")
-}
 
 // NewCreateOrderActivity creates an order row + publishes order.created via
 // the transactional outbox in a single ent.Tx.
@@ -163,19 +153,39 @@ func (uc *OrderUsecase) CreateForCheckout(ctx context.Context, in CheckoutInput)
 	return created.ID.String(), nil
 }
 
-// PublishPaymentRequested publishes a payment.requested event via the outbox.
-// messageID is the deterministic idempotency key for the outbox row.
-//
-// TODO(Wave 2b): open an explicit ent.Tx here and pass it to ob.Publish so the
-// outbox row and the idempotency-key upsert commit atomically. For now a noopTx
-// placeholder is used; the outbox.Client.Publish will return an error from
-// noopTx.ExecContext, so this is effectively a stub until Wave 2b.
-// The activity wraps this method, so errors surface as activity failures and
-// are retried by the workflow retry policy.
-func (uc *OrderUsecase) PublishPaymentRequested(_ context.Context, in paymentRequestedInput, _ string) error {
-	// TODO(Wave 2b): replace with explicit ent.Tx + WithMessageID option.
-	// For now, return nil to allow the workflow to proceed in environments
-	// where the payment subscriber is not yet deployed.
-	_ = in
-	return nil
+// paymentRequestedPayload is the JSON body published on payment.requested.
+type paymentRequestedPayload struct {
+	WorkflowInstanceID string `json:"workflow_instance_id"`
+	OrderID            string `json:"order_id"`
+	Amount             int64  `json:"amount"`
+	Currency           string `json:"currency"`
+	Attempt            int32  `json:"attempt"`
+}
+
+// PublishPaymentRequested publishes a payment.requested event via the
+// transactional outbox. Opens its own ent.Tx (via repo.RunInTx) so the
+// outbox row commits atomically and is isolated from any caller transaction.
+// messageID = workflowID+":pay-req:"+attempt ensures idempotent replay
+// (UNIQUE outbox id, ON CONFLICT DO NOTHING).
+// W3C traceparent is injected into headers from ctx so the payment service
+// can continue the trace.
+func (uc *OrderUsecase) PublishPaymentRequested(ctx context.Context, in paymentRequestedInput, messageID string) error {
+	headers := make(map[string]string)
+	propagation.TraceContext{}.Inject(ctx, propagation.MapCarrier(headers))
+
+	evt := paymentRequestedPayload{
+		WorkflowInstanceID: in.WorkflowID,
+		OrderID:            in.OrderID,
+		Amount:             in.Amount,
+		Currency:           in.Currency,
+		Attempt:            in.Attempt,
+	}
+
+	return uc.repo.RunInTx(ctx, func(tx TxExecer) error {
+		_, err := uc.ob.PublishWithOpts(ctx, tx, TopicPaymentRequested, evt, OutboxPublishOpts{
+			MessageID: messageID,
+			Headers:   headers,
+		})
+		return err
+	})
 }

@@ -8,6 +8,27 @@ import (
 )
 
 var (
+	// IdempotencyKeysColumns holds the columns for the "idempotency_keys" table.
+	IdempotencyKeysColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "key", Type: field.TypeString, Unique: true, Size: 255},
+		{Name: "response_json", Type: field.TypeString},
+		{Name: "user_id", Type: field.TypeString, Size: 128},
+		{Name: "created_at", Type: field.TypeTime},
+	}
+	// IdempotencyKeysTable holds the schema information for the "idempotency_keys" table.
+	IdempotencyKeysTable = &schema.Table{
+		Name:       "idempotency_keys",
+		Columns:    IdempotencyKeysColumns,
+		PrimaryKey: []*schema.Column{IdempotencyKeysColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "idempotencykey_key_user_id",
+				Unique:  false,
+				Columns: []*schema.Column{IdempotencyKeysColumns[1], IdempotencyKeysColumns[3]},
+			},
+		},
+	}
 	// OrdersColumns holds the columns for the "orders" table.
 	OrdersColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
@@ -68,6 +89,7 @@ var (
 	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
+		IdempotencyKeysTable,
 		OrdersTable,
 		WorkflowDeadLetterEventsTable,
 	}

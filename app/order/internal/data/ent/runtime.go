@@ -3,6 +3,7 @@
 package ent
 
 import (
+	"gomall/app/order/internal/data/ent/idempotencykey"
 	"gomall/app/order/internal/data/ent/order"
 	"gomall/app/order/internal/data/ent/schema"
 	"gomall/app/order/internal/data/ent/workflowdeadletterevent"
@@ -15,6 +16,24 @@ import (
 // (default values, validators, hooks and policies) and stitches it
 // to their package variables.
 func init() {
+	idempotencykeyFields := schema.IdempotencyKey{}.Fields()
+	_ = idempotencykeyFields
+	// idempotencykeyDescKey is the schema descriptor for key field.
+	idempotencykeyDescKey := idempotencykeyFields[0].Descriptor()
+	// idempotencykey.KeyValidator is a validator for the "key" field. It is called by the builders before save.
+	idempotencykey.KeyValidator = idempotencykeyDescKey.Validators[0].(func(string) error)
+	// idempotencykeyDescResponseJSON is the schema descriptor for response_json field.
+	idempotencykeyDescResponseJSON := idempotencykeyFields[1].Descriptor()
+	// idempotencykey.ResponseJSONValidator is a validator for the "response_json" field. It is called by the builders before save.
+	idempotencykey.ResponseJSONValidator = idempotencykeyDescResponseJSON.Validators[0].(func(string) error)
+	// idempotencykeyDescUserID is the schema descriptor for user_id field.
+	idempotencykeyDescUserID := idempotencykeyFields[2].Descriptor()
+	// idempotencykey.UserIDValidator is a validator for the "user_id" field. It is called by the builders before save.
+	idempotencykey.UserIDValidator = idempotencykeyDescUserID.Validators[0].(func(string) error)
+	// idempotencykeyDescCreatedAt is the schema descriptor for created_at field.
+	idempotencykeyDescCreatedAt := idempotencykeyFields[3].Descriptor()
+	// idempotencykey.DefaultCreatedAt holds the default value on creation for the created_at field.
+	idempotencykey.DefaultCreatedAt = idempotencykeyDescCreatedAt.Default.(func() time.Time)
 	orderFields := schema.Order{}.Fields()
 	_ = orderFields
 	// orderDescUserID is the schema descriptor for user_id field.
