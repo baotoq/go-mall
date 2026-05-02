@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 
 // Requires: UCP_ENABLED=true npm run dev
-// Tests the MCP JSON-RPC endpoint at /api/mcp
+// Tests the MCP JSON-RPC endpoint at /api/mcp/mcp (streamable HTTP transport)
 
 test.describe("UCP MCP Transport", () => {
   async function mcpCall(
@@ -15,11 +15,18 @@ test.describe("UCP MCP Transport", () => {
     params: Record<string, unknown>,
     id = 1,
   ) {
-    const res = await request.post("/api/mcp", {
+    const res = await request.post("/api/mcp/mcp", {
       data: { jsonrpc: "2.0", id, method, params },
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json, text/event-stream",
+      },
     });
-    return { status: res.status(), body: await res.json() };
+    // mcp-handler returns SSE-encoded JSON: "event: message\ndata: {...}\n\n"
+    const text = await res.text();
+    const dataLine = text.split("\n").find((l) => l.startsWith("data: "));
+    const body = dataLine ? JSON.parse(dataLine.slice(6)) : null;
+    return { status: res.status(), body };
   }
 
   test("tools/list returns all UCP tools", async ({ request }) => {
