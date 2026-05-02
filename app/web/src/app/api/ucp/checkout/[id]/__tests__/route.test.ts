@@ -86,7 +86,7 @@ describe("GET /api/ucp/checkout/[id]", () => {
   it("returns session when found", async () => {
     mockGet.mockResolvedValue(MOCK_SESSION);
     const { GET } = await import("../route");
-    const req = makeGetRequest("test-id");
+    const req = makeGetRequest("test-id", { "X-UCP-Session": "test-id" });
     const res = await GET(req, { params: Promise.resolve({ id: "test-id" }) });
     expect(res.status).toBe(200);
     const body = await res.json();
@@ -96,13 +96,77 @@ describe("GET /api/ucp/checkout/[id]", () => {
   it("returns 404 for unknown id", async () => {
     mockGet.mockResolvedValue(null);
     const { GET } = await import("../route");
-    const req = makeGetRequest("unknown-id");
+    const req = makeGetRequest("unknown-id", { "X-UCP-Session": "unknown-id" });
     const res = await GET(req, {
       params: Promise.resolve({ id: "unknown-id" }),
     });
     expect(res.status).toBe(404);
     const body = await res.json();
     expect(body.code).toBe("not_found");
+  });
+
+  it("returns 401 when X-UCP-Session header is missing", async () => {
+    const { GET } = await import("../route");
+    const req = makeGetRequest("test-id");
+    const res = await GET(req, { params: Promise.resolve({ id: "test-id" }) });
+    expect(res.status).toBe(401);
+    const body = await res.json();
+    expect(body.code).toBe("missing_session");
+  });
+
+  it("returns 403 when X-UCP-Session does not match id", async () => {
+    const { GET } = await import("../route");
+    const req = makeGetRequest("test-id", { "X-UCP-Session": "wrong-id" });
+    const res = await GET(req, { params: Promise.resolve({ id: "test-id" }) });
+    expect(res.status).toBe(403);
+    const body = await res.json();
+    expect(body.code).toBe("session_mismatch");
+  });
+
+  it("does not call getCheckoutSession when auth fails", async () => {
+    const { GET } = await import("../route");
+    const req = makeGetRequest("test-id");
+    await GET(req, { params: Promise.resolve({ id: "test-id" }) });
+    expect(mockGet).not.toHaveBeenCalled();
+  });
+});
+
+describe("OPTIONS /api/ucp/checkout/[id]", () => {
+  beforeEach(() => {
+    process.env.UCP_ENABLED = "true";
+    process.env.UCP_ALLOWED_ORIGINS = "http://allowed.example";
+  });
+
+  afterEach(() => {
+    delete process.env.UCP_ENABLED;
+    delete process.env.UCP_ALLOWED_ORIGINS;
+  });
+
+  it("returns 204 with CORS headers when origin is allowed", async () => {
+    const { OPTIONS } = await import("../route");
+    const req = new Request("http://localhost:3000/api/ucp/checkout/test-id", {
+      method: "OPTIONS",
+      headers: { Origin: "http://allowed.example" },
+    });
+    const res = await OPTIONS(req);
+    expect(res.status).toBe(204);
+    expect(res.headers.get("Access-Control-Allow-Origin")).toBe(
+      "http://allowed.example",
+    );
+    expect(res.headers.get("Vary")).toBe("Origin");
+    expect(res.headers.get("Access-Control-Allow-Methods")).toContain("PATCH");
+  });
+
+  it("omits Access-Control-Allow-Origin when origin is not allow-listed", async () => {
+    const { OPTIONS } = await import("../route");
+    const req = new Request("http://localhost:3000/api/ucp/checkout/test-id", {
+      method: "OPTIONS",
+      headers: { Origin: "http://evil.example" },
+    });
+    const res = await OPTIONS(req);
+    expect(res.status).toBe(204);
+    expect(res.headers.get("Access-Control-Allow-Origin")).toBeNull();
+    expect(res.headers.get("Vary")).toBe("Origin");
   });
 });
 
@@ -217,7 +281,7 @@ describe("POST /api/ucp/checkout/[id] (complete)", () => {
   it("returns 410 Gone for expired session (treats missing as expired/not found)", async () => {
     mockGet.mockResolvedValue(null);
     const { GET } = await import("../route");
-    const req = makeGetRequest("expired-id");
+    const req = makeGetRequest("expired-id", { "X-UCP-Session": "expired-id" });
     const res = await GET(req, {
       params: Promise.resolve({ id: "expired-id" }),
     });
