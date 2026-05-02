@@ -58,7 +58,7 @@ describe("createCheckout", () => {
     // Act
     const result = await createCheckout(
       { cart_session_id: "missing", currency: "USD" },
-      { userId: "user-1" },
+      {},
     );
 
     // Assert
@@ -76,7 +76,7 @@ describe("createCheckout", () => {
     // Act
     const result = await createCheckout(
       { cart_session_id: "sess-1", currency: "USD" },
-      { userId: "user-1" },
+      {},
     );
 
     // Assert
@@ -145,7 +145,7 @@ describe("createCheckout", () => {
     // Act
     const result = await createCheckout(
       { cart_session_id: "sess-1", currency: "USD" },
-      { userId: "user-1" },
+      {},
     );
 
     // Assert
@@ -167,7 +167,7 @@ describe("updateCheckout", () => {
     mockedGetCart.mockResolvedValue(makeCart());
     const created = await createCheckout(
       { cart_session_id: "sess-1", currency: "USD" },
-      { userId: "user-1" },
+      {},
     );
     if ("error" in created) throw new Error("expected session");
 
@@ -192,7 +192,7 @@ describe("completeCheckout", () => {
     mockedGetCart.mockResolvedValue(makeCart());
     const created = await createCheckout(
       { cart_session_id: "sess-1", currency: "USD" },
-      { userId: "user-1" },
+      {},
     );
     if ("error" in created) throw new Error("expected session");
     const updated = await updateCheckout(created.session.id, {
@@ -208,7 +208,7 @@ describe("completeCheckout", () => {
     mockedCreateOrder.mockResolvedValue({ id: "order-123" });
 
     // Act
-    const result = await completeCheckout(session.id, { userId: "user-1" });
+    const result = await completeCheckout(session.id, {});
 
     // Assert
     if ("error" in result) throw new Error("expected session");
@@ -227,7 +227,7 @@ describe("completeCheckout", () => {
     mockedCreateOrder.mockRejectedValue(new Error("boom"));
 
     // Act
-    const result = await completeCheckout(session.id, { userId: "user-1" });
+    const result = await completeCheckout(session.id, {});
 
     // Assert
     expect(result).toMatchObject({
@@ -251,8 +251,8 @@ describe("completeCheckout", () => {
     );
 
     // Act
-    const p1 = completeCheckout(session.id, { userId: "user-1" });
-    const p2 = completeCheckout(session.id, { userId: "user-1" });
+    const p1 = completeCheckout(session.id, {});
+    const p2 = completeCheckout(session.id, {});
     resolveOrder({ id: "order-123" });
     const [r1, r2] = await Promise.all([p1, p2]);
 
@@ -271,14 +271,8 @@ describe("completeCheckout", () => {
     const key = "idem-key-1";
 
     // Act
-    const r1 = await completeCheckout(session.id, {
-      idempotencyKey: key,
-      userId: "user-1",
-    });
-    const r2 = await completeCheckout(session.id, {
-      idempotencyKey: key,
-      userId: "user-1",
-    });
+    const r1 = await completeCheckout(session.id, { idempotencyKey: key });
+    const r2 = await completeCheckout(session.id, { idempotencyKey: key });
 
     // Assert
     if ("error" in r1) throw new Error("expected session");

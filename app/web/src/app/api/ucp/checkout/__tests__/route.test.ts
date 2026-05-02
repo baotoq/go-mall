@@ -54,6 +54,7 @@ function makeRequest(
 describe("POST /api/ucp/checkout", () => {
   beforeEach(() => {
     process.env.UCP_ENABLED = "true";
+    mockCreateCheckout.mockReset();
     vi.clearAllMocks();
     idemStore.clear();
   });
@@ -174,5 +175,58 @@ describe("POST /api/ucp/checkout", () => {
     expect(body2.session_id).toBe("idem-id");
     // createCheckout must only have been called once — the second was served from cache.
     expect(mockCreateCheckout).toHaveBeenCalledTimes(1);
+  });
+
+  it("Idempotency-Key scoping: same key with different cart_session_id is NOT deduped", async () => {
+    // Two distinct carts with the same key must each create their own session.
+    mockCreateCheckout
+      .mockResolvedValueOnce({
+        session: {
+          id: "session-cart-a",
+          status: "incomplete",
+          currency: "USD",
+          cart_session_id: "cart-a",
+          user_id: "guest",
+          totals: { subtotal_cents: 100, currency: "USD" },
+          messages: [],
+          expires_at: new Date().toISOString(),
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+      })
+      .mockResolvedValueOnce({
+        session: {
+          id: "session-cart-b",
+          status: "incomplete",
+          currency: "USD",
+          cart_session_id: "cart-b",
+          user_id: "guest",
+          totals: { subtotal_cents: 200, currency: "USD" },
+          messages: [],
+          expires_at: new Date().toISOString(),
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+      });
+
+    const { POST } = await import("../route");
+
+    const res1 = await POST(
+      makeRequest(
+        { cart_session_id: "cart-a", currency: "USD" },
+        { "Idempotency-Key": "shared-key" },
+      ),
+    );
+    const res2 = await POST(
+      makeRequest(
+        { cart_session_id: "cart-b", currency: "USD" },
+        { "Idempotency-Key": "shared-key" },
+      ),
+    );
+
+    expect((await res1.json()).session_id).toBe("session-cart-a");
+    expect((await res2.json()).session_id).toBe("session-cart-b");
+    // Both carts must have triggered a real createCheckout call.
+    expect(mockCreateCheckout).toHaveBeenCalledTimes(2);
   });
 });

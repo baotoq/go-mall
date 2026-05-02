@@ -57,11 +57,14 @@ export async function POST(req: Request) {
       req,
     );
 
-  // Scope the store key by cart_session_id so a leaked Idempotency-Key cannot
-  // replay another caller's session (the cart_session_id acts as a second factor).
+  // Scope the store key by the full canonical body so:
+  //   (a) a leaked key cannot replay a different caller's session (cart isolation)
+  //   (b) a different currency with the same key gets a fresh session (correctness)
+  // Note: callers must use a new key if external cart contents change — per the
+  // IETF Idempotency-Key draft, the key must not be reused for different requests.
   const scopedKey = idempotencyKey
     ? createHash("sha256")
-        .update(`${idempotencyKey}:${parsed.data.cart_session_id}`)
+        .update(`${idempotencyKey}:${JSON.stringify(parsed.data)}`)
         .digest("hex")
     : null;
 

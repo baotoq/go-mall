@@ -123,7 +123,7 @@ export async function updateCheckout(
 
 export async function completeCheckout(
   id: string,
-  opts: { idempotencyKey?: string | null; userId?: string },
+  opts: { idempotencyKey?: string | null },
 ): Promise<CompleteCheckoutResult> {
   const session = getSession(id);
   if (!session) {
