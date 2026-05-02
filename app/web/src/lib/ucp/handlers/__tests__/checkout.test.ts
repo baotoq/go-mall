@@ -286,4 +286,53 @@ describe("completeCheckout", () => {
     expect(r1.session.id).toBe(r2.session.id);
     expect(mockedCreateOrder).toHaveBeenCalledTimes(1);
   });
+
+  it("idempotency replay returns frozen snapshot, immune to later mutations", async () => {
+    // Arrange — complete once with a key, capture the snapshot values.
+    const session = await setupReadySession();
+    mockedCreateOrder.mockResolvedValue({ id: "order-123" });
+    const key = "idem-key-frozen";
+    const r1 = await completeCheckout(session.id, { idempotencyKey: key });
+    if ("error" in r1) throw new Error("expected session");
+    const cachedAt = r1.session.updated_at;
+    const cachedEmail = r1.session.buyer?.email;
+    const cachedStatus = r1.session.status;
+
+    // Mutate the live session directly — bypassing the public API so the
+    // change is observable regardless of timer/clock resolution.
+    const live = await getCheckoutSession(session.id);
+    if (!live) throw new Error("expected live session");
+    live.updated_at = "MUTATED-AFTER-CACHE";
+    live.buyer = { email: "tampered@evil.example" };
+    live.status = "incomplete";
+
+    // Act — replay the original idempotency key.
+    const r2 = await completeCheckout(session.id, { idempotencyKey: key });
+
+    // Assert — replayed snapshot is the original, NOT the mutated live state.
+    if ("error" in r2) throw new Error("expected session");
+    expect(r2.session.updated_at).toBe(cachedAt);
+    expect(r2.session.buyer?.email).toBe(cachedEmail);
+    expect(r2.session.status).toBe(cachedStatus);
+    // r1 and r2 must be independent objects so callers can't poison cache.
+    expect(r1.session).not.toBe(r2.session);
+  });
+
+  it("logs the underlying error when createOrder fails", async () => {
+    // Arrange
+    const session = await setupReadySession();
+    const upstreamErr = new Error("upstream 500: kratos error_reason=BOOM");
+    mockedCreateOrder.mockRejectedValue(upstreamErr);
+    const errSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    // Act
+    await completeCheckout(session.id, {});
+
+    // Assert
+    expect(errSpy).toHaveBeenCalledWith(
+      "[ucp] createOrder failed:",
+      upstreamErr,
+    );
+    errSpy.mockRestore();
+  });
 });

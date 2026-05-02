@@ -148,11 +148,18 @@ export async function completeCheckout(
     }
     const cached = getIdempotency(idempotencyKey);
     if (cached) {
-      return { session: cached.response as CheckoutSession };
+      // Clone on read so callers can't mutate the cached snapshot through the
+      // returned reference (defense in depth — we also clone on write below).
+      return {
+        session: structuredClone(cached.response) as CheckoutSession,
+      };
     }
   }
 
-  // SYNCHRONOUS race-condition gate — must occur before any await
+  // SYNCHRONOUS race-condition gate — must occur before any await.
+  // Any future refactor that introduces an `await` between `getSession`
+  // above and the `setSession` write below silently reopens the
+  // double-complete race. Keep this block synchronous.
   if (session.status !== "ready_for_complete") {
     return {
       error: true,
@@ -169,7 +176,11 @@ export async function completeCheckout(
 
   try {
     await createOrder(session, items);
-  } catch {
+  } catch (err) {
+    // Surface the upstream failure to logs — silent catches here previously
+    // hid the real status/body from the order service and made
+    // "order_creation_failed" un-debuggable.
+    console.error("[ucp] createOrder failed:", err);
     session.status = "ready_for_complete";
     session.updated_at = new Date().toISOString();
     setSession(id, session);
@@ -186,8 +197,11 @@ export async function completeCheckout(
   setSession(id, session);
 
   if (idempotencyKey) {
+    // Clone the session snapshot at completion time so later updateCheckout
+    // calls (which mutate the live ref) cannot retroactively rewrite the
+    // cached idempotency response.
     setIdempotency(idempotencyKey, {
-      response: session,
+      response: structuredClone(session) as CheckoutSession,
       hash: hashSession(id),
       expires_at: Date.now() + IDEMPOTENCY_TTL_MS,
     });
