@@ -1,10 +1,8 @@
 package main
 
 import (
-	"context"
 	"flag"
 	"os"
-	"time"
 
 	"gomall/app/cart/internal/conf"
 	"gomall/pkg/secrets"
@@ -68,33 +66,15 @@ func main() {
 		panic(err)
 	}
 
-	// Retry Dapr client connection — sidecar may not be ready immediately on pod start.
-	var (
-		daprClient dapr.Client
-		secret     map[string]string
-	)
-	for attempt := 1; ; attempt++ {
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		dc, err := dapr.NewClient()
-		if err == nil {
-			s, err := dc.GetSecret(ctx, "secretstore", "secrets", nil)
-			cancel()
-			if err == nil {
-				daprClient = dc
-				secret = s
-				break
-			}
-			dc.Close()
-		} else {
-			cancel()
-		}
-		if attempt >= 12 {
-			panic("dapr sidecar not ready after 60s")
-		}
-		log.NewHelper(logger).Infof("waiting for dapr sidecar (attempt %d/12)...", attempt)
-		time.Sleep(5 * time.Second)
+	daprClient, err := dapr.NewClient()
+	if err != nil {
+		panic(err)
 	}
 	defer daprClient.Close()
+	secret, err := secrets.LoadSecrets(daprClient, logger)
+	if err != nil {
+		panic(err)
+	}
 
 	var bc conf.Bootstrap
 	if err := c.Scan(&bc); err != nil {
