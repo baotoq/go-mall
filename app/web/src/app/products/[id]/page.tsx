@@ -1,8 +1,8 @@
-import { notFound } from "next/navigation";
-import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { getProduct, listCategories } from "@/lib/api";
+import Link from "next/link";
+import { notFound } from "next/navigation";
 import { AddToCartButton } from "@/components/add-to-cart-button";
+import { getProduct, listCategories } from "@/lib/api";
 
 export default async function ProductPage({
   params,

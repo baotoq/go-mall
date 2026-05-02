@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
 test.describe("Auth flows", () => {
   test("unauthenticated /cart redirects to /signin with callbackUrl", async ({

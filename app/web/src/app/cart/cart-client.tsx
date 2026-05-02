@@ -1,11 +1,11 @@
 "use client";
 
+import { ArrowLeft, ShoppingBag, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useEffect } from "react";
-import { Trash2, ArrowLeft, ShoppingBag } from "lucide-react";
-import { useCartStore } from "@/store/cart";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useCartStore } from "@/store/cart";
 
 export function CartClient() {
   const {

@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { createKeycloakUser } from "@/lib/keycloak";
 
 export async function POST(req: NextRequest) {

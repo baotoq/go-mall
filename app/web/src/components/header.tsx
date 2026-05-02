@@ -1,13 +1,13 @@
 "use client";
 
-import Link from "next/link";
 import { ShoppingCart, Store } from "lucide-react";
-import { useCartStore } from "@/store/cart";
-import { useSession, signOut } from "next-auth/react";
+import Link from "next/link";
+import { signOut, useSession } from "next-auth/react";
+import { CleanButton } from "@/components/clean-button";
+import { SeedButton } from "@/components/seed-button";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { SeedButton } from "@/components/seed-button";
-import { CleanButton } from "@/components/clean-button";
+import { useCartStore } from "@/store/cart";
 
 export function Header() {
   const totalItems = useCartStore((state) => state.totalItems());
