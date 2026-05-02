@@ -1,0 +1,31 @@
+{
+  "ucp_version": "2026-01-11",
+  "roles": ["business"],
+  "runtime": "nodejs",
+  "capabilities": {
+    "core": ["dev.ucp.shopping.checkout"],
+    "extensions": [
+      "dev.ucp.shopping.fulfillment",
+      "dev.ucp.shopping.discount",
+      "dev.ucp.shopping.order"
+    ]
+  },
+  "transports": ["rest", "mcp"],
+  "transport_priority": ["rest", "mcp"],
+  "payment_handlers": [],
+  "features": {
+    "ap2_mandates": false,
+    "identity_linking": false,
+    "multi_destination_fulfillment": false
+  },
+  "existing_apis": {
+    "cart_get": "GET http://localhost:8002/v1/carts/:sessionId",
+    "order_create": "POST http://localhost:8004/v1/orders"
+  },
+  "policy_urls": {
+    "privacy": "TODO",
+    "terms": "TODO",
+    "refunds": "TODO",
+    "shipping": "TODO"
+  }
+}
