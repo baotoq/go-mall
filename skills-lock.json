@@ -1,6 +1,18 @@
 {
   "version": 1,
   "skills": {
+    "agent-browser": {
+      "source": "vercel-labs/agent-browser",
+      "sourceType": "github",
+      "skillPath": "skills/agent-browser/SKILL.md",
+      "computedHash": "c19a532a3777698b80b35270939a1dc559da451381971b3e1e78174d1ab54863"
+    },
+    "building-components": {
+      "source": "vercel/components.build",
+      "sourceType": "github",
+      "skillPath": "skills/building-components/SKILL.md",
+      "computedHash": "20889af7cb9b3abca1e38824f7fffaa873eb0cc4d45187967b97bd85462cf934"
+    },
     "go-concurrency": {
       "source": "cxuu/golang-skills",
       "sourceType": "github",
@@ -114,6 +126,12 @@
       "sourceType": "github",
       "skillPath": "skills/typescript-expert/SKILL.md",
       "computedHash": "b286805fbc1e24cdbe238445c62f27889cdc48dac9dfb77fc927bd1b3c37ab2a"
+    },
+    "ucp": {
+      "source": "vercel-labs/agentic-commerce-skills",
+      "sourceType": "github",
+      "skillPath": "ucp/SKILL.md",
+      "computedHash": "05987423e41eca47ea1f125b2fd9470539fd3f726a7eb50c282d38bf2846ff1c"
     },
     "ui-ux-pro-max": {
       "source": "nextlevelbuilder/ui-ux-pro-max-skill",
