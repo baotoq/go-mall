@@ -2,15 +2,15 @@ export const runtime = "nodejs";
 
 import { createMcpHandler } from "mcp-handler";
 import { z } from "zod";
+import ucpConfig from "@/../ucp.config.json";
 import {
+  completeCheckout,
   createCheckout,
   getCheckoutSession,
   updateCheckout,
-  completeCheckout,
 } from "@/lib/ucp/handlers/checkout";
-import { generateProfile } from "@/lib/ucp/profile";
 import { negotiateCapabilities } from "@/lib/ucp/negotiation";
-import ucpConfig from "@/../ucp.config.json";
+import { generateProfile } from "@/lib/ucp/profile";
 
 function isUcpEnabled(): boolean {
   return process.env.UCP_ENABLED === "true";

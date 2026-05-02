@@ -1,16 +1,11 @@
-import { test, expect } from "@playwright/test";
+import { type APIRequestContext, expect, test } from "@playwright/test";
 
 // Requires: UCP_ENABLED=true npm run dev
 // Tests the MCP JSON-RPC endpoint at /api/mcp/mcp (streamable HTTP transport)
 
 test.describe("UCP MCP Transport", () => {
   async function mcpCall(
-    request: Parameters<typeof test>[1] extends (
-      args: { request: infer R },
-      ...rest: unknown[]
-    ) => unknown
-      ? R
-      : never,
+    request: APIRequestContext,
     method: string,
     params: Record<string, unknown>,
     id = 1,

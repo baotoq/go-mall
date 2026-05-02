@@ -1,6 +1,6 @@
-import { describe, it, expect } from "vitest";
-import { wrapResponse, errorResponse } from "../response";
+import { describe, expect, it } from "vitest";
 import type { NegotiationResult } from "../negotiation";
+import { errorResponse, wrapResponse } from "../response";
 
 describe("wrapResponse", () => {
   it("includes ucp.capabilities in response body", async () => {
@@ -11,8 +11,8 @@ describe("wrapResponse", () => {
     const data = { orderId: "123", total: 99.99 };
     const response = wrapResponse(data, negotiation);
     const body = await response.json();
-    expect(body["ucp"]).toBeDefined();
-    expect(body["ucp"].capabilities).toEqual(["dev.ucp.shopping.checkout"]);
+    expect(body.ucp).toBeDefined();
+    expect(body.ucp.capabilities).toEqual(["dev.ucp.shopping.checkout"]);
   });
 
   it("uses provided status code", async () => {

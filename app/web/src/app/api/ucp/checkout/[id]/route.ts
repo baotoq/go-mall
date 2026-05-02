@@ -1,14 +1,14 @@
 export const runtime = "nodejs";
 
+import { corsHeaders, withCors } from "@/lib/ucp/cors";
 import {
+  completeCheckout,
   getCheckoutSession,
   updateCheckout,
-  completeCheckout,
 } from "@/lib/ucp/handlers/checkout";
-import { UpdateCheckoutInputSchema } from "@/lib/ucp/schemas/checkout";
 import { negotiateCapabilities, parseUCPAgent } from "@/lib/ucp/negotiation";
 import { errorResponse, wrapResponse } from "@/lib/ucp/response";
-import { corsHeaders, withCors } from "@/lib/ucp/cors";
+import { UpdateCheckoutInputSchema } from "@/lib/ucp/schemas/checkout";
 
 function isUcpEnabled(): boolean {
   return process.env.UCP_ENABLED === "true";

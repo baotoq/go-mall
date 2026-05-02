@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { MCP_TOOL_NAMES } from "@/lib/ucp/transports/mcp-tools";
 
 describe("MCP tool registration", () => {

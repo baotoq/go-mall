@@ -22,12 +22,10 @@ declare global {
   var __UCP_STORE__: StoreSingleton | undefined;
 }
 
-const store: StoreSingleton =
-  globalThis.__UCP_STORE__ ??
-  (globalThis.__UCP_STORE__ = {
-    sessions: new Map(),
-    idempotency: new Map(),
-  });
+if (!globalThis.__UCP_STORE__) {
+  globalThis.__UCP_STORE__ = { sessions: new Map(), idempotency: new Map() };
+}
+const store: StoreSingleton = globalThis.__UCP_STORE__;
 
 const sessions = store.sessions;
 const idempotency = store.idempotency;

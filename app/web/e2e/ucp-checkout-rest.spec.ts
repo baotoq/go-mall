@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
 // Requires: make dev (cart service at :8002) + UCP_ENABLED=true npm run dev
 // Assumes a cart exists with session ID "e2e-test-session" and at least one item.

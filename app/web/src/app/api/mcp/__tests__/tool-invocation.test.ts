@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/ucp/handlers/checkout");
 vi.mock("@/lib/ucp/profile");
@@ -8,8 +8,8 @@ import {
   createCheckout,
   getCheckoutSession,
 } from "@/lib/ucp/handlers/checkout";
-import { generateProfile } from "@/lib/ucp/profile";
 import { negotiateCapabilities } from "@/lib/ucp/negotiation";
+import { generateProfile } from "@/lib/ucp/profile";
 
 beforeEach(() => {
   vi.clearAllMocks();

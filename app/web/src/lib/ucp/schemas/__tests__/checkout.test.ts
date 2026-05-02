@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 
 describe("checkout schemas", () => {
   describe("CreateCheckoutInputSchema", () => {
@@ -26,7 +26,7 @@ describe("checkout schemas", () => {
       expect(result.success).toBe(false);
       if (!result.success) {
         const messages = result.error.issues
-          .map((i) => i.path.join(".") + " " + i.message)
+          .map((i) => `${i.path.join(".")} ${i.message}`)
           .join(", ");
         expect(messages).toMatch(/cart_session_id/);
       }

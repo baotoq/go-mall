@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
 test.describe("UCP Discovery Profile", () => {
   test("GET /.well-known/ucp returns valid profile", async ({ request }) => {

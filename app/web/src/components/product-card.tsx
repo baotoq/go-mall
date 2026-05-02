@@ -1,10 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import { ShoppingCart } from "lucide-react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { useCartStore } from "@/store/cart";
 import type { Product } from "@/lib/types";
+import { useCartStore } from "@/store/cart";
 
 export function ProductCard({ product }: { product: Product }) {
   const addItem = useCartStore((state) => state.addItem);

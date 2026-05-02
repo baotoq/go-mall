@@ -1,14 +1,14 @@
 export const runtime = "nodejs";
 
 import { auth } from "@/auth";
+import { corsHeaders, withCors } from "@/lib/ucp/cors";
 import { createCheckout } from "@/lib/ucp/handlers/checkout";
 import { negotiateCapabilities, parseUCPAgent } from "@/lib/ucp/negotiation";
+import { errorResponse, wrapResponse } from "@/lib/ucp/response";
 import {
   CreateCheckoutInputSchema,
   validateIdempotencyKey,
 } from "@/lib/ucp/schemas/checkout";
-import { errorResponse, wrapResponse } from "@/lib/ucp/response";
-import { corsHeaders, withCors } from "@/lib/ucp/cors";
 
 function isUcpEnabled(): boolean {
   return process.env.UCP_ENABLED === "true";
@@ -48,7 +48,7 @@ export async function POST(req: Request) {
   const keyValidation = validateIdempotencyKey(idempotencyKey);
   if (!keyValidation.valid)
     return withCors(
-      errorResponse(400, "invalid_idempotency_key", keyValidation.error!),
+      errorResponse(400, "invalid_idempotency_key", keyValidation.error ?? ""),
       req,
     );
 

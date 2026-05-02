@@ -1,6 +1,7 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/ucp/handlers/checkout");
+
 import { getCheckoutSession } from "@/lib/ucp/handlers/checkout";
 
 describe("MCP session bridging", () => {

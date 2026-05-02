@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/ucp/handlers/checkout", () => ({
   getCheckoutSession: vi.fn(),
@@ -15,9 +15,9 @@ vi.mock("@/lib/ucp/negotiation", () => ({
 }));
 
 import {
+  completeCheckout,
   getCheckoutSession,
   updateCheckout,
-  completeCheckout,
 } from "@/lib/ucp/handlers/checkout";
 
 const mockGet = vi.mocked(getCheckoutSession);

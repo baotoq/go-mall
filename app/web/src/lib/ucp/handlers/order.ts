@@ -13,9 +13,11 @@ declare global {
   var __UCP_SESSION_ITEMS__: Map<string, ItemsEntry> | undefined;
 }
 
+if (!globalThis.__UCP_SESSION_ITEMS__) {
+  globalThis.__UCP_SESSION_ITEMS__ = new Map();
+}
 const sessionItemsStore: Map<string, ItemsEntry> =
-  globalThis.__UCP_SESSION_ITEMS__ ??
-  (globalThis.__UCP_SESSION_ITEMS__ = new Map());
+  globalThis.__UCP_SESSION_ITEMS__;
 
 export function storeSessionItems(id: string, items: CartItemData[]): void {
   sessionItemsStore.set(id, {

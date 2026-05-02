@@ -3,10 +3,10 @@
 import { create } from "zustand";
 import {
   addCartItem,
-  updateCartItem,
-  removeCartItem,
   clearCart as clearCartAPI,
   getCart,
+  removeCartItem,
+  updateCartItem,
 } from "@/lib/api";
 import type { CartData } from "@/lib/types";
 

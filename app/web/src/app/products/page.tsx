@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ProductCard } from "@/components/product-card";
-import { listProducts, listCategories } from "@/lib/api";
+import { listCategories, listProducts } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 export default async function ProductsPage({

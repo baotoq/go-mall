@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
 test.describe("Cart page", () => {
   test("shows empty state when no items", async ({ page }) => {

@@ -1,7 +1,7 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
-import { authConfig } from "./auth.config";
 import { getKeycloakToken, refreshKeycloakToken } from "@/lib/keycloak";
+import { authConfig } from "./auth.config";
 
 declare module "next-auth" {
   interface Session {
