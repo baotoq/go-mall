@@ -8,6 +8,18 @@ import (
 	"gomall/app/order/internal/data/ent"
 )
 
+// The CompletedWorkflowFunc type is an adapter to allow the use of ordinary
+// function as CompletedWorkflow mutator.
+type CompletedWorkflowFunc func(context.Context, *ent.CompletedWorkflowMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f CompletedWorkflowFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.CompletedWorkflowMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.CompletedWorkflowMutation", m)
+}
+
 // The IdempotencyKeyFunc type is an adapter to allow the use of ordinary
 // function as IdempotencyKey mutator.
 type IdempotencyKeyFunc func(context.Context, *ent.IdempotencyKeyMutation) (ent.Value, error)

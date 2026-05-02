@@ -6,6 +6,9 @@ import (
 	"entgo.io/ent/dialect/sql"
 )
 
+// CompletedWorkflow is the predicate function for completedworkflow builders.
+type CompletedWorkflow func(*sql.Selector)
+
 // IdempotencyKey is the predicate function for idempotencykey builders.
 type IdempotencyKey func(*sql.Selector)
 

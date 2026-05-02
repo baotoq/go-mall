@@ -8,6 +8,27 @@ import (
 )
 
 var (
+	// CompletedWorkflowsColumns holds the columns for the "completed_workflows" table.
+	CompletedWorkflowsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "instance_id", Type: field.TypeString, Unique: true},
+		{Name: "terminal_state", Type: field.TypeString},
+		{Name: "terminated_at", Type: field.TypeTime},
+		{Name: "purged_at", Type: field.TypeTime, Nullable: true},
+	}
+	// CompletedWorkflowsTable holds the schema information for the "completed_workflows" table.
+	CompletedWorkflowsTable = &schema.Table{
+		Name:       "completed_workflows",
+		Columns:    CompletedWorkflowsColumns,
+		PrimaryKey: []*schema.Column{CompletedWorkflowsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "completedworkflow_purged_at",
+				Unique:  false,
+				Columns: []*schema.Column{CompletedWorkflowsColumns[4]},
+			},
+		},
+	}
 	// IdempotencyKeysColumns holds the columns for the "idempotency_keys" table.
 	IdempotencyKeysColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
@@ -89,6 +110,7 @@ var (
 	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
+		CompletedWorkflowsTable,
 		IdempotencyKeysTable,
 		OrdersTable,
 		WorkflowDeadLetterEventsTable,

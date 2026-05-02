@@ -3,6 +3,7 @@
 package ent
 
 import (
+	"gomall/app/order/internal/data/ent/completedworkflow"
 	"gomall/app/order/internal/data/ent/idempotencykey"
 	"gomall/app/order/internal/data/ent/order"
 	"gomall/app/order/internal/data/ent/schema"
@@ -16,6 +17,12 @@ import (
 // (default values, validators, hooks and policies) and stitches it
 // to their package variables.
 func init() {
+	completedworkflowFields := schema.CompletedWorkflow{}.Fields()
+	_ = completedworkflowFields
+	// completedworkflowDescTerminatedAt is the schema descriptor for terminated_at field.
+	completedworkflowDescTerminatedAt := completedworkflowFields[2].Descriptor()
+	// completedworkflow.DefaultTerminatedAt holds the default value on creation for the terminated_at field.
+	completedworkflow.DefaultTerminatedAt = completedworkflowDescTerminatedAt.Default.(func() time.Time)
 	idempotencykeyFields := schema.IdempotencyKey{}.Fields()
 	_ = idempotencykeyFields
 	// idempotencykeyDescKey is the schema descriptor for key field.

@@ -4,6 +4,7 @@ import (
 	"flag"
 	"os"
 
+	"gomall/app/order/internal/biz"
 	"gomall/app/order/internal/conf"
 	"gomall/app/order/internal/server"
 	"gomall/pkg/outbox"
@@ -34,14 +35,16 @@ func init() {
 	flag.StringVar(&flagconf, "conf", "../../configs", "config path, eg: -conf config.yaml")
 }
 
-func newApp(logger log.Logger, gs *grpc.Server, hs *http.Server, ob *outbox.Client, sub *server.OrderSubscriber) *kratos.App {
+func newApp(logger log.Logger, gs *grpc.Server, hs *http.Server, ob *outbox.Client, sub *server.OrderSubscriber, ww *server.WorkflowWorker, ps *biz.PurgeService) *kratos.App {
 	return kratos.New(
 		kratos.ID(id),
 		kratos.Name(Name),
 		kratos.Version(Version),
 		kratos.Metadata(map[string]string{}),
 		kratos.Logger(logger),
-		kratos.Server(gs, hs, sub),
+		// Registration order matters: kratos stops in reverse order.
+		// Stop sequence: ps → ww → sub → gs → hs
+		kratos.Server(hs, gs, sub, ww, ps),
 		kratos.BeforeStart(ob.Start),
 		kratos.AfterStop(ob.Stop),
 	)

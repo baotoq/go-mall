@@ -11,6 +11,7 @@ import (
 
 	"gomall/app/order/internal/data/ent/migrate"
 
+	"gomall/app/order/internal/data/ent/completedworkflow"
 	"gomall/app/order/internal/data/ent/idempotencykey"
 	"gomall/app/order/internal/data/ent/order"
 	"gomall/app/order/internal/data/ent/workflowdeadletterevent"
@@ -26,6 +27,8 @@ type Client struct {
 	config
 	// Schema is the client for creating, migrating and dropping schema.
 	Schema *migrate.Schema
+	// CompletedWorkflow is the client for interacting with the CompletedWorkflow builders.
+	CompletedWorkflow *CompletedWorkflowClient
 	// IdempotencyKey is the client for interacting with the IdempotencyKey builders.
 	IdempotencyKey *IdempotencyKeyClient
 	// Order is the client for interacting with the Order builders.
@@ -43,6 +46,7 @@ func NewClient(opts ...Option) *Client {
 
 func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
+	c.CompletedWorkflow = NewCompletedWorkflowClient(c.config)
 	c.IdempotencyKey = NewIdempotencyKeyClient(c.config)
 	c.Order = NewOrderClient(c.config)
 	c.WorkflowDeadLetterEvent = NewWorkflowDeadLetterEventClient(c.config)
@@ -138,6 +142,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	return &Tx{
 		ctx:                     ctx,
 		config:                  cfg,
+		CompletedWorkflow:       NewCompletedWorkflowClient(cfg),
 		IdempotencyKey:          NewIdempotencyKeyClient(cfg),
 		Order:                   NewOrderClient(cfg),
 		WorkflowDeadLetterEvent: NewWorkflowDeadLetterEventClient(cfg),
@@ -160,6 +165,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	return &Tx{
 		ctx:                     ctx,
 		config:                  cfg,
+		CompletedWorkflow:       NewCompletedWorkflowClient(cfg),
 		IdempotencyKey:          NewIdempotencyKeyClient(cfg),
 		Order:                   NewOrderClient(cfg),
 		WorkflowDeadLetterEvent: NewWorkflowDeadLetterEventClient(cfg),
@@ -169,7 +175,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 // Debug returns a new debug-client. It's used to get verbose logging on specific operations.
 //
 //	client.Debug().
-//		IdempotencyKey.
+//		CompletedWorkflow.
 //		Query().
 //		Count(ctx)
 func (c *Client) Debug() *Client {
@@ -191,6 +197,7 @@ func (c *Client) Close() error {
 // Use adds the mutation hooks to all the entity clients.
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
+	c.CompletedWorkflow.Use(hooks...)
 	c.IdempotencyKey.Use(hooks...)
 	c.Order.Use(hooks...)
 	c.WorkflowDeadLetterEvent.Use(hooks...)
@@ -199,6 +206,7 @@ func (c *Client) Use(hooks ...Hook) {
 // Intercept adds the query interceptors to all the entity clients.
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
+	c.CompletedWorkflow.Intercept(interceptors...)
 	c.IdempotencyKey.Intercept(interceptors...)
 	c.Order.Intercept(interceptors...)
 	c.WorkflowDeadLetterEvent.Intercept(interceptors...)
@@ -207,6 +215,8 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 // Mutate implements the ent.Mutator interface.
 func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 	switch m := m.(type) {
+	case *CompletedWorkflowMutation:
+		return c.CompletedWorkflow.mutate(ctx, m)
 	case *IdempotencyKeyMutation:
 		return c.IdempotencyKey.mutate(ctx, m)
 	case *OrderMutation:
@@ -215,6 +225,139 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.WorkflowDeadLetterEvent.mutate(ctx, m)
 	default:
 		return nil, fmt.Errorf("ent: unknown mutation type %T", m)
+	}
+}
+
+// CompletedWorkflowClient is a client for the CompletedWorkflow schema.
+type CompletedWorkflowClient struct {
+	config
+}
+
+// NewCompletedWorkflowClient returns a client for the CompletedWorkflow from the given config.
+func NewCompletedWorkflowClient(c config) *CompletedWorkflowClient {
+	return &CompletedWorkflowClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `completedworkflow.Hooks(f(g(h())))`.
+func (c *CompletedWorkflowClient) Use(hooks ...Hook) {
+	c.hooks.CompletedWorkflow = append(c.hooks.CompletedWorkflow, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `completedworkflow.Intercept(f(g(h())))`.
+func (c *CompletedWorkflowClient) Intercept(interceptors ...Interceptor) {
+	c.inters.CompletedWorkflow = append(c.inters.CompletedWorkflow, interceptors...)
+}
+
+// Create returns a builder for creating a CompletedWorkflow entity.
+func (c *CompletedWorkflowClient) Create() *CompletedWorkflowCreate {
+	mutation := newCompletedWorkflowMutation(c.config, OpCreate)
+	return &CompletedWorkflowCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of CompletedWorkflow entities.
+func (c *CompletedWorkflowClient) CreateBulk(builders ...*CompletedWorkflowCreate) *CompletedWorkflowCreateBulk {
+	return &CompletedWorkflowCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *CompletedWorkflowClient) MapCreateBulk(slice any, setFunc func(*CompletedWorkflowCreate, int)) *CompletedWorkflowCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &CompletedWorkflowCreateBulk{err: fmt.Errorf("calling to CompletedWorkflowClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*CompletedWorkflowCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &CompletedWorkflowCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for CompletedWorkflow.
+func (c *CompletedWorkflowClient) Update() *CompletedWorkflowUpdate {
+	mutation := newCompletedWorkflowMutation(c.config, OpUpdate)
+	return &CompletedWorkflowUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *CompletedWorkflowClient) UpdateOne(_m *CompletedWorkflow) *CompletedWorkflowUpdateOne {
+	mutation := newCompletedWorkflowMutation(c.config, OpUpdateOne, withCompletedWorkflow(_m))
+	return &CompletedWorkflowUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *CompletedWorkflowClient) UpdateOneID(id int) *CompletedWorkflowUpdateOne {
+	mutation := newCompletedWorkflowMutation(c.config, OpUpdateOne, withCompletedWorkflowID(id))
+	return &CompletedWorkflowUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for CompletedWorkflow.
+func (c *CompletedWorkflowClient) Delete() *CompletedWorkflowDelete {
+	mutation := newCompletedWorkflowMutation(c.config, OpDelete)
+	return &CompletedWorkflowDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *CompletedWorkflowClient) DeleteOne(_m *CompletedWorkflow) *CompletedWorkflowDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *CompletedWorkflowClient) DeleteOneID(id int) *CompletedWorkflowDeleteOne {
+	builder := c.Delete().Where(completedworkflow.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &CompletedWorkflowDeleteOne{builder}
+}
+
+// Query returns a query builder for CompletedWorkflow.
+func (c *CompletedWorkflowClient) Query() *CompletedWorkflowQuery {
+	return &CompletedWorkflowQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeCompletedWorkflow},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a CompletedWorkflow entity by its id.
+func (c *CompletedWorkflowClient) Get(ctx context.Context, id int) (*CompletedWorkflow, error) {
+	return c.Query().Where(completedworkflow.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *CompletedWorkflowClient) GetX(ctx context.Context, id int) *CompletedWorkflow {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *CompletedWorkflowClient) Hooks() []Hook {
+	return c.hooks.CompletedWorkflow
+}
+
+// Interceptors returns the client interceptors.
+func (c *CompletedWorkflowClient) Interceptors() []Interceptor {
+	return c.inters.CompletedWorkflow
+}
+
+func (c *CompletedWorkflowClient) mutate(ctx context.Context, m *CompletedWorkflowMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&CompletedWorkflowCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&CompletedWorkflowUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&CompletedWorkflowUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&CompletedWorkflowDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown CompletedWorkflow mutation op: %q", m.Op())
 	}
 }
 
@@ -620,9 +763,10 @@ func (c *WorkflowDeadLetterEventClient) mutate(ctx context.Context, m *WorkflowD
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		IdempotencyKey, Order, WorkflowDeadLetterEvent []ent.Hook
+		CompletedWorkflow, IdempotencyKey, Order, WorkflowDeadLetterEvent []ent.Hook
 	}
 	inters struct {
-		IdempotencyKey, Order, WorkflowDeadLetterEvent []ent.Interceptor
+		CompletedWorkflow, IdempotencyKey, Order,
+		WorkflowDeadLetterEvent []ent.Interceptor
 	}
 )

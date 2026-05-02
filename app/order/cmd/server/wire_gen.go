@@ -43,6 +43,7 @@ func wireApp(confServer *conf.Server, confData *conf.Data, confSaga *conf.Saga, 
 	orderUsecase := biz.NewOrderUsecase(orderRepo, outboxPublisher)
 	idempotencyKeyRepo := data.NewIdempotencyKeyRepo(dataData, logger)
 	workflowDeadLetterEventRepo := data.NewWorkflowDeadLetterEventRepo(dataData, logger)
+	completedWorkflowRepo := data.NewCompletedWorkflowRepo(dataData, logger)
 	sagaConfig := biz.ProvideSagaConfig(confSaga)
 	workflowClient, cleanupWfc, err := biz.NewWorkflowClient(logger)
 	if err != nil {
@@ -51,13 +52,22 @@ func wireApp(confServer *conf.Server, confData *conf.Data, confSaga *conf.Saga, 
 		cleanup()
 		return nil, nil, err
 	}
+	workflowRegistry, err := biz.NewWorkflowRegistry(orderUsecase, sagaConfig)
+	if err != nil {
+		cleanupWfc()
+		cleanup3()
+		cleanup2()
+		cleanup()
+		return nil, nil, err
+	}
 	checkoutUsecase := biz.NewCheckoutUsecase(workflowClient, idempotencyKeyRepo, sagaConfig, logger)
-	_ = checkoutUsecase // used by service layer in Wave 3
-	orderService := service.NewOrderService(orderUsecase)
+	purgeService := biz.NewPurgeService(workflowClient, completedWorkflowRepo, confSaga, logger)
+	orderService := service.NewOrderService(orderUsecase, checkoutUsecase, confSaga)
 	grpcServer := server.NewGRPCServer(confServer, orderService, logger)
 	httpServer := server.NewHTTPServer(confServer, orderService, logger)
 	orderSubscriber := server.NewOrderSubscriber(confServer, workflowClient, workflowDeadLetterEventRepo, outboxClient, logger)
-	app := newApp(logger, grpcServer, httpServer, outboxClient, orderSubscriber)
+	workflowWorker := server.NewWorkflowWorker(workflowClient, workflowRegistry, confSaga, logger)
+	app := newApp(logger, grpcServer, httpServer, outboxClient, orderSubscriber, workflowWorker, purgeService)
 	return app, func() {
 		cleanupWfc()
 		cleanup3()

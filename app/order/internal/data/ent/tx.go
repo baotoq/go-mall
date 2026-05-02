@@ -12,6 +12,8 @@ import (
 // Tx is a transactional client that is created by calling Client.Tx().
 type Tx struct {
 	config
+	// CompletedWorkflow is the client for interacting with the CompletedWorkflow builders.
+	CompletedWorkflow *CompletedWorkflowClient
 	// IdempotencyKey is the client for interacting with the IdempotencyKey builders.
 	IdempotencyKey *IdempotencyKeyClient
 	// Order is the client for interacting with the Order builders.
@@ -149,6 +151,7 @@ func (tx *Tx) Client() *Client {
 }
 
 func (tx *Tx) init() {
+	tx.CompletedWorkflow = NewCompletedWorkflowClient(tx.config)
 	tx.IdempotencyKey = NewIdempotencyKeyClient(tx.config)
 	tx.Order = NewOrderClient(tx.config)
 	tx.WorkflowDeadLetterEvent = NewWorkflowDeadLetterEventClient(tx.config)
@@ -161,7 +164,7 @@ func (tx *Tx) init() {
 // of them in order to commit or rollback the transaction.
 //
 // If a closed transaction is embedded in one of the generated entities, and the entity
-// applies a query, for example: IdempotencyKey.QueryXXX(), the query will be executed
+// applies a query, for example: CompletedWorkflow.QueryXXX(), the query will be executed
 // through the driver which created this transaction.
 //
 // Note that txDriver is not goroutine safe.

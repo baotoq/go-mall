@@ -104,7 +104,7 @@ func (s *stubOutbox) PublishWithOpts(_ context.Context, _ biz.TxExecer, _ string
 }
 
 func newSvc(repo *stubOrderRepo) *service.OrderService {
-	return service.NewOrderService(biz.NewOrderUsecase(repo, &stubOutbox{}))
+	return service.NewOrderService(biz.NewOrderUsecase(repo, &stubOutbox{}), nil, nil)
 }
 
 func TestOrderService_CreateOrder_validatesEmptyItems(t *testing.T) {

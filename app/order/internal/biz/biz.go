@@ -20,6 +20,7 @@ var ProviderSet = wire.NewSet(
 	ProvideSagaConfig,
 	NewWorkflowClient,
 	NewWorkflowRegistry,
+	NewPurgeService,
 )
 
 // ProvideSagaConfig converts *conf.Saga (proto Duration fields) to the biz

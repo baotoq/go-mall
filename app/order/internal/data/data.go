@@ -28,6 +28,7 @@ var ProviderSet = wire.NewSet(
 	NewOrderRepo,
 	NewIdempotencyKeyRepo,
 	NewWorkflowDeadLetterEventRepo,
+	NewCompletedWorkflowRepo,
 )
 
 type Data struct {
