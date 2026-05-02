@@ -48,7 +48,7 @@ for svc in SERVICES:
         '.',
         entrypoint=dlv_entrypoint(name),
         dockerfile='app/' + name + '/Dockerfile.dev.debug',
-        only=['./dist'],
+        only=['./dist/' + name],
         live_update=[sync('./dist/' + name, '/app/' + name)],
     )
 
