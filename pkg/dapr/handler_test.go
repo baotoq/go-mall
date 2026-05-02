@@ -1,10 +1,13 @@
 package dapr
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
+	daprcommon "github.com/dapr/go-sdk/service/common"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -41,4 +44,22 @@ func TestLoopbackOnly(t *testing.T) {
 			assert.Equal(t, tc.wantStatus, w.Code)
 		})
 	}
+}
+
+func TestTopicHandler_panicInHandler_returns500(t *testing.T) {
+	// Arrange — a handler that panics
+	panicking := daprcommon.TopicEventHandler(func(_ context.Context, _ *daprcommon.TopicEvent) (bool, error) {
+		panic("simulated handler panic")
+	})
+	body := `{"id":"e1","source":"test","type":"test","specversion":"1.0","datacontenttype":"application/json","data":{}}`
+	req := httptest.NewRequest(http.MethodPost, "/dapr/events/test", strings.NewReader(body))
+	w := httptest.NewRecorder()
+
+	// Act — must not propagate panic
+	assert.NotPanics(t, func() {
+		TopicHandler(panicking)(w, req)
+	})
+
+	// Assert — Dapr interprets 500 as RETRY
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
 }

@@ -33,6 +33,8 @@ type sagaMetrics struct {
 }
 
 // SagaMetrics is the package-level singleton.
+// TODO: Replace with an injectable *sagaMetrics to allow per-test isolation
+// and future Prometheus registration without global state.
 var SagaMetrics sagaMetrics
 
 // RecordCompleted increments the completed attempt counter.

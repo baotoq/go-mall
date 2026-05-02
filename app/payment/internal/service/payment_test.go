@@ -9,10 +9,36 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	kerrors "github.com/go-kratos/kratos/v2/errors"
+	kratstransport "github.com/go-kratos/kratos/v2/transport"
+
 	v1 "gomall/api/payment/v1"
 	"gomall/app/payment/internal/biz"
 	"gomall/app/payment/internal/service"
 )
+
+// fakeTransportHeader implements transport.Header for tests.
+type fakeTransportHeader map[string]string
+
+func (h fakeTransportHeader) Get(key string) string      { return h[key] }
+func (h fakeTransportHeader) Set(key, value string)      { h[key] = value }
+func (h fakeTransportHeader) Add(key, value string)      { h[key] = value }
+func (h fakeTransportHeader) Keys() []string             { keys := make([]string, 0, len(h)); for k := range h { keys = append(keys, k) }; return keys }
+func (h fakeTransportHeader) Values(key string) []string { return []string{h[key]} }
+
+// fakeTransport implements transport.Transporter for tests.
+type fakeTransport struct{ header fakeTransportHeader }
+
+func (t *fakeTransport) Kind() kratstransport.Kind            { return kratstransport.KindHTTP }
+func (t *fakeTransport) Endpoint() string                     { return "" }
+func (t *fakeTransport) Operation() string                    { return "" }
+func (t *fakeTransport) RequestHeader() kratstransport.Header { return t.header }
+func (t *fakeTransport) ReplyHeader() kratstransport.Header   { return fakeTransportHeader{} }
+
+func ctxWithToken(token string) context.Context {
+	h := fakeTransportHeader{"X-Internal-Token": token}
+	return kratstransport.NewServerContext(context.Background(), &fakeTransport{header: h})
+}
 
 type nopPaymentRepo struct {
 	getStatus string
@@ -130,4 +156,45 @@ func TestPaymentService_ListPayments_byUser(t *testing.T) {
 	got, err := newPaymentSvc(&nopPaymentRepo{}).ListPayments(context.Background(), &v1.ListPaymentsRequest{UserId: "u"})
 	require.NoError(t, err)
 	assert.Equal(t, int32(1), got.Total)
+}
+
+func TestCompletePayment_noToken_returnsUnauthenticated(t *testing.T) {
+	// TDD: CRITICAL-1 — token enforcement, no transport context → 401
+	svc := service.NewPaymentServiceWithToken(biz.NewPaymentUsecase(&nopPaymentRepo{}, nopOutbox{}), "secret")
+	_, err := svc.CompletePayment(context.Background(), &v1.CompletePaymentRequest{Id: uuid.NewString()})
+	require.Error(t, err)
+	assert.Equal(t, 401, kerrors.Code(err))
+}
+
+func TestCompletePayment_wrongToken_returnsUnauthenticated(t *testing.T) {
+	svc := service.NewPaymentServiceWithToken(biz.NewPaymentUsecase(&nopPaymentRepo{}, nopOutbox{}), "secret")
+	_, err := svc.CompletePayment(ctxWithToken("wrong"), &v1.CompletePaymentRequest{Id: uuid.NewString()})
+	require.Error(t, err)
+	assert.Equal(t, 401, kerrors.Code(err))
+}
+
+func TestCompletePayment_correctToken_succeeds(t *testing.T) {
+	svc := service.NewPaymentServiceWithToken(biz.NewPaymentUsecase(&nopPaymentRepo{getStatus: "PENDING"}, nopOutbox{}), "secret")
+	_, err := svc.CompletePayment(ctxWithToken("secret"), &v1.CompletePaymentRequest{Id: uuid.NewString()})
+	require.NoError(t, err)
+}
+
+func TestCompletePayment_tokenDisabled_succeeds(t *testing.T) {
+	// empty token = disabled → existing code path unaffected
+	svc := newPaymentSvc(&nopPaymentRepo{getStatus: "PENDING"})
+	_, err := svc.CompletePayment(context.Background(), &v1.CompletePaymentRequest{Id: uuid.NewString()})
+	require.NoError(t, err)
+}
+
+func TestFailPayment_noToken_returnsUnauthenticated(t *testing.T) {
+	svc := service.NewPaymentServiceWithToken(biz.NewPaymentUsecase(&nopPaymentRepo{}, nopOutbox{}), "secret")
+	_, err := svc.FailPayment(context.Background(), &v1.FailPaymentRequest{Id: uuid.NewString()})
+	require.Error(t, err)
+	assert.Equal(t, 401, kerrors.Code(err))
+}
+
+func TestFailPayment_correctToken_succeeds(t *testing.T) {
+	svc := service.NewPaymentServiceWithToken(biz.NewPaymentUsecase(&nopPaymentRepo{getStatus: "PENDING"}, nopOutbox{}), "secret")
+	_, err := svc.FailPayment(ctxWithToken("secret"), &v1.FailPaymentRequest{Id: uuid.NewString()})
+	require.NoError(t, err)
 }

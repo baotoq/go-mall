@@ -5,8 +5,10 @@ import (
 	"encoding/json"
 	"net"
 	"net/http"
+	"runtime/debug"
 
 	daprcommon "github.com/dapr/go-sdk/service/common"
+	"github.com/go-kratos/kratos/v2/log"
 )
 
 // Subscription is one entry in the /dapr/subscribe JSON response.
@@ -44,8 +46,18 @@ const maxCloudEventBytes = 1 << 20 // 1 MiB
 // HandleFunc routes, not proto-generated handlers). This is intentional: the
 // Dapr sidecar carries no user JWT, so these routes must be unauthenticated
 // at the app layer. Restrict access at the network/pod level instead.
+//
+// M5: A deferred recover catches any panic from the user-supplied handler and
+// returns HTTP 500, which Dapr interprets as RETRY, preventing pod crashes.
 func TopicHandler(h daprcommon.TopicEventHandler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		defer func() {
+			if rec := recover(); rec != nil {
+				log.NewHelper(log.DefaultLogger).Errorf("dapr topic handler panic: %v\n%s",
+					rec, debug.Stack())
+				http.Error(w, "internal error", http.StatusInternalServerError)
+			}
+		}()
 		r.Body = http.MaxBytesReader(w, r.Body, maxCloudEventBytes)
 		var ce cloudEvent
 		if err := json.NewDecoder(r.Body).Decode(&ce); err != nil {
@@ -100,6 +112,7 @@ func SubscribeHandler(subs []Subscription) http.HandlerFunc {
 // LoopbackOnly rejects requests not originating from the loopback interface.
 // The Dapr sidecar always delivers via the pod-local loopback (127.0.0.1/::1),
 // so this guard ensures no external caller can reach Dapr delivery routes.
+// Assumption: the Dapr sidecar delivers exclusively from pod-local loopback (127.0.0.1/::1); this guard is not valid behind a proxy that alters RemoteAddr.
 func LoopbackOnly(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		host, _, err := net.SplitHostPort(r.RemoteAddr)

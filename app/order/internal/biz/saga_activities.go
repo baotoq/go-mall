@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"github.com/dapr/durabletask-go/workflow"
+	"github.com/go-kratos/kratos/v2/log"
 	"github.com/google/uuid"
 	"go.opentelemetry.io/otel/propagation"
 )
@@ -40,8 +41,9 @@ func NewCreateOrderActivity(uc *OrderUsecase) workflow.Activity {
 // delivery (Wave 2b adds the constraint migration).
 func NewPublishPaymentRequestedActivity(uc *OrderUsecase) workflow.Activity {
 	return func(actx workflow.ActivityContext) (any, error) {
-		var in paymentRequestedInput
+		var in PaymentRequestedInput
 		if err := actx.GetInput(&in); err != nil {
+			// Decode errors are permanent: malformed input cannot be fixed by retry.
 			return nil, fmt.Errorf("PublishPaymentRequestedActivity: decode input: %w", err)
 		}
 		ctx := actx.Context()
@@ -72,7 +74,9 @@ func NewCancelOrderActivity(uc *OrderUsecase, completedRepo CompletedWorkflowRep
 		if errors.Is(err, ErrOrderCannotCancel) {
 			// Already in a terminal non-cancellable state — treat as success.
 			if in.WorkflowID != "" {
-				_ = completedRepo.Insert(ctx, in.WorkflowID, "FAILED")
+				if ierr := completedRepo.Insert(ctx, in.WorkflowID, "FAILED"); ierr != nil {
+					log.NewHelper(log.DefaultLogger).Warnw("msg", "completedRepo.Insert", "workflow_id", in.WorkflowID, "err", ierr)
+				}
 			}
 			return nil, nil
 		}
@@ -80,7 +84,9 @@ func NewCancelOrderActivity(uc *OrderUsecase, completedRepo CompletedWorkflowRep
 			return nil, fmt.Errorf("CancelOrderActivity: %w", err)
 		}
 		if in.WorkflowID != "" {
-			_ = completedRepo.Insert(ctx, in.WorkflowID, "FAILED")
+			if ierr := completedRepo.Insert(ctx, in.WorkflowID, "FAILED"); ierr != nil {
+				log.NewHelper(log.DefaultLogger).Warnw("msg", "completedRepo.Insert", "workflow_id", in.WorkflowID, "err", ierr)
+			}
 		}
 		return nil, nil
 	}
@@ -106,7 +112,9 @@ func NewMarkPaidActivity(uc *OrderUsecase, completedRepo CompletedWorkflowRepo) 
 			return nil, fmt.Errorf("MarkPaidActivity: %w", err)
 		}
 		if in.WorkflowID != "" {
-			_ = completedRepo.Insert(ctx, in.WorkflowID, "COMPLETED")
+			if ierr := completedRepo.Insert(ctx, in.WorkflowID, "COMPLETED"); ierr != nil {
+				log.NewHelper(log.DefaultLogger).Warnw("msg", "completedRepo.Insert", "workflow_id", in.WorkflowID, "err", ierr)
+			}
 		}
 		out, err := json.Marshal(order)
 		if err != nil {
@@ -180,7 +188,7 @@ type paymentRequestedPayload struct {
 // (UNIQUE outbox id, ON CONFLICT DO NOTHING).
 // W3C traceparent is injected into headers from ctx so the payment service
 // can continue the trace.
-func (uc *OrderUsecase) PublishPaymentRequested(ctx context.Context, in paymentRequestedInput, messageID string) error {
+func (uc *OrderUsecase) PublishPaymentRequested(ctx context.Context, in PaymentRequestedInput, messageID string) error {
 	headers := make(map[string]string)
 	propagation.TraceContext{}.Inject(ctx, propagation.MapCarrier(headers))
 

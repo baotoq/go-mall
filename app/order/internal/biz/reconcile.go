@@ -26,25 +26,33 @@ type ReconciliationRepo interface {
 type ReconciliationService struct {
 	repo     ReconciliationRepo
 	interval time.Duration
+	disabled bool
 	log      *log.Helper
 	cancel   context.CancelFunc
 }
 
-// NewReconciliationService constructs a ReconciliationService. The tick
-// interval is read from conf.Saga.ReconcileInterval; missing or zero falls
-// back to 24h.
+// NewReconciliationService constructs a ReconciliationService. The service is
+// disabled (Start returns immediately) when ReconcileInterval is absent or
+// zero — an explicit positive interval must be configured to activate polling.
 func NewReconciliationService(repo ReconciliationRepo, sagaCfg *conf.Saga, logger log.Logger) *ReconciliationService {
-	interval := 24 * time.Hour
+	var interval time.Duration
+	disabled := true
 	if sagaCfg != nil && sagaCfg.ReconcileInterval != nil {
 		if d := sagaCfg.ReconcileInterval.AsDuration(); d > 0 {
 			interval = d
+			disabled = false
 		}
 	}
-	return &ReconciliationService{repo: repo, interval: interval, log: log.NewHelper(logger)}
+	return &ReconciliationService{repo: repo, interval: interval, disabled: disabled, log: log.NewHelper(logger)}
 }
 
 // Start blocks until ctx is cancelled, running a reconciliation scan every r.interval.
+// Returns immediately if the service was constructed without a positive ReconcileInterval.
 func (r *ReconciliationService) Start(ctx context.Context) error {
+	if r.disabled {
+		r.log.Infow("msg", "reconciliation service disabled (ReconcileInterval not configured)")
+		return nil
+	}
 	runCtx, cancel := context.WithCancel(ctx)
 	r.cancel = cancel
 	ticker := time.NewTicker(r.interval)

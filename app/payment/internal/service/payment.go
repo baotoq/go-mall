@@ -2,23 +2,64 @@ package service
 
 import (
 	"context"
+	"crypto/subtle"
 
 	v1 "gomall/api/payment/v1"
 	"gomall/app/payment/internal/biz"
+	"gomall/app/payment/internal/conf"
 
 	"github.com/go-kratos/kratos/v2/errors"
 	kratosJWT "github.com/go-kratos/kratos/v2/middleware/auth/jwt"
+	kratstransport "github.com/go-kratos/kratos/v2/transport"
 	"github.com/google/uuid"
 	jwtv5 "github.com/golang-jwt/jwt/v5"
 )
 
 type PaymentService struct {
 	v1.UnimplementedPaymentServiceServer
-	uc *biz.PaymentUsecase
+	uc            *biz.PaymentUsecase
+	internalToken string
 }
 
 func NewPaymentService(uc *biz.PaymentUsecase) *PaymentService {
 	return &PaymentService{uc: uc}
+}
+
+// NewPaymentServiceWithToken creates a PaymentService that enforces an
+// X-Internal-Token header on CompletePayment and FailPayment. Passing an
+// empty token disables enforcement (same as NewPaymentService).
+func NewPaymentServiceWithToken(uc *biz.PaymentUsecase, token string) *PaymentService {
+	return &PaymentService{uc: uc, internalToken: token}
+}
+
+// NewPaymentServiceFromAuth creates a PaymentService using runtime auth config.
+// The InternalToken is read from conf.Auth and injected into the service so
+// Wire can wire this constructor when *conf.Auth is already provided.
+func NewPaymentServiceFromAuth(uc *biz.PaymentUsecase, auth *conf.Auth) *PaymentService {
+	var token string
+	if auth != nil {
+		token = auth.InternalToken
+	}
+	return &PaymentService{uc: uc, internalToken: token}
+}
+
+// checkInternalToken returns 401 Unauthenticated when an internalToken is
+// configured and the request context either lacks transport metadata or
+// carries the wrong X-Internal-Token value. Comparison is constant-time to
+// prevent timing-based token recovery.
+func (s *PaymentService) checkInternalToken(ctx context.Context) error {
+	if s.internalToken == "" {
+		return nil
+	}
+	tr, ok := kratstransport.FromServerContext(ctx)
+	if !ok {
+		return errors.Unauthorized("UNAUTHENTICATED", "X-Internal-Token required")
+	}
+	got := tr.RequestHeader().Get("X-Internal-Token")
+	if subtle.ConstantTimeCompare([]byte(got), []byte(s.internalToken)) != 1 {
+		return errors.Unauthorized("UNAUTHENTICATED", "X-Internal-Token required")
+	}
+	return nil
 }
 
 // callerID extracts the JWT subject from the request context (empty string if unavailable).
@@ -128,6 +169,9 @@ func (s *PaymentService) RefundPayment(ctx context.Context, req *v1.RefundPaymen
 }
 
 func (s *PaymentService) CompletePayment(ctx context.Context, req *v1.CompletePaymentRequest) (*v1.Payment, error) {
+	if err := s.checkInternalToken(ctx); err != nil {
+		return nil, err
+	}
 	if req.Id == "" {
 		return nil, errors.BadRequest(v1.ErrorReason_INVALID_ARGUMENT.String(), "id is required")
 	}
@@ -143,6 +187,9 @@ func (s *PaymentService) CompletePayment(ctx context.Context, req *v1.CompletePa
 }
 
 func (s *PaymentService) FailPayment(ctx context.Context, req *v1.FailPaymentRequest) (*v1.Payment, error) {
+	if err := s.checkInternalToken(ctx); err != nil {
+		return nil, err
+	}
 	if req.Id == "" {
 		return nil, errors.BadRequest(v1.ErrorReason_INVALID_ARGUMENT.String(), "id is required")
 	}

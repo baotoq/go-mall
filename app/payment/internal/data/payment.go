@@ -30,6 +30,11 @@ func (r *paymentRepo) Create(ctx context.Context, p *biz.Payment) (*biz.Payment,
 		SetProvider(p.Provider).
 		SetStatus(p.Status).
 		SetAttempt(p.Attempt)
+	// Currency defaults to "USD" via the ent schema when not set; callers in
+	// the saga path always populate this field, making the branch below always
+	// true in practice. The guard is kept so that the schema default fires
+	// correctly when currency is omitted (SetCurrency("") would store "" instead
+	// of the schema default).
 	if p.Currency != "" {
 		q = q.SetCurrency(p.Currency)
 	}

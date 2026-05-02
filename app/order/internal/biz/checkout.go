@@ -18,6 +18,16 @@ import (
 // biz-layer guard exists for direct callers (tests, future internal flows).
 var ErrCheckoutMissingKey = errors.New("checkout: idempotency_key required")
 
+// ErrInvalidSagaConfig is returned when the SagaConfig in use is missing
+// required values (e.g. MaxPaymentAttempts <= 0) that would cause the saga
+// to behave incorrectly.
+var ErrInvalidSagaConfig = errors.New("checkout: invalid saga config")
+
+// ErrCheckoutDuplicateKey is returned when an idempotency key is reused with a
+// different user_id, or when a key is presented after the workflow has been
+// purged (use a new key).
+var ErrCheckoutDuplicateKey = errors.New("checkout duplicate key")
+
 // IdempotencyKeyRepo persists checkout idempotency keys so that duplicate
 // Schedule calls with the same key + same user return the previously scheduled
 // checkout. The data-layer implementation lands in Wave 2b alongside the ent
@@ -84,8 +94,20 @@ func (uc *CheckoutUsecase) Schedule(ctx context.Context, in CheckoutInput) (chec
 				return "", "", ErrCheckoutDuplicateKey
 			}
 			// Same user: return the stored checkout_id (idempotent response).
+			if stored.OrderID == "" {
+				// OrderID was not yet known when the entry was stored — try
+				// to recover it from the workflow's own output.
+				return uc.fetchExisting(ctx, in.IdempotencyKey)
+			}
 			return stored.CheckoutID, stored.OrderID, nil
 		}
+	}
+
+	// Guard: SagaConfig must define a positive MaxPaymentAttempts; otherwise
+	// the saga payment loop would never run and the workflow would compensate
+	// immediately. Surface as a config error rather than silently failing.
+	if uc.cfg.MaxPaymentAttempts <= 0 {
+		return "", "", ErrInvalidSagaConfig
 	}
 
 	// 2. Schedule the workflow.
@@ -169,6 +191,8 @@ func (uc *CheckoutUsecase) Status(ctx context.Context, checkoutID string) (Check
 			var cr CheckoutResult
 			if jsonErr := json.Unmarshal([]byte(raw), &cr); jsonErr == nil {
 				result = cr
+			} else {
+				uc.log.WithContext(ctx).Warnf("checkout Status: decode workflow output: %v", jsonErr)
 			}
 		}
 	}
@@ -205,34 +229,28 @@ func workflowStateString(meta *workflow.WorkflowMetadata) string {
 	}
 }
 
-// unwrapAll walks the error chain to find the deepest wrapped error, which is
-// what status.FromError inspects for gRPC status details.
+// unwrapAll walks the full error chain (single and multi-error) and returns
+// the deepest error. Used to surface wrapped gRPC status codes.
 func unwrapAll(err error) error {
+	type multiUnwrapper interface{ Unwrap() []error }
 	for {
-		unwrapped := unwrapOne(err)
-		if unwrapped == nil {
-			return err
+		if next := errors.Unwrap(err); next != nil {
+			err = next
+			continue
 		}
-		err = unwrapped
+		if mu, ok := err.(multiUnwrapper); ok {
+			found := false
+			for _, e := range mu.Unwrap() {
+				if e != nil {
+					err = e
+					found = true
+					break
+				}
+			}
+			if found {
+				continue
+			}
+		}
+		return err
 	}
-}
-
-type unwrapper interface{ Unwrap() error }
-
-func unwrapOne(err error) error {
-	if u, ok := err.(unwrapper); ok {
-		return u.Unwrap()
-	}
-	return nil
-}
-
-// ErrCheckoutDuplicateKey is returned when an idempotency key is reused with a
-// different user_id, or when a key is presented after the workflow has been
-// purged (use a new key).
-var ErrCheckoutDuplicateKey = errCheckoutDuplicateKey{}
-
-type errCheckoutDuplicateKey struct{}
-
-func (e errCheckoutDuplicateKey) Error() string {
-	return "checkout duplicate key"
 }

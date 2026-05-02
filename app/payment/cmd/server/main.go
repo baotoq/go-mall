@@ -90,6 +90,9 @@ func main() {
 	if sec.KeycloakJWKSURL != "" {
 		auth.JwksURL = sec.KeycloakJWKSURL
 	}
+	if sec.PaymentInternalToken != "" {
+		auth.InternalToken = sec.PaymentInternalToken
+	}
 
 	app, cleanup, err := wireApp(bc.Server, bc.Data, auth, logger, daprClient)
 	if err != nil {

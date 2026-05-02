@@ -4,12 +4,14 @@ const (
 	keyDatabase         = "DATABASE_CONNECTION_STRING"
 	keyWorkflowDatabase = "WORKFLOWSTORE_DATABASE_CONNECTION_STRING"
 	keyKeycloak         = "KEYCLOAK_JWKS_URL"
+	keyPaymentToken     = "PAYMENT_INTERNAL_TOKEN"
 )
 
 type Secrets struct {
-	DatabaseConnectionString          string
-	WorkflowstoreConnectionString     string
-	KeycloakJWKSURL                   string
+	DatabaseConnectionString      string
+	WorkflowstoreConnectionString string
+	KeycloakJWKSURL               string
+	PaymentInternalToken          string
 }
 
 func Parse(m map[string]string, serviceDBKey string) Secrets {
@@ -25,5 +27,6 @@ func Parse(m map[string]string, serviceDBKey string) Secrets {
 		DatabaseConnectionString:      dsn,
 		WorkflowstoreConnectionString: wdsn,
 		KeycloakJWKSURL:               m[keyKeycloak],
+		PaymentInternalToken:          m[keyPaymentToken],
 	}
 }

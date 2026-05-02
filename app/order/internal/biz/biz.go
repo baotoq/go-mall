@@ -29,12 +29,14 @@ var ProviderSet = wire.NewSet(
 func ProvideSagaConfig(c *conf.Saga) SagaConfig {
 	if c == nil {
 		return SagaConfig{
-			MaxPaymentAttempts:  3,
-			PerAttemptTimeout:   60 * time.Second,
-			PaymentInitialDelay: 500 * time.Millisecond,
-			PaymentBackoffMax:   30 * time.Second,
-			MarkPaidRetryMax:    5,
-			MarkPaidBudget:      5 * time.Minute,
+			MaxPaymentAttempts:   3,
+			PerAttemptTimeout:    60 * time.Second,
+			PaymentInitialDelay:  500 * time.Millisecond,
+			PaymentBackoffMax:    30 * time.Second,
+			MarkPaidRetryMax:     5,
+			MarkPaidBudget:       5 * time.Minute,
+			MarkPaidInitialDelay: 1 * time.Second,
+			MarkPaidBackoffMax:   30 * time.Second,
 		}
 	}
 	cfg := SagaConfig{
@@ -61,18 +63,26 @@ func ProvideSagaConfig(c *conf.Saga) SagaConfig {
 	} else {
 		cfg.MarkPaidBudget = 5 * time.Minute
 	}
+	// TODO: Add mark_paid_initial_delay / mark_paid_backoff_max to conf.proto so
+	// these can be tuned without a code change. Until then, use fixed defaults.
+	cfg.MarkPaidInitialDelay = 1 * time.Second
+	cfg.MarkPaidBackoffMax = 30 * time.Second
 	return cfg
 }
 
 // NewWorkflowClient creates a *workflow.Client connected to the Dapr sidecar
 // gRPC port (DAPR_GRPC_PORT env var, default 50001).
 // The workflow.Client is used by CheckoutUsecase to schedule and query sagas.
+// TODO: Move NewWorkflowClient to the data layer; biz should not hold
+// infrastructure dial logic.
 func NewWorkflowClient(logger log.Logger) (*workflow.Client, func(), error) {
 	port := os.Getenv("DAPR_GRPC_PORT")
 	if port == "" {
 		port = "50001"
 	}
 	addr := net.JoinHostPort("127.0.0.1", port)
+	// TODO: Add a startup health-check ping so a misconfigured sidecar address
+	// fails fast at service start rather than on the first Schedule call.
 	conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, nil, err

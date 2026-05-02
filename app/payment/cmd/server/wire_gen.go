@@ -44,7 +44,7 @@ func wireApp(confServer *conf.Server, confData *conf.Data, auth *conf.Auth, logg
 	paymentRepo := data.NewPaymentRepo(dataData, logger)
 	outboxPublisher := data.NewOutboxPublisher(outboxClient)
 	paymentUsecase := biz.NewPaymentUsecase(paymentRepo, outboxPublisher)
-	paymentService := service.NewPaymentService(paymentUsecase)
+	paymentService := service.NewPaymentServiceFromAuth(paymentUsecase, auth)
 	grpcServer := server.NewGRPCServer(confServer, auth, paymentService, logger)
 	paymentSubscriber := server.NewPaymentSubscriber(paymentUsecase, outboxClient, logger)
 	httpServer := server.NewHTTPServer(confServer, auth, paymentService, paymentSubscriber, logger)

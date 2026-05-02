@@ -4,13 +4,14 @@ import (
 	"context"
 	"errors"
 	"net/http"
-	"strings"
 
 	v1 "gomall/api/order/v1"
 	"gomall/app/order/internal/biz"
 
 	kerrors "github.com/go-kratos/kratos/v2/errors"
 	"github.com/google/uuid"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 func (s *OrderService) Checkout(ctx context.Context, req *v1.CheckoutRequest) (*v1.CheckoutResponse, error) {
@@ -83,13 +84,15 @@ func (s *OrderService) GetCheckoutStatus(ctx context.Context, req *v1.GetCheckou
 	}, nil
 }
 
-// isNotFound returns true when err looks like a workflow-instance-not-found error.
+// isNotFound returns true when err is or wraps a gRPC NotFound status.
 func isNotFound(err error) bool {
 	if err == nil {
 		return false
 	}
-	msg := err.Error()
-	return strings.Contains(msg, "not found") ||
-		strings.Contains(msg, "does not exist") ||
-		strings.Contains(msg, "ErrInstanceNotFound")
+	for e := err; e != nil; e = errors.Unwrap(e) {
+		if st, ok := status.FromError(e); ok && st.Code() == codes.NotFound {
+			return true
+		}
+	}
+	return false
 }

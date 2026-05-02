@@ -161,13 +161,86 @@ func TestCheckout_unwrapAll_grpcStatusDetected(t *testing.T) {
 // unwrapAllForTest mirrors the biz.unwrapAll logic for test verification.
 // (unwrapAll itself is unexported; we replicate the logic here.)
 func unwrapAllForTest(err error) error {
+	type multiUnwrapper interface{ Unwrap() []error }
 	for {
-		unwrapped := errors.Unwrap(err)
-		if unwrapped == nil {
-			return err
+		if next := errors.Unwrap(err); next != nil {
+			err = next
+			continue
 		}
-		err = unwrapped
+		if mu, ok := err.(multiUnwrapper); ok {
+			found := false
+			for _, e := range mu.Unwrap() {
+				if e != nil {
+					err = e
+					found = true
+					break
+				}
+			}
+			if found {
+				continue
+			}
+		}
+		return err
 	}
+}
+
+// countingIdempotencyKeyRepo wraps stub and counts Get calls.
+type countingIdempotencyKeyRepo struct {
+	*stubIdempotencyKeyRepo
+	getCalls int
+}
+
+func (r *countingIdempotencyKeyRepo) Get(ctx context.Context, key string) (biz.StoredCheckout, bool, error) {
+	r.getCalls++
+	return r.stubIdempotencyKeyRepo.Get(ctx, key)
+}
+
+func TestCheckout_DuplicateSameUser_emptyOrderID_attemptsRecovery(t *testing.T) {
+	// Arrange — stored checkout has empty OrderID (the C2 bug case)
+	inner := newStubIdempotencyKeyRepo()
+	idem := &countingIdempotencyKeyRepo{stubIdempotencyKeyRepo: inner}
+	storedKey := "idem-key-empty"
+	storedCheckoutID := "checkout-" + storedKey
+	idem.data[storedKey] = biz.StoredCheckout{
+		CheckoutID: storedCheckoutID,
+		UserID:     "user-1",
+		OrderID:    "", // empty — triggers recovery attempt
+	}
+	uc := biz.NewCheckoutUsecase(nil, idem, defaultSagaCfg(), noopLogger{})
+	in := checkoutInput(storedKey, "user-1")
+
+	// Act
+	checkoutID, _, err := uc.Schedule(context.Background(), in)
+
+	// Assert — fix: fetchExisting is called (Get called twice: once in main path, once in fetchExisting)
+	require.NoError(t, err)
+	assert.Equal(t, storedCheckoutID, checkoutID)
+	assert.Equal(t, 2, idem.getCalls, "fetchExisting should call Get a second time to attempt recovery")
+}
+
+func TestCheckout_zeroMaxPaymentAttempts_returnsError(t *testing.T) {
+	cfg := defaultSagaCfg()
+	cfg.MaxPaymentAttempts = 0
+	uc := biz.NewCheckoutUsecase(nil, newStubIdempotencyKeyRepo(), cfg, noopLogger{})
+	in := checkoutInput("new-key-h1", "user-1")
+
+	_, _, err := uc.Schedule(context.Background(), in)
+
+	require.Error(t, err)
+	assert.ErrorIs(t, err, biz.ErrInvalidSagaConfig)
+}
+
+func TestCheckout_unwrapAll_joinedErrors_detectsAlreadyExists(t *testing.T) {
+	// Arrange — wrap AlreadyExists inside errors.Join (multi-error)
+	inner := status.Error(codes.AlreadyExists, "orchestration already exists")
+	joined := errors.Join(inner, fmt.Errorf("other error"))
+
+	// Act — simulate what Schedule does when ScheduleWorkflow returns joined
+	st, ok := status.FromError(unwrapAllForTest(joined))
+
+	// Assert — the fix: AlreadyExists is found even in a joined error
+	assert.True(t, ok)
+	assert.Equal(t, codes.AlreadyExists, st.Code())
 }
 
 // noopLogger satisfies log.Logger for tests.

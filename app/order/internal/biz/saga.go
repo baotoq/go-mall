@@ -54,12 +54,14 @@ type PaymentResult struct {
 
 // SagaConfig holds all tunable saga parameters read from conf.Saga.
 type SagaConfig struct {
-	MaxPaymentAttempts  int32
-	PerAttemptTimeout   time.Duration
-	PaymentInitialDelay time.Duration
-	PaymentBackoffMax   time.Duration
-	MarkPaidRetryMax    int32
-	MarkPaidBudget      time.Duration
+	MaxPaymentAttempts   int32
+	PerAttemptTimeout    time.Duration
+	PaymentInitialDelay  time.Duration
+	PaymentBackoffMax    time.Duration
+	MarkPaidRetryMax     int32
+	MarkPaidBudget       time.Duration
+	MarkPaidInitialDelay time.Duration
+	MarkPaidBackoffMax   time.Duration
 }
 
 // cancelInput is the input struct for CancelOrderActivity.
@@ -76,8 +78,8 @@ type markPaidInput struct {
 	PaymentID  string
 }
 
-// paymentRequestedInput is the input struct for PublishPaymentRequestedActivity.
-type paymentRequestedInput struct {
+// PaymentRequestedInput is the input struct for PublishPaymentRequestedActivity.
+type PaymentRequestedInput struct {
 	WorkflowID string
 	OrderID    string
 	Amount     int64
@@ -99,6 +101,7 @@ func NewOrderSagaWorkflow(cfg SagaConfig) workflow.Workflow {
 		var orderID string
 		if err := ctx.CallActivity(activityCreateOrder,
 			workflow.WithActivityInput(in)).Await(&orderID); err != nil {
+			SagaMetrics.RecordFailed()
 			return CheckoutResult{State: "FAILED", Reason: "order_create_failed", LastError: err.Error()}, nil
 		}
 
@@ -114,7 +117,7 @@ func NewOrderSagaWorkflow(cfg SagaConfig) workflow.Workflow {
 		maxAttempts := int(cfg.MaxPaymentAttempts)
 		for attempt := 1; attempt <= maxAttempts; attempt++ {
 			if err := ctx.CallActivity(activityPublishPaymentRequested,
-				workflow.WithActivityInput(paymentRequestedInput{
+				workflow.WithActivityInput(PaymentRequestedInput{
 					WorkflowID: workflowID,
 					OrderID:    orderID,
 					Amount:     in.TotalCents,
@@ -134,6 +137,10 @@ func NewOrderSagaWorkflow(cfg SagaConfig) workflow.Workflow {
 				case err == nil && !r.Success:
 					out.reasonCode = r.ReasonCode
 				case errors.Is(err, task.ErrTaskCanceled):
+					// ErrTaskCanceled is raised on clean workflow shutdown (context
+					// cancel). Treating it as a timeout keeps the saga correct: the
+					// loop retries if attempts remain, or compensates. Propagating it
+					// as an error would orphan the workflow instance.
 					out.reasonCode = "timeout"
 				default:
 					out.reasonCode = "wait_error"
@@ -161,6 +168,8 @@ func NewOrderSagaWorkflow(cfg SagaConfig) workflow.Workflow {
 					OrderID:    orderID,
 					Reason:     out.reasonCode,
 				})).Await(nil)
+			SagaMetrics.RecordCompensation()
+			SagaMetrics.RecordFailed()
 			return CheckoutResult{
 				State:     "FAILED",
 				OrderID:   orderID,
@@ -173,9 +182,9 @@ func NewOrderSagaWorkflow(cfg SagaConfig) workflow.Workflow {
 		// MarkPaid is idempotent on same payment_id (Step 3.5 fix), so replay is safe.
 		retry := &workflow.RetryPolicy{
 			MaxAttempts:          int(cfg.MarkPaidRetryMax),
-			InitialRetryInterval: cfg.PaymentInitialDelay,
+			InitialRetryInterval: cfg.MarkPaidInitialDelay,
 			BackoffCoefficient:   2.0,
-			MaxRetryInterval:     cfg.PaymentBackoffMax,
+			MaxRetryInterval:     cfg.MarkPaidBackoffMax,
 			RetryTimeout:         cfg.MarkPaidBudget,
 		}
 		if err := ctx.CallActivity(activityMarkPaid,
@@ -185,6 +194,7 @@ func NewOrderSagaWorkflow(cfg SagaConfig) workflow.Workflow {
 				PaymentID:  out.paymentID,
 			}),
 			workflow.WithActivityRetryPolicy(retry)).Await(nil); err != nil {
+			SagaMetrics.RecordFailedAfterPivot()
 			return CheckoutResult{
 				State:     "FAILED_AFTER_PIVOT",
 				OrderID:   orderID,
@@ -193,6 +203,7 @@ func NewOrderSagaWorkflow(cfg SagaConfig) workflow.Workflow {
 			}, nil
 		}
 
+		SagaMetrics.RecordCompleted()
 		return CheckoutResult{
 			State:     "COMPLETED",
 			OrderID:   orderID,

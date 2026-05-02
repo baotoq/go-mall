@@ -86,14 +86,29 @@ func TestCreateForCheckout_emptyItemsRejected(t *testing.T) {
 }
 
 // --- PublishPaymentRequested ---
-// paymentRequestedInput is unexported; we cannot call PublishPaymentRequested
-// from biz_test directly. The message-ID format and headers injection are
-// verified by TestCreateForCheckout_returnsOrderID (outbox opts) and by
-// integration tests that exercise the full activity chain.
 
-func TestPublishPaymentRequested_skippedUnexportedInput(t *testing.T) {
-	t.Skip("paymentRequestedInput is unexported — cannot call PublishPaymentRequested " +
-		"from biz_test; message-ID and traceparent are covered by integration tests")
+func TestPublishPaymentRequested_publishesPaymentRequestedTopic(t *testing.T) {
+	// Arrange
+	repo := newStubOrderRepo()
+	ob := &recordingOutbox{}
+	uc := biz.NewOrderUsecase(repo, ob)
+	in := biz.PaymentRequestedInput{
+		WorkflowID: "wf-1",
+		OrderID:    "order-1",
+		Amount:     1000,
+		Currency:   "USD",
+		Attempt:    1,
+	}
+	messageID := "wf-1:pay-req:1"
+
+	// Act
+	err := uc.PublishPaymentRequested(context.Background(), in, messageID)
+
+	// Assert
+	require.NoError(t, err)
+	require.Len(t, ob.publishWithCalls, 1)
+	assert.Equal(t, biz.TopicPaymentRequested, ob.publishWithCalls[0].topic)
+	assert.Equal(t, messageID, ob.publishWithCalls[0].opts.MessageID)
 }
 
 // --- CancelOrderActivity inner logic: Cancel idempotency ---

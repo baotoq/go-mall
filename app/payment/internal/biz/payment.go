@@ -17,6 +17,8 @@ type TxExecer interface {
 }
 
 // OutboxPublisher writes an event into the transactional outbox.
+// TODO: This interface is duplicated across services; extract to pkg/outbox once
+// a second consumer exists.
 type OutboxPublisher interface {
 	Publish(ctx context.Context, tx TxExecer, topic string, payload any) (string, error)
 }
