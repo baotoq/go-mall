@@ -1,0 +1,11 @@
+apiVersion: dapr.io/v1alpha1
+kind: Configuration
+metadata:
+  name: order-workflow-config
+  namespace: go-mall
+spec:
+  workflow:
+    stateRetentionPolicy:
+      completed: "168h"
+      failed: "720h"
+      terminated: "168h"

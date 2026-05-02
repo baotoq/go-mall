@@ -24,12 +24,14 @@ const (
 type ErrorReason int32
 
 const (
-	ErrorReason_ER_UNSPECIFIED      ErrorReason = 0
-	ErrorReason_ORDER_NOT_FOUND     ErrorReason = 1
-	ErrorReason_INVALID_ARGUMENT    ErrorReason = 2
-	ErrorReason_ORDER_CANNOT_CANCEL ErrorReason = 3
-	ErrorReason_ORDER_ALREADY_PAID  ErrorReason = 4
-	ErrorReason_ORDER_EMPTY_ITEMS   ErrorReason = 5
+	ErrorReason_ER_UNSPECIFIED         ErrorReason = 0
+	ErrorReason_ORDER_NOT_FOUND        ErrorReason = 1
+	ErrorReason_INVALID_ARGUMENT       ErrorReason = 2
+	ErrorReason_ORDER_CANNOT_CANCEL    ErrorReason = 3
+	ErrorReason_ORDER_ALREADY_PAID     ErrorReason = 4
+	ErrorReason_ORDER_EMPTY_ITEMS      ErrorReason = 5
+	ErrorReason_CHECKOUT_NOT_FOUND     ErrorReason = 6
+	ErrorReason_CHECKOUT_DUPLICATE_KEY ErrorReason = 7
 )
 
 // Enum value maps for ErrorReason.
@@ -41,14 +43,18 @@ var (
 		3: "ORDER_CANNOT_CANCEL",
 		4: "ORDER_ALREADY_PAID",
 		5: "ORDER_EMPTY_ITEMS",
+		6: "CHECKOUT_NOT_FOUND",
+		7: "CHECKOUT_DUPLICATE_KEY",
 	}
 	ErrorReason_value = map[string]int32{
-		"ER_UNSPECIFIED":      0,
-		"ORDER_NOT_FOUND":     1,
-		"INVALID_ARGUMENT":    2,
-		"ORDER_CANNOT_CANCEL": 3,
-		"ORDER_ALREADY_PAID":  4,
-		"ORDER_EMPTY_ITEMS":   5,
+		"ER_UNSPECIFIED":         0,
+		"ORDER_NOT_FOUND":        1,
+		"INVALID_ARGUMENT":       2,
+		"ORDER_CANNOT_CANCEL":    3,
+		"ORDER_ALREADY_PAID":     4,
+		"ORDER_EMPTY_ITEMS":      5,
+		"CHECKOUT_NOT_FOUND":     6,
+		"CHECKOUT_DUPLICATE_KEY": 7,
 	}
 )
 
@@ -83,14 +89,16 @@ var File_order_v1_error_reason_proto protoreflect.FileDescriptor
 
 const file_order_v1_error_reason_proto_rawDesc = "" +
 	"\n" +
-	"\x1border/v1/error_reason.proto\x12\border.v1*\x94\x01\n" +
+	"\x1border/v1/error_reason.proto\x12\border.v1*\xc8\x01\n" +
 	"\vErrorReason\x12\x12\n" +
 	"\x0eER_UNSPECIFIED\x10\x00\x12\x13\n" +
 	"\x0fORDER_NOT_FOUND\x10\x01\x12\x14\n" +
 	"\x10INVALID_ARGUMENT\x10\x02\x12\x17\n" +
 	"\x13ORDER_CANNOT_CANCEL\x10\x03\x12\x16\n" +
 	"\x12ORDER_ALREADY_PAID\x10\x04\x12\x15\n" +
-	"\x11ORDER_EMPTY_ITEMS\x10\x05B\x18Z\x16gomall/api/order/v1;v1b\x06proto3"
+	"\x11ORDER_EMPTY_ITEMS\x10\x05\x12\x16\n" +
+	"\x12CHECKOUT_NOT_FOUND\x10\x06\x12\x1a\n" +
+	"\x16CHECKOUT_DUPLICATE_KEY\x10\aB\x18Z\x16gomall/api/order/v1;v1b\x06proto3"
 
 var (
 	file_order_v1_error_reason_proto_rawDescOnce sync.Once

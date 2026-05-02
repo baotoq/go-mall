@@ -5,6 +5,7 @@ import (
 
 	v1 "gomall/api/order/v1"
 	"gomall/app/order/internal/biz"
+	"gomall/app/order/internal/conf"
 
 	"github.com/go-kratos/kratos/v2/errors"
 	"github.com/google/uuid"
@@ -12,10 +13,14 @@ import (
 
 type OrderService struct {
 	v1.UnimplementedOrderServiceServer
-	uc *biz.OrderUsecase
+	uc       *biz.OrderUsecase
+	checkout *biz.CheckoutUsecase
+	sagaCfg  *conf.Saga
 }
 
-func NewOrderService(uc *biz.OrderUsecase) *OrderService { return &OrderService{uc: uc} }
+func NewOrderService(uc *biz.OrderUsecase, checkout *biz.CheckoutUsecase, sagaCfg *conf.Saga) *OrderService {
+	return &OrderService{uc: uc, checkout: checkout, sagaCfg: sagaCfg}
+}
 
 func (s *OrderService) CreateOrder(ctx context.Context, req *v1.CreateOrderRequest) (*v1.Order, error) {
 	if req.UserId == "" {

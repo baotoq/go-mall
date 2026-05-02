@@ -66,8 +66,35 @@ func (r *stubPaymentRepo) UpdateStatus(_ context.Context, id uuid.UUID, status s
 	return p, nil
 }
 
+func (r *stubPaymentRepo) GetByWorkflowAndAttempt(_ context.Context, _ string, _ int32) (*biz.Payment, error) {
+	return nil, biz.ErrPaymentNotFound
+}
+
+func (r *stubPaymentRepo) UpdateStatusInTx(_ context.Context, id uuid.UUID, status string, emit func(context.Context, biz.TxExecer, *biz.Payment) error) (*biz.Payment, error) {
+	p, ok := r.payments[id]
+	if !ok {
+		return nil, biz.ErrPaymentNotFound
+	}
+	if err := emit(context.Background(), nil, p); err != nil {
+		return nil, err
+	}
+	p.Status = status
+	p.UpdatedAt = time.Now()
+	return p, nil
+}
+
+type stubNopOutbox struct{}
+
+func (stubNopOutbox) Publish(_ context.Context, _ biz.TxExecer, _ string, _ any) (string, error) {
+	return "", nil
+}
+
+func newUC(repo *stubPaymentRepo) *biz.PaymentUsecase {
+	return biz.NewPaymentUsecase(repo, stubNopOutbox{})
+}
+
 func TestPaymentUsecase_Create_setsPending(t *testing.T) {
-	uc := biz.NewPaymentUsecase(newStubPaymentRepo())
+	uc := newUC(newStubPaymentRepo())
 
 	got, err := uc.Create(context.Background(), &biz.Payment{OrderID: "o1", UserID: "u1", AmountCents: 100})
 
@@ -77,7 +104,7 @@ func TestPaymentUsecase_Create_setsPending(t *testing.T) {
 
 func TestPaymentUsecase_Refund_rejectsNonCompleted(t *testing.T) {
 	repo := newStubPaymentRepo()
-	uc := biz.NewPaymentUsecase(repo)
+	uc := newUC(repo)
 	created, _ := uc.Create(context.Background(), &biz.Payment{OrderID: "o", UserID: "u", AmountCents: 1})
 
 	_, err := uc.Refund(context.Background(), created.ID)
@@ -87,7 +114,7 @@ func TestPaymentUsecase_Refund_rejectsNonCompleted(t *testing.T) {
 
 func TestPaymentUsecase_Refund_completedTransitions(t *testing.T) {
 	repo := newStubPaymentRepo()
-	uc := biz.NewPaymentUsecase(repo)
+	uc := newUC(repo)
 	created, _ := uc.Create(context.Background(), &biz.Payment{OrderID: "o", UserID: "u", AmountCents: 1})
 	created.Status = "COMPLETED"
 
@@ -98,7 +125,7 @@ func TestPaymentUsecase_Refund_completedTransitions(t *testing.T) {
 }
 
 func TestPaymentUsecase_Refund_notFound(t *testing.T) {
-	uc := biz.NewPaymentUsecase(newStubPaymentRepo())
+	uc := newUC(newStubPaymentRepo())
 
 	_, err := uc.Refund(context.Background(), uuid.New())
 
@@ -107,7 +134,7 @@ func TestPaymentUsecase_Refund_notFound(t *testing.T) {
 
 func TestPaymentUsecase_ListPayments_orderTakesPriority(t *testing.T) {
 	repo := newStubPaymentRepo()
-	uc := biz.NewPaymentUsecase(repo)
+	uc := newUC(repo)
 	_, _ = uc.Create(context.Background(), &biz.Payment{OrderID: "ord-x", UserID: "u1"})
 	_, _ = uc.Create(context.Background(), &biz.Payment{OrderID: "ord-x", UserID: "u2"})
 	_, _ = uc.Create(context.Background(), &biz.Payment{OrderID: "ord-y", UserID: "u1"})
@@ -121,7 +148,7 @@ func TestPaymentUsecase_ListPayments_orderTakesPriority(t *testing.T) {
 
 func TestPaymentUsecase_ListPayments_byUser(t *testing.T) {
 	repo := newStubPaymentRepo()
-	uc := biz.NewPaymentUsecase(repo)
+	uc := newUC(repo)
 	_, _ = uc.Create(context.Background(), &biz.Payment{OrderID: "o1", UserID: "u1"})
 	_, _ = uc.Create(context.Background(), &biz.Payment{OrderID: "o2", UserID: "u2"})
 

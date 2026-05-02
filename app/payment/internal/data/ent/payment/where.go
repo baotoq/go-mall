@@ -85,6 +85,16 @@ func Provider(v string) predicate.Payment {
 	return predicate.Payment(sql.FieldEQ(FieldProvider, v))
 }
 
+// WorkflowInstanceID applies equality check predicate on the "workflow_instance_id" field. It's identical to WorkflowInstanceIDEQ.
+func WorkflowInstanceID(v string) predicate.Payment {
+	return predicate.Payment(sql.FieldEQ(FieldWorkflowInstanceID, v))
+}
+
+// Attempt applies equality check predicate on the "attempt" field. It's identical to AttemptEQ.
+func Attempt(v int32) predicate.Payment {
+	return predicate.Payment(sql.FieldEQ(FieldAttempt, v))
+}
+
 // CreatedAt applies equality check predicate on the "created_at" field. It's identical to CreatedAtEQ.
 func CreatedAt(v time.Time) predicate.Payment {
 	return predicate.Payment(sql.FieldEQ(FieldCreatedAt, v))
@@ -458,6 +468,121 @@ func ProviderEqualFold(v string) predicate.Payment {
 // ProviderContainsFold applies the ContainsFold predicate on the "provider" field.
 func ProviderContainsFold(v string) predicate.Payment {
 	return predicate.Payment(sql.FieldContainsFold(FieldProvider, v))
+}
+
+// WorkflowInstanceIDEQ applies the EQ predicate on the "workflow_instance_id" field.
+func WorkflowInstanceIDEQ(v string) predicate.Payment {
+	return predicate.Payment(sql.FieldEQ(FieldWorkflowInstanceID, v))
+}
+
+// WorkflowInstanceIDNEQ applies the NEQ predicate on the "workflow_instance_id" field.
+func WorkflowInstanceIDNEQ(v string) predicate.Payment {
+	return predicate.Payment(sql.FieldNEQ(FieldWorkflowInstanceID, v))
+}
+
+// WorkflowInstanceIDIn applies the In predicate on the "workflow_instance_id" field.
+func WorkflowInstanceIDIn(vs ...string) predicate.Payment {
+	return predicate.Payment(sql.FieldIn(FieldWorkflowInstanceID, vs...))
+}
+
+// WorkflowInstanceIDNotIn applies the NotIn predicate on the "workflow_instance_id" field.
+func WorkflowInstanceIDNotIn(vs ...string) predicate.Payment {
+	return predicate.Payment(sql.FieldNotIn(FieldWorkflowInstanceID, vs...))
+}
+
+// WorkflowInstanceIDGT applies the GT predicate on the "workflow_instance_id" field.
+func WorkflowInstanceIDGT(v string) predicate.Payment {
+	return predicate.Payment(sql.FieldGT(FieldWorkflowInstanceID, v))
+}
+
+// WorkflowInstanceIDGTE applies the GTE predicate on the "workflow_instance_id" field.
+func WorkflowInstanceIDGTE(v string) predicate.Payment {
+	return predicate.Payment(sql.FieldGTE(FieldWorkflowInstanceID, v))
+}
+
+// WorkflowInstanceIDLT applies the LT predicate on the "workflow_instance_id" field.
+func WorkflowInstanceIDLT(v string) predicate.Payment {
+	return predicate.Payment(sql.FieldLT(FieldWorkflowInstanceID, v))
+}
+
+// WorkflowInstanceIDLTE applies the LTE predicate on the "workflow_instance_id" field.
+func WorkflowInstanceIDLTE(v string) predicate.Payment {
+	return predicate.Payment(sql.FieldLTE(FieldWorkflowInstanceID, v))
+}
+
+// WorkflowInstanceIDContains applies the Contains predicate on the "workflow_instance_id" field.
+func WorkflowInstanceIDContains(v string) predicate.Payment {
+	return predicate.Payment(sql.FieldContains(FieldWorkflowInstanceID, v))
+}
+
+// WorkflowInstanceIDHasPrefix applies the HasPrefix predicate on the "workflow_instance_id" field.
+func WorkflowInstanceIDHasPrefix(v string) predicate.Payment {
+	return predicate.Payment(sql.FieldHasPrefix(FieldWorkflowInstanceID, v))
+}
+
+// WorkflowInstanceIDHasSuffix applies the HasSuffix predicate on the "workflow_instance_id" field.
+func WorkflowInstanceIDHasSuffix(v string) predicate.Payment {
+	return predicate.Payment(sql.FieldHasSuffix(FieldWorkflowInstanceID, v))
+}
+
+// WorkflowInstanceIDIsNil applies the IsNil predicate on the "workflow_instance_id" field.
+func WorkflowInstanceIDIsNil() predicate.Payment {
+	return predicate.Payment(sql.FieldIsNull(FieldWorkflowInstanceID))
+}
+
+// WorkflowInstanceIDNotNil applies the NotNil predicate on the "workflow_instance_id" field.
+func WorkflowInstanceIDNotNil() predicate.Payment {
+	return predicate.Payment(sql.FieldNotNull(FieldWorkflowInstanceID))
+}
+
+// WorkflowInstanceIDEqualFold applies the EqualFold predicate on the "workflow_instance_id" field.
+func WorkflowInstanceIDEqualFold(v string) predicate.Payment {
+	return predicate.Payment(sql.FieldEqualFold(FieldWorkflowInstanceID, v))
+}
+
+// WorkflowInstanceIDContainsFold applies the ContainsFold predicate on the "workflow_instance_id" field.
+func WorkflowInstanceIDContainsFold(v string) predicate.Payment {
+	return predicate.Payment(sql.FieldContainsFold(FieldWorkflowInstanceID, v))
+}
+
+// AttemptEQ applies the EQ predicate on the "attempt" field.
+func AttemptEQ(v int32) predicate.Payment {
+	return predicate.Payment(sql.FieldEQ(FieldAttempt, v))
+}
+
+// AttemptNEQ applies the NEQ predicate on the "attempt" field.
+func AttemptNEQ(v int32) predicate.Payment {
+	return predicate.Payment(sql.FieldNEQ(FieldAttempt, v))
+}
+
+// AttemptIn applies the In predicate on the "attempt" field.
+func AttemptIn(vs ...int32) predicate.Payment {
+	return predicate.Payment(sql.FieldIn(FieldAttempt, vs...))
+}
+
+// AttemptNotIn applies the NotIn predicate on the "attempt" field.
+func AttemptNotIn(vs ...int32) predicate.Payment {
+	return predicate.Payment(sql.FieldNotIn(FieldAttempt, vs...))
+}
+
+// AttemptGT applies the GT predicate on the "attempt" field.
+func AttemptGT(v int32) predicate.Payment {
+	return predicate.Payment(sql.FieldGT(FieldAttempt, v))
+}
+
+// AttemptGTE applies the GTE predicate on the "attempt" field.
+func AttemptGTE(v int32) predicate.Payment {
+	return predicate.Payment(sql.FieldGTE(FieldAttempt, v))
+}
+
+// AttemptLT applies the LT predicate on the "attempt" field.
+func AttemptLT(v int32) predicate.Payment {
+	return predicate.Payment(sql.FieldLT(FieldAttempt, v))
+}
+
+// AttemptLTE applies the LTE predicate on the "attempt" field.
+func AttemptLTE(v int32) predicate.Payment {
+	return predicate.Payment(sql.FieldLTE(FieldAttempt, v))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.

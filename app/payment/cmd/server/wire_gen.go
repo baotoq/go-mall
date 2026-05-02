@@ -7,6 +7,7 @@
 package main
 
 import (
+	"github.com/dapr/go-sdk/client"
 	"github.com/go-kratos/kratos/v2"
 	"github.com/go-kratos/kratos/v2/log"
 	"gomall/app/payment/internal/biz"
@@ -14,6 +15,7 @@ import (
 	"gomall/app/payment/internal/data"
 	"gomall/app/payment/internal/server"
 	"gomall/app/payment/internal/service"
+	"gomall/pkg/outbox"
 )
 
 import (
@@ -22,18 +24,34 @@ import (
 
 // Injectors from wire.go:
 
-func wireApp(confServer *conf.Server, confData *conf.Data, auth *conf.Auth, logger log.Logger) (*kratos.App, func(), error) {
-	dataData, cleanup, err := data.NewData(confData, logger)
+func wireApp(confServer *conf.Server, confData *conf.Data, auth *conf.Auth, logger log.Logger, clientClient client.Client) (*kratos.App, func(), error) {
+	db, cleanup, err := data.ProvideSQLDB(confData)
 	if err != nil {
 		return nil, nil, err
 	}
+	config := data.ProvideOutboxConfig()
+	outboxClient, cleanup2, err := outbox.ProvideClient(db, clientClient, config, logger)
+	if err != nil {
+		cleanup()
+		return nil, nil, err
+	}
+	dataData, cleanup3, err := data.NewData(db, outboxClient, logger)
+	if err != nil {
+		cleanup2()
+		cleanup()
+		return nil, nil, err
+	}
 	paymentRepo := data.NewPaymentRepo(dataData, logger)
-	paymentUsecase := biz.NewPaymentUsecase(paymentRepo)
-	paymentService := service.NewPaymentService(paymentUsecase)
+	outboxPublisher := data.NewOutboxPublisher(outboxClient)
+	paymentUsecase := biz.NewPaymentUsecase(paymentRepo, outboxPublisher)
+	paymentService := service.NewPaymentServiceFromAuth(paymentUsecase, auth)
 	grpcServer := server.NewGRPCServer(confServer, auth, paymentService, logger)
-	httpServer := server.NewHTTPServer(confServer, auth, paymentService, logger)
-	app := newApp(logger, grpcServer, httpServer)
+	paymentSubscriber := server.NewPaymentSubscriber(paymentUsecase, outboxClient, logger)
+	httpServer := server.NewHTTPServer(confServer, auth, paymentService, paymentSubscriber, logger)
+	app := newApp(logger, grpcServer, httpServer, outboxClient)
 	return app, func() {
+		cleanup3()
+		cleanup2()
 		cleanup()
 	}, nil
 }

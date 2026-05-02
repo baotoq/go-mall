@@ -35,7 +35,7 @@ CREATE TABLE IF NOT EXISTS inbox_states (
 CREATE INDEX IF NOT EXISTS idx_inbox_received_at ON inbox_states (received_at);
 `
 
-const insertOutboxSQL = `INSERT INTO outbox_messages (id, topic, payload, headers) VALUES ($1, $2, $3, $4)`
+const insertOutboxSQL = `INSERT INTO outbox_messages (id, topic, payload, headers) VALUES ($1, $2, $3, $4) ON CONFLICT (id) DO NOTHING`
 
 // clock_timestamp() returns wall-clock time, not transaction start time (unlike NOW()).
 // This is critical inside the relay's long-running transaction so retry intervals are accurate.

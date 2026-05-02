@@ -16,9 +16,21 @@ type TxExecer interface {
 	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
 }
 
+// OutboxPublishOpts carries optional overrides for a Publish call.
+// Kept in biz to avoid importing pkg/outbox from biz.
+type OutboxPublishOpts struct {
+	MessageID string
+	Headers   map[string]string
+}
+
 // OutboxPublisher writes an event into the transactional outbox.
+// TODO: This interface is duplicated across services; extract to pkg/outbox once
+// a second consumer exists.
 type OutboxPublisher interface {
 	Publish(ctx context.Context, tx TxExecer, topic string, payload any) (string, error)
+	// PublishWithOpts is like Publish but forwards message-ID and headers for
+	// idempotent, trace-correlated delivery (used by saga activities).
+	PublishWithOpts(ctx context.Context, tx TxExecer, topic string, payload any, opts OutboxPublishOpts) (string, error)
 }
 
 var (
@@ -26,6 +38,7 @@ var (
 	ErrOrderCannotCancel = errors.BadRequest(orderv1.ErrorReason_ORDER_CANNOT_CANCEL.String(), "order cannot be cancelled")
 	ErrOrderAlreadyPaid  = errors.BadRequest(orderv1.ErrorReason_ORDER_ALREADY_PAID.String(), "order already paid")
 	ErrOrderEmptyItems   = errors.BadRequest(orderv1.ErrorReason_ORDER_EMPTY_ITEMS.String(), "order must have at least one item")
+	ErrPaymentConflict   = errors.BadRequest(orderv1.ErrorReason_ORDER_ALREADY_PAID.String(), "order already paid with different payment id")
 )
 
 type OrderItem struct {
@@ -39,25 +52,32 @@ type OrderItem struct {
 }
 
 type Order struct {
-	ID         uuid.UUID
-	UserID     string
-	SessionID  string
-	Items      []OrderItem
-	TotalCents int64
-	Currency   string
-	Status     string
-	PaymentID  string
-	CreatedAt  time.Time
-	UpdatedAt  time.Time
+	ID                 uuid.UUID
+	UserID             string
+	SessionID          string
+	Items              []OrderItem
+	TotalCents         int64
+	Currency           string
+	Status             string
+	PaymentID          string
+	WorkflowInstanceID string
+	CreatedAt          time.Time
+	UpdatedAt          time.Time
 }
 
 type OrderRepo interface {
 	Create(ctx context.Context, o *Order) (*Order, error)
 	CreateWithEvent(ctx context.Context, o *Order, emit func(context.Context, TxExecer, *Order) error) (*Order, error)
 	GetByID(ctx context.Context, id uuid.UUID) (*Order, error)
+	// GetByWorkflowInstanceID returns the order tied to a Dapr workflow instance.
+	// found=false (with nil error) means no such order exists yet.
+	GetByWorkflowInstanceID(ctx context.Context, workflowInstanceID string) (*Order, bool, error)
 	ListByUser(ctx context.Context, userID, status string, page, pageSize int) ([]*Order, int, error)
 	UpdateStatus(ctx context.Context, id uuid.UUID, status string) (*Order, error)
 	MarkPaid(ctx context.Context, id uuid.UUID, paymentID string) (*Order, error)
+	// RunInTx executes fn inside a new database transaction. Used by saga
+	// activities that need to commit outbox rows atomically.
+	RunInTx(ctx context.Context, fn func(tx TxExecer) error) error
 }
 
 type OrderUsecase struct {
@@ -141,7 +161,11 @@ func (uc *OrderUsecase) MarkPaid(ctx context.Context, id uuid.UUID, paymentID st
 		return nil, err
 	}
 	if cur.Status == "PAID" {
-		return nil, ErrOrderAlreadyPaid
+		// Idempotent replay: same payment_id is success; different payment_id is a conflict.
+		if cur.PaymentID == paymentID {
+			return cur, nil
+		}
+		return nil, ErrPaymentConflict
 	}
 	if cur.Status == "CANCELLED" {
 		return nil, ErrOrderCannotCancel

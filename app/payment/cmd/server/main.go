@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"gomall/app/payment/internal/conf"
+	"gomall/pkg/outbox"
 	"gomall/pkg/secrets"
 
 	dapr "github.com/dapr/go-sdk/client"
@@ -32,7 +33,7 @@ func init() {
 	flag.StringVar(&flagconf, "conf", "../../configs", "config path, eg: -conf config.yaml")
 }
 
-func newApp(logger log.Logger, gs *grpc.Server, hs *http.Server) *kratos.App {
+func newApp(logger log.Logger, gs *grpc.Server, hs *http.Server, ob *outbox.Client) *kratos.App {
 	return kratos.New(
 		kratos.ID(id),
 		kratos.Name(Name),
@@ -40,6 +41,8 @@ func newApp(logger log.Logger, gs *grpc.Server, hs *http.Server) *kratos.App {
 		kratos.Metadata(map[string]string{}),
 		kratos.Logger(logger),
 		kratos.Server(gs, hs),
+		kratos.BeforeStart(ob.Start),
+		kratos.AfterStop(ob.Stop),
 	)
 }
 
@@ -87,8 +90,11 @@ func main() {
 	if sec.KeycloakJWKSURL != "" {
 		auth.JwksURL = sec.KeycloakJWKSURL
 	}
+	if sec.PaymentInternalToken != "" {
+		auth.InternalToken = sec.PaymentInternalToken
+	}
 
-	app, cleanup, err := wireApp(bc.Server, bc.Data, auth, logger)
+	app, cleanup, err := wireApp(bc.Server, bc.Data, auth, logger, daprClient)
 	if err != nil {
 		panic(err)
 	}

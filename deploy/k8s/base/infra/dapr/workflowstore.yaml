@@ -1,0 +1,17 @@
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: workflowstore
+  namespace: go-mall
+spec:
+  type: state.postgresql
+  version: v2
+  metadata:
+    - name: connectionString
+      secretKeyRef:
+        name: workflow-db-secret
+        key: WORKFLOWSTORE_DATABASE_CONNECTION_STRING
+    - name: actorStateStore
+      value: "true"
+    - name: cleanupInterval
+      value: "1h"

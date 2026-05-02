@@ -19,13 +19,17 @@ var _ = binding.EncodeURL
 
 const _ = http.SupportPackageIsVersion1
 
+const OperationPaymentServiceCompletePayment = "/payment.v1.PaymentService/CompletePayment"
 const OperationPaymentServiceCreatePayment = "/payment.v1.PaymentService/CreatePayment"
+const OperationPaymentServiceFailPayment = "/payment.v1.PaymentService/FailPayment"
 const OperationPaymentServiceGetPayment = "/payment.v1.PaymentService/GetPayment"
 const OperationPaymentServiceListPayments = "/payment.v1.PaymentService/ListPayments"
 const OperationPaymentServiceRefundPayment = "/payment.v1.PaymentService/RefundPayment"
 
 type PaymentServiceHTTPServer interface {
+	CompletePayment(context.Context, *CompletePaymentRequest) (*Payment, error)
 	CreatePayment(context.Context, *CreatePaymentRequest) (*Payment, error)
+	FailPayment(context.Context, *FailPaymentRequest) (*Payment, error)
 	GetPayment(context.Context, *GetPaymentRequest) (*Payment, error)
 	ListPayments(context.Context, *ListPaymentsRequest) (*ListPaymentsResponse, error)
 	RefundPayment(context.Context, *RefundPaymentRequest) (*Payment, error)
@@ -37,6 +41,8 @@ func RegisterPaymentServiceHTTPServer(s *http.Server, srv PaymentServiceHTTPServ
 	r.GET("/v1/payments/{id}", _PaymentService_GetPayment0_HTTP_Handler(srv))
 	r.GET("/v1/payments", _PaymentService_ListPayments0_HTTP_Handler(srv))
 	r.POST("/v1/payments/{id}/refund", _PaymentService_RefundPayment0_HTTP_Handler(srv))
+	r.POST("/v1/payments/{id}/complete", _PaymentService_CompletePayment0_HTTP_Handler(srv))
+	r.POST("/v1/payments/{id}/fail", _PaymentService_FailPayment0_HTTP_Handler(srv))
 }
 
 func _PaymentService_CreatePayment0_HTTP_Handler(srv PaymentServiceHTTPServer) func(ctx http.Context) error {
@@ -127,8 +133,60 @@ func _PaymentService_RefundPayment0_HTTP_Handler(srv PaymentServiceHTTPServer) f
 	}
 }
 
+func _PaymentService_CompletePayment0_HTTP_Handler(srv PaymentServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in CompletePaymentRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationPaymentServiceCompletePayment)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.CompletePayment(ctx, req.(*CompletePaymentRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*Payment)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _PaymentService_FailPayment0_HTTP_Handler(srv PaymentServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in FailPaymentRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationPaymentServiceFailPayment)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.FailPayment(ctx, req.(*FailPaymentRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*Payment)
+		return ctx.Result(200, reply)
+	}
+}
+
 type PaymentServiceHTTPClient interface {
+	CompletePayment(ctx context.Context, req *CompletePaymentRequest, opts ...http.CallOption) (rsp *Payment, err error)
 	CreatePayment(ctx context.Context, req *CreatePaymentRequest, opts ...http.CallOption) (rsp *Payment, err error)
+	FailPayment(ctx context.Context, req *FailPaymentRequest, opts ...http.CallOption) (rsp *Payment, err error)
 	GetPayment(ctx context.Context, req *GetPaymentRequest, opts ...http.CallOption) (rsp *Payment, err error)
 	ListPayments(ctx context.Context, req *ListPaymentsRequest, opts ...http.CallOption) (rsp *ListPaymentsResponse, err error)
 	RefundPayment(ctx context.Context, req *RefundPaymentRequest, opts ...http.CallOption) (rsp *Payment, err error)
@@ -142,11 +200,37 @@ func NewPaymentServiceHTTPClient(client *http.Client) PaymentServiceHTTPClient {
 	return &PaymentServiceHTTPClientImpl{client}
 }
 
+func (c *PaymentServiceHTTPClientImpl) CompletePayment(ctx context.Context, in *CompletePaymentRequest, opts ...http.CallOption) (*Payment, error) {
+	var out Payment
+	pattern := "/v1/payments/{id}/complete"
+	path := binding.EncodeURL(pattern, in, false)
+	opts = append(opts, http.Operation(OperationPaymentServiceCompletePayment))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
 func (c *PaymentServiceHTTPClientImpl) CreatePayment(ctx context.Context, in *CreatePaymentRequest, opts ...http.CallOption) (*Payment, error) {
 	var out Payment
 	pattern := "/v1/payments"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationPaymentServiceCreatePayment))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *PaymentServiceHTTPClientImpl) FailPayment(ctx context.Context, in *FailPaymentRequest, opts ...http.CallOption) (*Payment, error) {
+	var out Payment
+	pattern := "/v1/payments/{id}/fail"
+	path := binding.EncodeURL(pattern, in, false)
+	opts = append(opts, http.Operation(OperationPaymentServiceFailPayment))
 	opts = append(opts, http.PathTemplate(pattern))
 	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
 	if err != nil {

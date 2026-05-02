@@ -31,6 +31,7 @@ func (Order) Fields() []ent.Field {
 		field.String("currency").Default("USD").MaxLen(3),
 		field.String("status").Default("PENDING").MaxLen(20),
 		field.String("payment_id").Optional().MaxLen(64),
+		field.String("workflow_instance_id").Optional().Nillable().MaxLen(255),
 		field.Time("created_at").Default(time.Now).Immutable(),
 		field.Time("updated_at").Default(time.Now).UpdateDefault(time.Now),
 	}
@@ -40,5 +41,6 @@ func (Order) Indexes() []ent.Index {
 	return []ent.Index{
 		index.Fields("user_id"),
 		index.Fields("status"),
+		index.Fields("workflow_instance_id").Unique(),
 	}
 }

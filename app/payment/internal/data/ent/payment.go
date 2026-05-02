@@ -30,6 +30,10 @@ type Payment struct {
 	Status string `json:"status,omitempty"`
 	// Provider holds the value of the "provider" field.
 	Provider string `json:"provider,omitempty"`
+	// WorkflowInstanceID holds the value of the "workflow_instance_id" field.
+	WorkflowInstanceID *string `json:"workflow_instance_id,omitempty"`
+	// Attempt holds the value of the "attempt" field.
+	Attempt int32 `json:"attempt,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
@@ -42,9 +46,9 @@ func (*Payment) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case payment.FieldAmountCents:
+		case payment.FieldAmountCents, payment.FieldAttempt:
 			values[i] = new(sql.NullInt64)
-		case payment.FieldOrderID, payment.FieldUserID, payment.FieldCurrency, payment.FieldStatus, payment.FieldProvider:
+		case payment.FieldOrderID, payment.FieldUserID, payment.FieldCurrency, payment.FieldStatus, payment.FieldProvider, payment.FieldWorkflowInstanceID:
 			values[i] = new(sql.NullString)
 		case payment.FieldCreatedAt, payment.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -106,6 +110,19 @@ func (_m *Payment) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field provider", values[i])
 			} else if value.Valid {
 				_m.Provider = value.String
+			}
+		case payment.FieldWorkflowInstanceID:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field workflow_instance_id", values[i])
+			} else if value.Valid {
+				_m.WorkflowInstanceID = new(string)
+				*_m.WorkflowInstanceID = value.String
+			}
+		case payment.FieldAttempt:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field attempt", values[i])
+			} else if value.Valid {
+				_m.Attempt = int32(value.Int64)
 			}
 		case payment.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -172,6 +189,14 @@ func (_m *Payment) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("provider=")
 	builder.WriteString(_m.Provider)
+	builder.WriteString(", ")
+	if v := _m.WorkflowInstanceID; v != nil {
+		builder.WriteString("workflow_instance_id=")
+		builder.WriteString(*v)
+	}
+	builder.WriteString(", ")
+	builder.WriteString("attempt=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Attempt))
 	builder.WriteString(", ")
 	builder.WriteString("created_at=")
 	builder.WriteString(_m.CreatedAt.Format(time.ANSIC))

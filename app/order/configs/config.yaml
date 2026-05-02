@@ -9,3 +9,12 @@ data:
   database:
     driver: postgres
     source: ""
+saga:
+  enabled: false
+  max_payment_attempts: 3
+  per_attempt_timeout: 60s
+  payment_initial_delay: 0.5s
+  payment_backoff_max: 30s
+  mark_paid_retry_max: 5
+  mark_paid_budget: 5m
+  drain_timeout: 30s

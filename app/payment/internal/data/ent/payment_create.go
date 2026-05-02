@@ -81,6 +81,34 @@ func (_c *PaymentCreate) SetProvider(v string) *PaymentCreate {
 	return _c
 }
 
+// SetWorkflowInstanceID sets the "workflow_instance_id" field.
+func (_c *PaymentCreate) SetWorkflowInstanceID(v string) *PaymentCreate {
+	_c.mutation.SetWorkflowInstanceID(v)
+	return _c
+}
+
+// SetNillableWorkflowInstanceID sets the "workflow_instance_id" field if the given value is not nil.
+func (_c *PaymentCreate) SetNillableWorkflowInstanceID(v *string) *PaymentCreate {
+	if v != nil {
+		_c.SetWorkflowInstanceID(*v)
+	}
+	return _c
+}
+
+// SetAttempt sets the "attempt" field.
+func (_c *PaymentCreate) SetAttempt(v int32) *PaymentCreate {
+	_c.mutation.SetAttempt(v)
+	return _c
+}
+
+// SetNillableAttempt sets the "attempt" field if the given value is not nil.
+func (_c *PaymentCreate) SetNillableAttempt(v *int32) *PaymentCreate {
+	if v != nil {
+		_c.SetAttempt(*v)
+	}
+	return _c
+}
+
 // SetCreatedAt sets the "created_at" field.
 func (_c *PaymentCreate) SetCreatedAt(v time.Time) *PaymentCreate {
 	_c.mutation.SetCreatedAt(v)
@@ -170,6 +198,10 @@ func (_c *PaymentCreate) defaults() {
 		v := payment.DefaultStatus
 		_c.mutation.SetStatus(v)
 	}
+	if _, ok := _c.mutation.Attempt(); !ok {
+		v := payment.DefaultAttempt
+		_c.mutation.SetAttempt(v)
+	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
 		v := payment.DefaultCreatedAt()
 		_c.mutation.SetCreatedAt(v)
@@ -228,6 +260,14 @@ func (_c *PaymentCreate) check() error {
 		if err := payment.ProviderValidator(v); err != nil {
 			return &ValidationError{Name: "provider", err: fmt.Errorf(`ent: validator failed for field "Payment.provider": %w`, err)}
 		}
+	}
+	if v, ok := _c.mutation.WorkflowInstanceID(); ok {
+		if err := payment.WorkflowInstanceIDValidator(v); err != nil {
+			return &ValidationError{Name: "workflow_instance_id", err: fmt.Errorf(`ent: validator failed for field "Payment.workflow_instance_id": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.Attempt(); !ok {
+		return &ValidationError{Name: "attempt", err: errors.New(`ent: missing required field "Payment.attempt"`)}
 	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "Payment.created_at"`)}
@@ -293,6 +333,14 @@ func (_c *PaymentCreate) createSpec() (*Payment, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.Provider(); ok {
 		_spec.SetField(payment.FieldProvider, field.TypeString, value)
 		_node.Provider = value
+	}
+	if value, ok := _c.mutation.WorkflowInstanceID(); ok {
+		_spec.SetField(payment.FieldWorkflowInstanceID, field.TypeString, value)
+		_node.WorkflowInstanceID = &value
+	}
+	if value, ok := _c.mutation.Attempt(); ok {
+		_spec.SetField(payment.FieldAttempt, field.TypeInt32, value)
+		_node.Attempt = value
 	}
 	if value, ok := _c.mutation.CreatedAt(); ok {
 		_spec.SetField(payment.FieldCreatedAt, field.TypeTime, value)

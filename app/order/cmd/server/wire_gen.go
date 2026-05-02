@@ -7,7 +7,7 @@
 package main
 
 import (
-	dapr "github.com/dapr/go-sdk/client"
+	"github.com/dapr/go-sdk/client"
 	"github.com/go-kratos/kratos/v2"
 	"github.com/go-kratos/kratos/v2/log"
 	"gomall/app/order/internal/biz"
@@ -24,13 +24,13 @@ import (
 
 // Injectors from wire.go:
 
-func wireApp(confServer *conf.Server, confData *conf.Data, logger log.Logger, daprClient dapr.Client) (*kratos.App, func(), error) {
+func wireApp(confServer *conf.Server, confData *conf.Data, saga *conf.Saga, logger log.Logger, clientClient client.Client) (*kratos.App, func(), error) {
 	db, cleanup, err := data.ProvideSQLDB(confData)
 	if err != nil {
 		return nil, nil, err
 	}
 	config := data.ProvideOutboxConfig()
-	outboxClient, cleanup2, err := outbox.ProvideClient(db, daprClient, config, logger)
+	outboxClient, cleanup2, err := outbox.ProvideClient(db, clientClient, config, logger)
 	if err != nil {
 		cleanup()
 		return nil, nil, err
@@ -44,11 +44,37 @@ func wireApp(confServer *conf.Server, confData *conf.Data, logger log.Logger, da
 	orderRepo := data.NewOrderRepo(dataData, logger)
 	outboxPublisher := data.NewOutboxPublisher(outboxClient)
 	orderUsecase := biz.NewOrderUsecase(orderRepo, outboxPublisher)
-	orderService := service.NewOrderService(orderUsecase)
+	workflowClient, cleanup4, err := biz.NewWorkflowClient(logger)
+	if err != nil {
+		cleanup3()
+		cleanup2()
+		cleanup()
+		return nil, nil, err
+	}
+	idempotencyKeyRepo := data.NewIdempotencyKeyRepo(dataData, logger)
+	sagaConfig := biz.ProvideSagaConfig(saga)
+	checkoutUsecase := biz.NewCheckoutUsecase(workflowClient, idempotencyKeyRepo, sagaConfig, logger)
+	orderService := service.NewOrderService(orderUsecase, checkoutUsecase, saga)
 	grpcServer := server.NewGRPCServer(confServer, orderService, logger)
-	httpServer := server.NewHTTPServer(confServer, orderService, logger)
-	app := newApp(logger, grpcServer, httpServer, outboxClient)
+	workflowDeadLetterEventRepo := data.NewWorkflowDeadLetterEventRepo(dataData, logger)
+	orderSubscriber := server.NewOrderSubscriber(workflowClient, workflowDeadLetterEventRepo, outboxClient, logger)
+	httpServer := server.NewHTTPServer(confServer, orderService, orderSubscriber, logger)
+	completedWorkflowRepo := data.NewCompletedWorkflowRepo(dataData, logger)
+	registry, err := biz.NewWorkflowRegistry(orderUsecase, completedWorkflowRepo, sagaConfig)
+	if err != nil {
+		cleanup4()
+		cleanup3()
+		cleanup2()
+		cleanup()
+		return nil, nil, err
+	}
+	workflowWorker := server.NewWorkflowWorker(workflowClient, registry, saga, logger)
+	purgeService := biz.NewPurgeService(workflowClient, completedWorkflowRepo, saga, logger)
+	reconciliationRepo := data.NewReconciliationRepo(dataData)
+	reconciliationService := biz.NewReconciliationService(reconciliationRepo, saga, logger)
+	app := newApp(logger, grpcServer, httpServer, outboxClient, workflowWorker, purgeService, reconciliationService)
 	return app, func() {
+		cleanup4()
 		cleanup3()
 		cleanup2()
 		cleanup()

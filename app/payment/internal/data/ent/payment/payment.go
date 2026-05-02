@@ -26,6 +26,10 @@ const (
 	FieldStatus = "status"
 	// FieldProvider holds the string denoting the provider field in the database.
 	FieldProvider = "provider"
+	// FieldWorkflowInstanceID holds the string denoting the workflow_instance_id field in the database.
+	FieldWorkflowInstanceID = "workflow_instance_id"
+	// FieldAttempt holds the string denoting the attempt field in the database.
+	FieldAttempt = "attempt"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
 	FieldCreatedAt = "created_at"
 	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
@@ -43,6 +47,8 @@ var Columns = []string{
 	FieldCurrency,
 	FieldStatus,
 	FieldProvider,
+	FieldWorkflowInstanceID,
+	FieldAttempt,
 	FieldCreatedAt,
 	FieldUpdatedAt,
 }
@@ -74,6 +80,10 @@ var (
 	StatusValidator func(string) error
 	// ProviderValidator is a validator for the "provider" field. It is called by the builders before save.
 	ProviderValidator func(string) error
+	// WorkflowInstanceIDValidator is a validator for the "workflow_instance_id" field. It is called by the builders before save.
+	WorkflowInstanceIDValidator func(string) error
+	// DefaultAttempt holds the default value on creation for the "attempt" field.
+	DefaultAttempt int32
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
 	DefaultCreatedAt func() time.Time
 	// DefaultUpdatedAt holds the default value on creation for the "updated_at" field.
@@ -120,6 +130,16 @@ func ByStatus(opts ...sql.OrderTermOption) OrderOption {
 // ByProvider orders the results by the provider field.
 func ByProvider(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldProvider, opts...).ToFunc()
+}
+
+// ByWorkflowInstanceID orders the results by the workflow_instance_id field.
+func ByWorkflowInstanceID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldWorkflowInstanceID, opts...).ToFunc()
+}
+
+// ByAttempt orders the results by the attempt field.
+func ByAttempt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldAttempt, opts...).ToFunc()
 }
 
 // ByCreatedAt orders the results by the created_at field.
