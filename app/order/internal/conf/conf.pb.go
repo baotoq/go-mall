@@ -82,6 +82,86 @@ func (x *Bootstrap) GetSaga() *Saga {
 	return nil
 }
 
+// Saga holds tunable saga/workflow parameters. It is read from the
+// configs/config.yaml `saga:` block and injected via conf.Bootstrap.
+type Saga struct {
+	state               protoimpl.MessageState `protogen:"open.v1"`
+	Enabled             bool                   `protobuf:"varint,1,opt,name=enabled,proto3" json:"enabled,omitempty"`
+	MaxPaymentAttempts  int32                  `protobuf:"varint,2,opt,name=max_payment_attempts,json=maxPaymentAttempts,proto3" json:"max_payment_attempts,omitempty"`
+	PerAttemptTimeout   *durationpb.Duration   `protobuf:"bytes,3,opt,name=per_attempt_timeout,json=perAttemptTimeout,proto3" json:"per_attempt_timeout,omitempty"`
+	PaymentInitialDelay *durationpb.Duration   `protobuf:"bytes,4,opt,name=payment_initial_delay,json=paymentInitialDelay,proto3" json:"payment_initial_delay,omitempty"`
+	PaymentBackoffMax   *durationpb.Duration   `protobuf:"bytes,5,opt,name=payment_backoff_max,json=paymentBackoffMax,proto3" json:"payment_backoff_max,omitempty"`
+	MarkPaidRetryMax    int32                  `protobuf:"varint,6,opt,name=mark_paid_retry_max,json=markPaidRetryMax,proto3" json:"mark_paid_retry_max,omitempty"`
+	MarkPaidBudget      *durationpb.Duration   `protobuf:"bytes,7,opt,name=mark_paid_budget,json=markPaidBudget,proto3" json:"mark_paid_budget,omitempty"`
+	DrainTimeout        *durationpb.Duration   `protobuf:"bytes,8,opt,name=drain_timeout,json=drainTimeout,proto3" json:"drain_timeout,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
+}
+
+func (x *Saga) Reset()         {}
+func (x *Saga) String() string { return protoimpl.X.MessageStringOf(x) }
+func (*Saga) ProtoMessage()    {}
+
+func (x *Saga) ProtoReflect() protoreflect.Message {
+	return nil // stub: not used at runtime for struct population
+}
+
+func (x *Saga) GetEnabled() bool {
+	if x != nil {
+		return x.Enabled
+	}
+	return false
+}
+
+func (x *Saga) GetMaxPaymentAttempts() int32 {
+	if x != nil {
+		return x.MaxPaymentAttempts
+	}
+	return 0
+}
+
+func (x *Saga) GetPerAttemptTimeout() *durationpb.Duration {
+	if x != nil {
+		return x.PerAttemptTimeout
+	}
+	return nil
+}
+
+func (x *Saga) GetPaymentInitialDelay() *durationpb.Duration {
+	if x != nil {
+		return x.PaymentInitialDelay
+	}
+	return nil
+}
+
+func (x *Saga) GetPaymentBackoffMax() *durationpb.Duration {
+	if x != nil {
+		return x.PaymentBackoffMax
+	}
+	return nil
+}
+
+func (x *Saga) GetMarkPaidRetryMax() int32 {
+	if x != nil {
+		return x.MarkPaidRetryMax
+	}
+	return 0
+}
+
+func (x *Saga) GetMarkPaidBudget() *durationpb.Duration {
+	if x != nil {
+		return x.MarkPaidBudget
+	}
+	return nil
+}
+
+func (x *Saga) GetDrainTimeout() *durationpb.Duration {
+	if x != nil {
+		return x.DrainTimeout
+	}
+	return nil
+}
+
 type Server struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Http          *Server_HTTP           `protobuf:"bytes,1,opt,name=http,proto3" json:"http,omitempty"`

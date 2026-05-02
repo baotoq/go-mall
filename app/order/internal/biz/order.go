@@ -26,6 +26,7 @@ var (
 	ErrOrderCannotCancel = errors.BadRequest(orderv1.ErrorReason_ORDER_CANNOT_CANCEL.String(), "order cannot be cancelled")
 	ErrOrderAlreadyPaid  = errors.BadRequest(orderv1.ErrorReason_ORDER_ALREADY_PAID.String(), "order already paid")
 	ErrOrderEmptyItems   = errors.BadRequest(orderv1.ErrorReason_ORDER_EMPTY_ITEMS.String(), "order must have at least one item")
+	ErrPaymentConflict   = errors.BadRequest(orderv1.ErrorReason_ORDER_ALREADY_PAID.String(), "order already paid with different payment id")
 )
 
 type OrderItem struct {
@@ -141,7 +142,11 @@ func (uc *OrderUsecase) MarkPaid(ctx context.Context, id uuid.UUID, paymentID st
 		return nil, err
 	}
 	if cur.Status == "PAID" {
-		return nil, ErrOrderAlreadyPaid
+		// Idempotent replay: same payment_id is success; different payment_id is a conflict.
+		if cur.PaymentID == paymentID {
+			return cur, nil
+		}
+		return nil, ErrPaymentConflict
 	}
 	if cur.Status == "CANCELLED" {
 		return nil, ErrOrderCannotCancel

@@ -127,6 +127,36 @@ func (s *PaymentService) RefundPayment(ctx context.Context, req *v1.RefundPaymen
 	return bizToPayment(result), nil
 }
 
+func (s *PaymentService) CompletePayment(ctx context.Context, req *v1.CompletePaymentRequest) (*v1.Payment, error) {
+	if req.Id == "" {
+		return nil, errors.BadRequest(v1.ErrorReason_INVALID_ARGUMENT.String(), "id is required")
+	}
+	id, err := uuid.Parse(req.Id)
+	if err != nil {
+		return nil, errors.BadRequest(v1.ErrorReason_INVALID_ARGUMENT.String(), "invalid id")
+	}
+	result, err := s.uc.CompletePayment(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	return bizToPayment(result), nil
+}
+
+func (s *PaymentService) FailPayment(ctx context.Context, req *v1.FailPaymentRequest) (*v1.Payment, error) {
+	if req.Id == "" {
+		return nil, errors.BadRequest(v1.ErrorReason_INVALID_ARGUMENT.String(), "id is required")
+	}
+	id, err := uuid.Parse(req.Id)
+	if err != nil {
+		return nil, errors.BadRequest(v1.ErrorReason_INVALID_ARGUMENT.String(), "invalid id")
+	}
+	result, err := s.uc.FailPayment(ctx, id, req.ReasonCode)
+	if err != nil {
+		return nil, err
+	}
+	return bizToPayment(result), nil
+}
+
 func bizToPayment(p *biz.Payment) *v1.Payment {
 	statusVal, ok := v1.PaymentStatus_value[p.Status]
 	if !ok {

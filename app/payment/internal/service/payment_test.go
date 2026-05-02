@@ -44,9 +44,26 @@ func (r *nopPaymentRepo) ListByOrder(_ context.Context, _ string) ([]*biz.Paymen
 func (r *nopPaymentRepo) UpdateStatus(_ context.Context, id uuid.UUID, status string) (*biz.Payment, error) {
 	return &biz.Payment{ID: id, Status: status}, nil
 }
+func (r *nopPaymentRepo) GetByWorkflowAndAttempt(_ context.Context, _ string, _ int32) (*biz.Payment, error) {
+	return nil, biz.ErrPaymentNotFound
+}
+func (r *nopPaymentRepo) UpdateStatusInTx(_ context.Context, id uuid.UUID, status string, emit func(context.Context, biz.TxExecer, *biz.Payment) error) (*biz.Payment, error) {
+	p := &biz.Payment{ID: id, Status: "PENDING"}
+	if err := emit(context.Background(), nil, p); err != nil {
+		return nil, err
+	}
+	return &biz.Payment{ID: id, Status: status}, nil
+}
+
+// nopOutbox discards all outbox publishes. Shared by all tests in this package.
+type nopOutbox struct{}
+
+func (nopOutbox) Publish(_ context.Context, _ biz.TxExecer, _ string, _ any) (string, error) {
+	return "", nil
+}
 
 func newPaymentSvc(repo *nopPaymentRepo) *service.PaymentService {
-	return service.NewPaymentService(biz.NewPaymentUsecase(repo))
+	return service.NewPaymentService(biz.NewPaymentUsecase(repo, nopOutbox{}))
 }
 
 func TestPaymentService_CreatePayment_validation(t *testing.T) {

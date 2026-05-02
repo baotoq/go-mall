@@ -8,6 +8,7 @@ require (
 	entgo.io/ent v0.14.6
 	github.com/MicahParks/keyfunc/v3 v3.8.0
 	github.com/cenkalti/backoff/v4 v4.3.0
+	github.com/dapr/durabletask-go v0.11.3
 	github.com/dapr/go-sdk v1.14.2
 	github.com/go-kratos/kratos/v2 v2.9.2
 	github.com/golang-jwt/jwt/v5 v5.3.1
@@ -39,7 +40,6 @@ require (
 	github.com/containerd/platforms v0.2.1 // indirect
 	github.com/cpuguy83/dockercfg v0.3.2 // indirect
 	github.com/dapr/dapr v1.17.0 // indirect
-	github.com/dapr/durabletask-go v0.11.3 // indirect
 	github.com/dapr/kit v0.17.0 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/distribution/reference v0.6.0 // indirect
@@ -48,6 +48,7 @@ require (
 	github.com/ebitengine/purego v0.10.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
+	github.com/go-chi/chi/v5 v5.2.2 // indirect
 	github.com/go-kratos/aegis v0.2.0 // indirect
 	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect

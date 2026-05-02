@@ -10,11 +10,12 @@ import (
 	"gomall/app/payment/internal/server"
 	"gomall/app/payment/internal/service"
 
+	dapr "github.com/dapr/go-sdk/client"
 	"github.com/go-kratos/kratos/v2"
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/google/wire"
 )
 
-func wireApp(*conf.Server, *conf.Data, *conf.Auth, log.Logger) (*kratos.App, func(), error) {
+func wireApp(*conf.Server, *conf.Data, *conf.Auth, log.Logger, dapr.Client) (*kratos.App, func(), error) {
 	panic(wire.Build(server.ProviderSet, data.ProviderSet, biz.ProviderSet, service.ProviderSet, newApp))
 }
