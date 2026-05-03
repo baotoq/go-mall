@@ -86,6 +86,8 @@ export async function createKeycloakUser(
     body: JSON.stringify({
       email,
       username: crypto.randomUUID(),
+      firstName: email.split("@")[0],
+      lastName: "—",
       enabled: true,
       emailVerified: true,
     }),

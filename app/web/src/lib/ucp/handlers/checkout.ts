@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { getCart } from "@/lib/api";
 import {
   type CreateCheckoutInput,
+  summarizePayment,
   type UpdateCheckoutInput,
   validateIdempotencyKey,
 } from "@/lib/ucp/schemas/checkout";
@@ -28,6 +29,22 @@ const MISSING_EMAIL_MESSAGE: CheckoutMessage = {
   severity: "recoverable",
 };
 
+const MISSING_SHIPPING_MESSAGE: CheckoutMessage = {
+  type: "error",
+  code: "missing_shipping_address",
+  path: "$.shipping_address",
+  content: "Shipping address is required",
+  severity: "recoverable",
+};
+
+const MISSING_PAYMENT_MESSAGE: CheckoutMessage = {
+  type: "error",
+  code: "missing_payment",
+  path: "$.payment",
+  content: "Payment information is required",
+  severity: "recoverable",
+};
+
 export type CreateCheckoutResult =
   | { session: CheckoutSession }
   | { error: true; status: number; code: string; content: string };
@@ -38,6 +55,21 @@ export type CompleteCheckoutResult =
 
 function hashSession(id: string): string {
   return createHash("sha256").update(id).digest("hex");
+}
+
+function recomputeStatus(session: CheckoutSession): void {
+  const messages: CheckoutMessage[] = [];
+  if (!session.buyer?.email) {
+    messages.push(MISSING_EMAIL_MESSAGE);
+  }
+  if (!session.shipping_address) {
+    messages.push(MISSING_SHIPPING_MESSAGE);
+  }
+  if (!session.payment) {
+    messages.push(MISSING_PAYMENT_MESSAGE);
+  }
+  session.messages = messages;
+  session.status = messages.length === 0 ? "ready_for_complete" : "incomplete";
 }
 
 export async function createCheckout(
@@ -68,10 +100,6 @@ export async function createCheckout(
 
   const now = new Date();
   const id = crypto.randomUUID();
-  const messages: CheckoutMessage[] = [];
-  if (!input.buyer?.email) {
-    messages.push(MISSING_EMAIL_MESSAGE);
-  }
 
   const session: CheckoutSession = {
     id,
@@ -80,15 +108,19 @@ export async function createCheckout(
     cart_session_id: input.cart_session_id,
     user_id: opts.userId || "guest",
     buyer: input.buyer,
+    shipping_address: input.shipping_address,
+    payment: input.payment ? summarizePayment(input.payment) : undefined,
     totals: {
       subtotal_cents: cart.totalCents,
       currency: input.currency,
     },
-    messages,
+    messages: [],
     expires_at: new Date(now.getTime() + SESSION_TTL_MS).toISOString(),
     created_at: now.toISOString(),
     updated_at: now.toISOString(),
   };
+
+  recomputeStatus(session);
 
   storeSessionItems(id, cart.items);
   setSession(id, session);
@@ -108,13 +140,17 @@ export async function updateCheckout(
   const session = getSession(id);
   if (!session) return null;
 
-  if (input.buyer?.email) {
-    session.buyer = { ...session.buyer, email: input.buyer.email };
-    session.messages = session.messages.filter(
-      (m) => m.code !== "missing_email",
-    );
-    session.status = "ready_for_complete";
+  if (input.buyer !== undefined) {
+    session.buyer = input.buyer;
   }
+  if (input.shipping_address !== undefined) {
+    session.shipping_address = input.shipping_address;
+  }
+  if (input.payment !== undefined) {
+    session.payment = summarizePayment(input.payment);
+  }
+
+  recomputeStatus(session);
 
   session.updated_at = new Date().toISOString();
   setSession(id, session);

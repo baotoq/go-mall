@@ -160,9 +160,12 @@ export function CartClient() {
             <span>Total</span>
             <span>${totalPrice().toFixed(2)}</span>
           </div>
-          <Button size="lg" className="w-full">
+          <Link
+            href="/checkout"
+            className={cn(buttonVariants({ size: "lg" }), "w-full")}
+          >
             Checkout
-          </Button>
+          </Link>
         </div>
       </div>
     </div>

@@ -23,6 +23,7 @@ export default defineConfig({
     reuseExistingServer: !process.env.CI,
     env: {
       UCP_ENABLED: "true",
+      MOCK_ORDER_SERVICE: "true",
     },
   },
 });

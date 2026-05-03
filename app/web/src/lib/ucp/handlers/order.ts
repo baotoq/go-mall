@@ -40,6 +40,9 @@ export async function createOrder(
   session: CheckoutSession,
   items: CartItemData[],
 ): Promise<{ id: string }> {
+  if (process.env.MOCK_ORDER_SERVICE === "true") {
+    return { id: `mock_${session.id.slice(0, 8)}` };
+  }
   const res = await fetch(`${ORDER_API_URL}/v1/orders`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
