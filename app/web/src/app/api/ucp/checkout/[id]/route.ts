@@ -10,10 +10,6 @@ import { negotiateCapabilities, parseUCPAgent } from "@/lib/ucp/negotiation";
 import { errorResponse, wrapResponse } from "@/lib/ucp/response";
 import { UpdateCheckoutInputSchema } from "@/lib/ucp/schemas/checkout";
 
-function isUcpEnabled(): boolean {
-  return process.env.UCP_ENABLED === "true";
-}
-
 function getSessionFromHeader(req: Request): string | null {
   return req.headers.get("X-UCP-Session");
 }
@@ -58,12 +54,6 @@ export async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  if (!isUcpEnabled())
-    return withCors(
-      errorResponse(503, "ucp_disabled", "UCP is not enabled"),
-      req,
-    );
-
   const { id } = await params;
   const auth = authorize(req, id);
   if (!auth.ok) return auth.res;
@@ -85,12 +75,6 @@ export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  if (!isUcpEnabled())
-    return withCors(
-      errorResponse(503, "ucp_disabled", "UCP is not enabled"),
-      req,
-    );
-
   const { id } = await params;
   const auth = authorize(req, id);
   if (!auth.ok) return auth.res;
@@ -122,12 +106,6 @@ export async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  if (!isUcpEnabled())
-    return withCors(
-      errorResponse(503, "ucp_disabled", "UCP is not enabled"),
-      req,
-    );
-
   const { id } = await params;
   const auth = authorize(req, id);
   if (!auth.ok) return auth.res;

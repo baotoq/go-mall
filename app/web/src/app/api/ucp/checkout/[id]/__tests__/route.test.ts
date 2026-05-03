@@ -75,12 +75,7 @@ function makePostRequest(
 
 describe("GET /api/ucp/checkout/[id]", () => {
   beforeEach(() => {
-    process.env.UCP_ENABLED = "true";
     vi.clearAllMocks();
-  });
-
-  afterEach(() => {
-    delete process.env.UCP_ENABLED;
   });
 
   it("returns session when found", async () => {
@@ -133,12 +128,10 @@ describe("GET /api/ucp/checkout/[id]", () => {
 
 describe("OPTIONS /api/ucp/checkout/[id]", () => {
   beforeEach(() => {
-    process.env.UCP_ENABLED = "true";
     process.env.UCP_ALLOWED_ORIGINS = "http://allowed.example";
   });
 
   afterEach(() => {
-    delete process.env.UCP_ENABLED;
     delete process.env.UCP_ALLOWED_ORIGINS;
   });
 
@@ -172,12 +165,7 @@ describe("OPTIONS /api/ucp/checkout/[id]", () => {
 
 describe("PATCH /api/ucp/checkout/[id]", () => {
   beforeEach(() => {
-    process.env.UCP_ENABLED = "true";
     vi.clearAllMocks();
-  });
-
-  afterEach(() => {
-    delete process.env.UCP_ENABLED;
   });
 
   it("returns 401 when X-UCP-Session header is missing", async () => {
@@ -229,12 +217,7 @@ describe("PATCH /api/ucp/checkout/[id]", () => {
 
 describe("POST /api/ucp/checkout/[id] (complete)", () => {
   beforeEach(() => {
-    process.env.UCP_ENABLED = "true";
     vi.clearAllMocks();
-  });
-
-  afterEach(() => {
-    delete process.env.UCP_ENABLED;
   });
 
   it("returns 401 when X-UCP-Session header is missing", async () => {

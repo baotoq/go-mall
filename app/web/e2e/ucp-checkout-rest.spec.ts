@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-// Requires: make dev (cart service at :8002) + UCP_ENABLED=true npm run dev
+// Requires: make dev (cart service at :8002) + npm run dev
 // Assumes a cart exists with session ID "e2e-test-session" and at least one item.
 // Pre-condition: add a product to the cart via the UI or API before running.
 
@@ -49,16 +49,5 @@ test.describe("UCP Checkout REST flow", () => {
     expect(completeRes.status()).toBe(200);
     const completeBody = await completeRes.json();
     expect(completeBody.status).toBe("completed");
-  });
-
-  test("returns 503 when UCP_ENABLED is not set", async ({ request }) => {
-    // This test only applies if UCP_ENABLED env is false (integration check).
-    // When running with UCP_ENABLED=true the route returns normally.
-    // Skip if the server is running with UCP enabled.
-    const res = await request.get("/.well-known/ucp");
-    if (res.status() === 200) {
-      test.skip();
-    }
-    expect(res.status()).toBe(503);
   });
 });
