@@ -15,21 +15,11 @@ import type { CheckoutSession } from "@/lib/ucp/types/checkout";
 
 const IDEMPOTENCY_TTL_MS = 24 * 60 * 60 * 1000;
 
-function isUcpEnabled(): boolean {
-  return process.env.UCP_ENABLED === "true";
-}
-
 export async function OPTIONS(req: Request) {
   return new Response(null, { status: 204, headers: corsHeaders(req) });
 }
 
 export async function POST(req: Request) {
-  if (!isUcpEnabled())
-    return withCors(
-      errorResponse(503, "ucp_disabled", "UCP is not enabled"),
-      req,
-    );
-
   const body = await req.json().catch(() => null);
   if (!body)
     return withCors(

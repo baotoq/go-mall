@@ -15,7 +15,7 @@ npm run lint        # biome check
 npm run format      # biome format --write — run after editing
 npm test            # vitest run (jsdom; co-located `__tests__/` + `*.test.ts(x)`)
 npm run test:watch  # vitest watch
-npm run test:e2e    # playwright (auto-starts dev server with UCP_ENABLED + MOCK_ORDER_SERVICE=true)
+npm run test:e2e    # playwright (auto-starts dev server with MOCK_ORDER_SERVICE=true)
 ```
 
 Run a single vitest file or test name:
@@ -62,19 +62,18 @@ Zustand store in `src/store/cart.ts` (with sibling `cart.test.ts`) — guest-car
 
 ## UCP (Universal Commerce Protocol)
 
-`app/web/` is a UCP v2026-01-11 **business node**. Kill switch `UCP_ENABLED=false` (default) → all UCP routes return 503.
+`app/web/` is a UCP v2026-01-11 **business node**. UCP routes are always enabled.
 
 ### Env vars
 
 | Var | Default | Purpose |
 |-----|---------|---------|
-| `UCP_ENABLED` | `false` | Feature kill switch |
 | `UCP_DOMAIN` | `localhost:3000` | Domain in `/.well-known/ucp` |
 | `ORDER_API_URL` | `http://localhost:8004` | Go order service (server-only — **never** prefix with `NEXT_PUBLIC_`) |
 | `UCP_ALLOWED_ORIGINS` | `http://localhost:3000` | CORS allowlist |
 | `MOCK_ORDER_SERVICE` | `false` | When `true`, `createOrder` returns `{ id: "mock_<first-8>" }` instead of calling `ORDER_API_URL` |
 
-For local checkout without the Go order service: `UCP_ENABLED=true` + `MOCK_ORDER_SERVICE=true` in `.env.local`. Playwright already sets these in `playwright.config.ts`. **Never set `MOCK_ORDER_SERVICE` in production.**
+For local checkout without the Go order service: set `MOCK_ORDER_SERVICE=true` in `.env.local`. Playwright already sets this in `playwright.config.ts`. **Never set `MOCK_ORDER_SERVICE` in production.**
 
 ### Routes
 

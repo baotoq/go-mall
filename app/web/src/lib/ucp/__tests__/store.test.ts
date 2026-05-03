@@ -10,12 +10,28 @@ describe("ucp store", () => {
     vi.unstubAllEnvs();
   });
 
-  it("store throws in prod env", async () => {
-    // Arrange
+  it("store throws on first accessor call in prod env", async () => {
+    // Arrange — guard is lazy so the module imports cleanly under NODE_ENV=production
+    // (next build evaluates route modules during page-data collection); the guard
+    // fires on first request-time accessor call.
     vi.stubEnv("NODE_ENV", "production");
+    const { setSession } = await import("../store");
 
     // Act & Assert
-    await expect(import("../store")).rejects.toThrow(/production/);
+    expect(() =>
+      setSession("sess-prod", {
+        id: "sess-prod",
+        status: "incomplete",
+        currency: "USD",
+        cart_session_id: "cart-1",
+        user_id: "user-1",
+        totals: { subtotal_cents: 0, currency: "USD" },
+        messages: [],
+        expires_at: new Date(Date.now() + 60_000).toISOString(),
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      }),
+    ).toThrow(/production/);
   });
 
   it("get/set works in test env", async () => {

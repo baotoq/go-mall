@@ -1,7 +1,7 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// mcp-handler returns a function-shaped handler; we mock it so the kill-switch
-// test is hermetic and does not require a live MCP transport.
+// mcp-handler returns a function-shaped handler; we mock it so the test stays
+// hermetic and does not require a live MCP transport.
 vi.mock("mcp-handler", () => ({
   createMcpHandler: vi.fn(
     () =>
@@ -22,38 +22,21 @@ function makeRequest(method: "GET" | "POST"): Request {
   });
 }
 
-describe("MCP transport kill switch", () => {
+describe("MCP transport", () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
   });
 
-  afterEach(() => {
-    delete process.env.UCP_ENABLED;
+  it("delegates to MCP handler on POST", async () => {
+    const { POST } = await import("../route");
+    const res = await POST(makeRequest("POST"));
+    expect(res.status).toBe(200);
   });
 
-  it("returns 503 ucp_disabled on GET when UCP_ENABLED is unset", async () => {
-    delete process.env.UCP_ENABLED;
+  it("delegates to MCP handler on GET", async () => {
     const { GET } = await import("../route");
     const res = await GET(makeRequest("GET"));
-    expect(res.status).toBe(503);
-    const body = await res.json();
-    expect(body.code).toBe("ucp_disabled");
-  });
-
-  it("returns 503 ucp_disabled on POST when UCP_ENABLED=false", async () => {
-    process.env.UCP_ENABLED = "false";
-    const { POST } = await import("../route");
-    const res = await POST(makeRequest("POST"));
-    expect(res.status).toBe(503);
-    const body = await res.json();
-    expect(body.code).toBe("ucp_disabled");
-  });
-
-  it("delegates to MCP handler when UCP_ENABLED=true", async () => {
-    process.env.UCP_ENABLED = "true";
-    const { POST } = await import("../route");
-    const res = await POST(makeRequest("POST"));
     expect(res.status).toBe(200);
   });
 });

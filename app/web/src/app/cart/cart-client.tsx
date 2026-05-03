@@ -8,15 +8,14 @@ import { cn } from "@/lib/utils";
 import { useCartStore } from "@/store/cart";
 
 export function CartClient() {
-  const {
-    items,
-    isLoading,
-    removeItem,
-    updateQuantity,
-    totalItems,
-    totalPrice,
-    loadCart,
-  } = useCartStore();
+  const { items, isLoading, removeItem, updateQuantity, loadCart } =
+    useCartStore();
+
+  const itemCount = items.reduce((acc, i) => acc + i.quantity, 0);
+  const subtotal = items.reduce(
+    (acc, i) => acc + (i.priceCents / 100) * i.quantity,
+    0,
+  );
 
   useEffect(() => {
     loadCart();
@@ -75,7 +74,7 @@ export function CartClient() {
         </Link>
 
         <h1 className="text-3xl font-bold mb-8">
-          Cart ({totalItems()} item{totalItems() !== 1 ? "s" : ""})
+          Cart ({itemCount} item{itemCount !== 1 ? "s" : ""})
         </h1>
 
         <div className="space-y-4 mb-8">
@@ -148,9 +147,9 @@ export function CartClient() {
           <h2 className="font-semibold text-lg">Order Summary</h2>
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">
-              Subtotal ({totalItems()} items)
+              Subtotal ({itemCount} items)
             </span>
-            <span>${totalPrice().toFixed(2)}</span>
+            <span>${subtotal.toFixed(2)}</span>
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Shipping</span>
@@ -158,7 +157,7 @@ export function CartClient() {
           </div>
           <div className="border-t pt-4 flex justify-between font-bold text-lg">
             <span>Total</span>
-            <span>${totalPrice().toFixed(2)}</span>
+            <span>${subtotal.toFixed(2)}</span>
           </div>
           <Link
             href="/checkout"

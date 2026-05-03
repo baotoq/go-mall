@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/ucp/handlers/checkout", () => ({
   createCheckout: vi.fn(),
@@ -53,24 +53,9 @@ function makeRequest(
 
 describe("POST /api/ucp/checkout", () => {
   beforeEach(() => {
-    process.env.UCP_ENABLED = "true";
     mockCreateCheckout.mockReset();
     vi.clearAllMocks();
     idemStore.clear();
-  });
-
-  afterEach(() => {
-    delete process.env.UCP_ENABLED;
-  });
-
-  it("returns 503 when UCP_ENABLED is not 'true'", async () => {
-    process.env.UCP_ENABLED = "false";
-    const { POST } = await import("../route");
-    const req = makeRequest({ cart_session_id: "abc", currency: "USD" });
-    const res = await POST(req);
-    expect(res.status).toBe(503);
-    const body = await res.json();
-    expect(body.code).toBe("ucp_disabled");
   });
 
   it("returns 400 when body is invalid (missing cart_session_id)", async () => {
