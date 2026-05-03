@@ -142,7 +142,10 @@ export function CheckoutClient({ defaultEmail }: CheckoutClientProps) {
     try {
       const res = await fetch(
         `/api/ucp/checkout/${sessionId}?action=complete`,
-        { method: "POST" },
+        {
+          method: "POST",
+          headers: { "X-UCP-Session": sessionId },
+        },
       );
 
       if (!res.ok) {
