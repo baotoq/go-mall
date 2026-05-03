@@ -55,9 +55,7 @@ export function validateIdempotencyKey(key: string | null | undefined): {
   return { valid: true };
 }
 
-export function summarizePayment(p: {
-  card_number: string;
-}): PaymentSummary {
+export function summarizePayment(p: { card_number: string }): PaymentSummary {
   const digits = p.card_number.replace(/\s/g, "");
   const last4 = digits.slice(-4);
   const brand = digits.startsWith("4")

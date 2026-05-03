@@ -4,9 +4,9 @@ import Link from "next/link";
 import { useEffect } from "react";
 import { buttonVariants } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import type { CheckoutSession } from "@/lib/ucp/types/checkout";
 import { cn } from "@/lib/utils";
 import { useCartStore } from "@/store/cart";
-import type { CheckoutSession } from "@/lib/ucp/types/checkout";
 
 const SHIPPING_CENTS = 599;
 
@@ -48,9 +48,7 @@ export function SuccessClient({ session }: SuccessClientProps) {
         <div className="text-center space-y-2">
           <div className="text-4xl">&#10003;</div>
           <h1 className="text-3xl font-bold">Order placed!</h1>
-          <p className="text-muted-foreground text-sm">
-            Order #{orderId}
-          </p>
+          <p className="text-muted-foreground text-sm">Order #{orderId}</p>
         </div>
 
         {addr && (

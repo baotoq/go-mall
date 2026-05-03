@@ -1,4 +1,4 @@
-import { type Page, expect, test } from "@playwright/test";
+import { expect, type Page, test } from "@playwright/test";
 
 // Mock a NextAuth session so the checkout page server-component sees an
 // authenticated user without a live Keycloak instance.
@@ -56,7 +56,9 @@ test.describe("Checkout flow", () => {
     await page.getByRole("button", { name: /place order/i }).click();
 
     // Expect success page with order id
-    await expect(page).toHaveURL(/\/checkout\/success\?id=/, { timeout: 15000 });
+    await expect(page).toHaveURL(/\/checkout\/success\?id=/, {
+      timeout: 15000,
+    });
     await expect(page.getByText(/Order #ord_/i)).toBeVisible();
   });
 
@@ -89,6 +91,6 @@ test.describe("Checkout flow", () => {
 
     await page.goto("/checkout");
 
-    await expect(page).toHaveURL(/\/signin\?callbackUrl=%2Fcheckout/);
+    await expect(page).toHaveURL(/\/signin\?callbackUrl=(%2F|\/)checkout/);
   });
 });

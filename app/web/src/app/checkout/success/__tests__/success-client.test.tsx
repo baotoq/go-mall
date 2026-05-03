@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { useCartStore } from "@/store/cart";
 import type { CheckoutSession } from "@/lib/ucp/types/checkout";
+import { useCartStore } from "@/store/cart";
 
 const { SuccessClient } = await import("../success-client");
 

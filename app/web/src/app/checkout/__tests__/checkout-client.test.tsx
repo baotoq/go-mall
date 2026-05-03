@@ -137,9 +137,7 @@ describe("CheckoutClient", () => {
     await user.click(screen.getByRole("button", { name: /place order/i }));
 
     await waitFor(() => {
-      expect(mockPush).toHaveBeenCalledWith(
-        "/checkout/success?id=sess-abc123",
-      );
+      expect(mockPush).toHaveBeenCalledWith("/checkout/success?id=sess-abc123");
     });
     expect(mockFetch).toHaveBeenCalledTimes(2);
   });

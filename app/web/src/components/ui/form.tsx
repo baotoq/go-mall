@@ -9,9 +9,8 @@ import {
   FormProvider,
   useFormContext,
 } from "react-hook-form";
-
-import { cn } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 
 const Form = FormProvider;
 
@@ -72,7 +71,11 @@ function FormItem({ className, ...props }: React.ComponentProps<"div">) {
   const id = React.useId();
   return (
     <FormItemContext.Provider value={{ id }}>
-      <div data-slot="form-item" className={cn("grid gap-1.5", className)} {...props} />
+      <div
+        data-slot="form-item"
+        className={cn("grid gap-1.5", className)}
+        {...props}
+      />
     </FormItemContext.Provider>
   );
 }
@@ -90,7 +93,8 @@ function FormLabel({ className, ...props }: React.ComponentProps<"label">) {
 }
 
 function FormControl({ ...props }: React.ComponentProps<"div">) {
-  const { error, formItemId, formDescriptionId, formMessageId } = useFormField();
+  const { error, formItemId, formDescriptionId, formMessageId } =
+    useFormField();
   return (
     <div
       data-slot="form-control"
@@ -118,7 +122,11 @@ function FormDescription({ className, ...props }: React.ComponentProps<"p">) {
   );
 }
 
-function FormMessage({ className, children, ...props }: React.ComponentProps<"p">) {
+function FormMessage({
+  className,
+  children,
+  ...props
+}: React.ComponentProps<"p">) {
   const { error, formMessageId } = useFormField();
   const body = error ? String(error?.message ?? "") : children;
 

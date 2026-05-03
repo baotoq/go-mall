@@ -2,8 +2,8 @@ import { createHash } from "node:crypto";
 import { getCart } from "@/lib/api";
 import {
   type CreateCheckoutInput,
-  type UpdateCheckoutInput,
   summarizePayment,
+  type UpdateCheckoutInput,
   validateIdempotencyKey,
 } from "@/lib/ucp/schemas/checkout";
 import {
