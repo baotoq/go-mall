@@ -1,5 +1,14 @@
 @AGENTS.md
 
+## Testing & Verification
+
+For any UI or feature work, validate at **two layers** before marking done:
+
+1. **Playwright** (`npm run test:e2e`) — automated regression coverage; specs live in `e2e/`. Required.
+2. **agent-browser skill** — live exploratory walk-through against `npm run dev`. Use the `agent-browser` Skill tool to navigate, fill forms, click, and screenshot the actual UX (visual layout, console errors, real-network timing). Save screenshots to `.omc/research/<feature>-screenshots/`.
+
+The two are complementary: Playwright catches regressions; agent-browser catches things specs don't naturally surface (visual glitches, color contrast, real network behavior, console warnings). Don't claim a UI feature is shipped on Playwright alone.
+
 ## UCP (Universal Commerce Protocol) Integration
 
 `app/web/` implements UCP v2026-01-11 as a **business/merchant** node. It exposes a standards-compliant checkout flow over REST and MCP transports.
@@ -14,6 +23,11 @@
 | `UCP_DOMAIN` | `localhost:3000` | Domain for `/.well-known/ucp` |
 | `ORDER_API_URL` | `http://localhost:8004` | Go order service (server-only, no `NEXT_PUBLIC_`) |
 | `UCP_ALLOWED_ORIGINS` | `http://localhost:3000` | CORS allowed origins |
+| `MOCK_ORDER_SERVICE` | `false` | Skip the Go order service; `createOrder` returns a deterministic mock id |
+
+### Checkout (mock mode)
+
+Set `UCP_ENABLED=true` and `MOCK_ORDER_SERVICE=true` in `.env.local` (or copy from `.env.example`) to run the full `/checkout` flow without the Go order service. When `MOCK_ORDER_SERVICE=true`, `createOrder` returns `{ id: "mock_<first-8-of-session-uuid>" }` instead of calling `ORDER_API_URL`. Do **not** set this in production environments.
 
 ### Routes
 | Route | Description |

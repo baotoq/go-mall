@@ -162,7 +162,7 @@ describe("updateCheckout", () => {
     vi.clearAllMocks();
   });
 
-  it("transitions to ready_for_complete when buyer.email is provided", async () => {
+  it("stays incomplete when only buyer.email is provided (missing shipping+payment)", async () => {
     // Arrange
     mockedGetCart.mockResolvedValue(makeCart());
     const created = await createCheckout(
@@ -178,8 +178,160 @@ describe("updateCheckout", () => {
 
     // Assert
     expect(updated).not.toBeNull();
-    expect(updated?.status).toBe("ready_for_complete");
+    expect(updated?.status).toBe("incomplete");
     expect(updated?.buyer?.email).toBe("buyer@example.com");
+    const codes = updated?.messages.map((m) => m.code) ?? [];
+    expect(codes).toContain("missing_shipping_address");
+    expect(codes).toContain("missing_payment");
+  });
+
+  it("update from incomplete → ready_for_complete when all fields supplied", async () => {
+    // Arrange
+    mockedGetCart.mockResolvedValue(makeCart());
+    const created = await createCheckout(
+      { cart_session_id: "sess-1", currency: "USD" },
+      {},
+    );
+    if ("error" in created) throw new Error("expected session");
+    expect(created.session.status).toBe("incomplete");
+
+    // Act
+    const updated = await updateCheckout(created.session.id, {
+      buyer: { email: "buyer@example.com", name: "Alice" },
+      shipping_address: {
+        line1: "123 Main St",
+        city: "Springfield",
+        state: "IL",
+        postal_code: "62701",
+        country: "US",
+      },
+      payment: {
+        card_number: "4242 4242 4242 4242",
+        exp: "12/26",
+        cvc: "123",
+      },
+    });
+
+    // Assert
+    expect(updated).not.toBeNull();
+    expect(updated?.status).toBe("ready_for_complete");
+    expect(updated?.messages).toHaveLength(0);
+    expect(updated?.payment).toEqual({ brand: "visa", last4: "4242" });
+    expect(updated?.shipping_address?.city).toBe("Springfield");
+  });
+
+  it("raw card number is NOT present anywhere in JSON.stringify(session) after update", async () => {
+    // Arrange
+    mockedGetCart.mockResolvedValue(makeCart());
+    const created = await createCheckout(
+      { cart_session_id: "sess-1", currency: "USD" },
+      {},
+    );
+    if ("error" in created) throw new Error("expected session");
+
+    // Act
+    const updated = await updateCheckout(created.session.id, {
+      buyer: { email: "buyer@example.com" },
+      payment: {
+        card_number: "4242 4242 4242 4242",
+        exp: "12/26",
+        cvc: "123",
+      },
+    });
+
+    // Assert — no 16-digit string in the serialized session
+    const json = JSON.stringify(updated);
+    expect(json).not.toMatch(/\b\d{16}\b/);
+    expect(json).not.toMatch(/4242424242424242/);
+  });
+});
+
+describe("createCheckout with full buyer+shipping+payment", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("create with full body → status ready_for_complete, payment redacted to {brand, last4}", async () => {
+    // Arrange
+    mockedGetCart.mockResolvedValue(makeCart());
+
+    // Act
+    const result = await createCheckout(
+      {
+        cart_session_id: "sess-1",
+        currency: "USD",
+        buyer: { email: "buyer@example.com", name: "Alice" },
+        shipping_address: {
+          line1: "123 Main St",
+          city: "Springfield",
+          state: "IL",
+          postal_code: "62701",
+          country: "US",
+        },
+        payment: {
+          card_number: "4242 4242 4242 4242",
+          exp: "12/26",
+          cvc: "123",
+        },
+      },
+      { userId: "user-1" },
+    );
+
+    // Assert
+    if ("error" in result) throw new Error("expected session");
+    expect(result.session.status).toBe("ready_for_complete");
+    expect(result.session.messages).toHaveLength(0);
+    expect(result.session.payment).toEqual({ brand: "visa", last4: "4242" });
+    expect(result.session.buyer?.email).toBe("buyer@example.com");
+  });
+
+  it("create with email only → status incomplete, messages contain missing_shipping_address and missing_payment", async () => {
+    // Arrange
+    mockedGetCart.mockResolvedValue(makeCart());
+
+    // Act
+    const result = await createCheckout(
+      {
+        cart_session_id: "sess-1",
+        currency: "USD",
+        buyer: { email: "buyer@example.com" },
+      },
+      {},
+    );
+
+    // Assert
+    if ("error" in result) throw new Error("expected session");
+    expect(result.session.status).toBe("incomplete");
+    const codes = result.session.messages.map((m) => m.code);
+    expect(codes).toContain("missing_shipping_address");
+    expect(codes).toContain("missing_payment");
+    expect(codes).not.toContain("missing_email");
+  });
+
+  it("raw card number is NOT present in JSON.stringify(session) after create", async () => {
+    // Arrange
+    mockedGetCart.mockResolvedValue(makeCart());
+
+    // Act
+    const result = await createCheckout(
+      {
+        cart_session_id: "sess-1",
+        currency: "USD",
+        buyer: { email: "buyer@example.com" },
+        payment: {
+          card_number: "4111 1111 1111 1111",
+          exp: "01/27",
+          cvc: "456",
+        },
+      },
+      {},
+    );
+
+    // Assert
+    if ("error" in result) throw new Error("expected session");
+    const json = JSON.stringify(result.session);
+    expect(json).not.toMatch(/\b\d{16}\b/);
+    expect(json).not.toMatch(/4111111111111111/);
   });
 });
 
@@ -197,6 +349,18 @@ describe("completeCheckout", () => {
     if ("error" in created) throw new Error("expected session");
     const updated = await updateCheckout(created.session.id, {
       buyer: { email: "buyer@example.com" },
+      shipping_address: {
+        line1: "1 Test St",
+        city: "Testville",
+        state: "TX",
+        postal_code: "12345",
+        country: "US",
+      },
+      payment: {
+        card_number: "4242 4242 4242 4242",
+        exp: "12/26",
+        cvc: "123",
+      },
     });
     if (!updated) throw new Error("expected updated session");
     return updated;

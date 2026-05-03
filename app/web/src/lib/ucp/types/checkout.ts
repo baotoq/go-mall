@@ -21,6 +21,22 @@ export interface CheckoutTotals {
 
 export interface BuyerInfo {
   email?: string;
+  name?: string;
+  phone?: string;
+}
+
+export interface ShippingAddress {
+  line1: string;
+  line2?: string;
+  city: string;
+  state: string;
+  postal_code: string;
+  country: string; // ISO 3166-1 alpha-2
+}
+
+export interface PaymentSummary {
+  brand: string; // 'visa' | 'mastercard' | 'amex' | 'unknown'
+  last4: string; // 4 digits
 }
 
 export interface CheckoutSession {
@@ -30,6 +46,8 @@ export interface CheckoutSession {
   cart_session_id: string;
   user_id: string;
   buyer?: BuyerInfo;
+  shipping_address?: ShippingAddress;
+  payment?: PaymentSummary;
   totals: CheckoutTotals;
   messages: CheckoutMessage[];
   expires_at: string; // ISO 8601

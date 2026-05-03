@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { CartItemData } from "@/lib/types";
 import type { CheckoutSession } from "@/lib/ucp/types/checkout";
 import { createOrder } from "../order";
@@ -36,6 +36,39 @@ function makeItems(): CartItemData[] {
     },
   ];
 }
+
+describe("createOrder with MOCK_ORDER_SERVICE=true", () => {
+  beforeEach(() => {
+    vi.stubEnv("MOCK_ORDER_SERVICE", "true");
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it("resolves to mock id without calling fetch", async () => {
+    // Arrange
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+
+    // Act
+    const result = await createOrder(makeSession(), makeItems());
+
+    // Assert
+    expect(result.id).toMatch(/^mock_/);
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it("mock id is derived from session id (first 8 chars)", async () => {
+    // Arrange
+    const session = makeSession();
+
+    // Act
+    const result = await createOrder(session, makeItems());
+
+    // Assert
+    expect(result.id).toBe(`mock_${session.id.slice(0, 8)}`);
+  });
+});
 
 describe("createOrder", () => {
   it("includes upstream response body in thrown Error on non-2xx", async () => {
